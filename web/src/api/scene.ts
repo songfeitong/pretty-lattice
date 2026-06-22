@@ -25,7 +25,9 @@ export interface CellSummary {
 export interface SymmetrySummary {
   available: boolean;
   spaceGroup: string | null;
+  spaceGroupNumber: number | null;
   pointGroup: string | null;
+  pointGroupSchoenflies: string | null;
   crystalSystem: string | null;
   latticeSystem: string | null;
 }

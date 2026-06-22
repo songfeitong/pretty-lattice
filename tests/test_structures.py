@@ -84,7 +84,9 @@ def test_scene_response_shape_uses_radius_and_color_defaults() -> None:
         "symmetry": {
             "available": True,
             "spaceGroup": "Pm-3m",
+            "spaceGroupNumber": 221,
             "pointGroup": "m-3m",
+            "pointGroupSchoenflies": "Oh",
             "crystalSystem": "cubic",
             "latticeSystem": "cubic",
         },
@@ -103,7 +105,9 @@ def test_scene_summary_marks_non_periodic_symmetry_unavailable() -> None:
     assert scene["summary"]["symmetry"] == {
         "available": False,
         "spaceGroup": None,
+        "spaceGroupNumber": None,
         "pointGroup": None,
+        "pointGroupSchoenflies": None,
         "crystalSystem": None,
         "latticeSystem": None,
     }

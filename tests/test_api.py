@@ -54,7 +54,9 @@ async def test_structure_preview_upload_endpoint_returns_scene() -> None:
             "symmetry": {
                 "available": True,
                 "spaceGroup": "Pm-3m",
+                "spaceGroupNumber": 221,
                 "pointGroup": "m-3m",
+                "pointGroupSchoenflies": "Oh",
                 "crystalSystem": "cubic",
                 "latticeSystem": "cubic",
             },

@@ -136,13 +136,25 @@ export function App() {
                 <dl className="mt-1.5 flex flex-col gap-1.5 text-sm">
                   <SymmetryMetric
                     label="Space group"
-                    value={renderHermannMauguin(summary.symmetry.spaceGroup ?? "-")}
-                    title={summary.symmetry.spaceGroup ?? "-"}
+                    value={renderSpaceGroup(
+                      summary.symmetry.spaceGroup,
+                      summary.symmetry.spaceGroupNumber,
+                    )}
+                    title={formatSpaceGroupTitle(
+                      summary.symmetry.spaceGroup,
+                      summary.symmetry.spaceGroupNumber,
+                    )}
                   />
                   <SymmetryMetric
                     label="Point group"
-                    value={renderHermannMauguin(summary.symmetry.pointGroup ?? "-")}
-                    title={summary.symmetry.pointGroup ?? "-"}
+                    value={renderPointGroup(
+                      summary.symmetry.pointGroup,
+                      summary.symmetry.pointGroupSchoenflies,
+                    )}
+                    title={formatPointGroupTitle(
+                      summary.symmetry.pointGroup,
+                      summary.symmetry.pointGroupSchoenflies,
+                    )}
                   />
                   <SymmetryMetric
                     label="Crystal system"
@@ -162,7 +174,9 @@ export function App() {
               <>
                 <Separator />
                 <div>
-                  <span className="block text-xs font-bold text-muted-foreground">Cell</span>
+                  <span className="block text-xs font-bold text-muted-foreground">
+                    Lattice Parameters
+                  </span>
                   <dl className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-1.5 font-mono text-sm">
                     <CellMetric label="a" value={summary.cell.a} unit="Å" />
                     <CellMetric label="b" value={summary.cell.b} unit="Å" />
@@ -242,27 +256,52 @@ function SymmetryMetric({
 function renderHermannMauguin(symbol: string) {
   const nodes: ReactNode[] = [];
   let plainStart = 0;
+  let index = 0;
 
-  for (let index = 0; index < symbol.length - 1; index += 1) {
+  while (index < symbol.length) {
     const current = symbol[index] ?? "";
     const next = symbol[index + 1] ?? "";
-    if (current !== "-" || !/\d/.test(next)) {
+    if (current === "-" && /\d/.test(next)) {
+      if (plainStart < index) {
+        nodes.push(symbol.slice(plainStart, index));
+      }
+      nodes.push(
+        <span
+          key={`overline-${index}`}
+          className="hm-overline-digit"
+          aria-label={`overline ${next}`}
+        >
+          {next}
+        </span>,
+      );
+      index += 2;
+      plainStart = index;
       continue;
     }
 
-    if (plainStart < index) {
-      nodes.push(symbol.slice(plainStart, index));
+    if (current === "_" && /\d/.test(next)) {
+      let subscriptEnd = index + 1;
+      while (subscriptEnd < symbol.length && /\d/.test(symbol[subscriptEnd] ?? "")) {
+        subscriptEnd += 1;
+      }
+
+      if (plainStart < index) {
+        nodes.push(symbol.slice(plainStart, index));
+      }
+      nodes.push(
+        <sub key={`subscript-${index}`} className="text-[0.68em] leading-none">
+          {symbol.slice(index + 1, subscriptEnd)}
+        </sub>,
+      );
+      index = subscriptEnd;
+      plainStart = index;
+      continue;
     }
-    nodes.push(
-      <span key={`overline-${index}`} className="hm-overline-digit" aria-label={`overline ${next}`}>
-        {next}
-      </span>,
-    );
-    plainStart = index + 2;
+
     index += 1;
   }
 
-  if (plainStart === 0) {
+  if (nodes.length === 0) {
     return symbol;
   }
   if (plainStart < symbol.length) {
@@ -270,6 +309,59 @@ function renderHermannMauguin(symbol: string) {
   }
 
   return nodes;
+}
+
+function renderSpaceGroup(spaceGroup: string | null, spaceGroupNumber: number | null) {
+  const symbol = spaceGroup ?? "-";
+  if (spaceGroupNumber === null) {
+    return renderHermannMauguin(symbol);
+  }
+
+  return (
+    <>
+      {renderHermannMauguin(symbol)}
+      <span className="ml-1">(No. {spaceGroupNumber})</span>
+    </>
+  );
+}
+
+function formatSpaceGroupTitle(spaceGroup: string | null, spaceGroupNumber: number | null) {
+  const symbol = spaceGroup ?? "-";
+  return spaceGroupNumber === null ? symbol : `${symbol}  (No. ${spaceGroupNumber})`;
+}
+
+function renderPointGroup(pointGroup: string | null, schoenflies: string | null) {
+  const symbol = pointGroup ?? "-";
+  if (!schoenflies) {
+    return renderHermannMauguin(symbol);
+  }
+
+  return (
+    <>
+      {renderHermannMauguin(symbol)}
+      <span className="ml-1">(</span>
+      {renderSchoenflies(schoenflies)}
+      <span>)</span>
+    </>
+  );
+}
+
+function formatPointGroupTitle(pointGroup: string | null, schoenflies: string | null) {
+  const symbol = pointGroup ?? "-";
+  return schoenflies ? `${symbol}  (${schoenflies})` : symbol;
+}
+
+function renderSchoenflies(symbol: string) {
+  if (symbol.length <= 1) {
+    return symbol;
+  }
+
+  return (
+    <>
+      {symbol.slice(0, 1)}
+      <sub className="text-[0.68em] leading-none">{symbol.slice(1)}</sub>
+    </>
+  );
 }
 
 function renderFormula(formula: string) {

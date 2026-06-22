@@ -27,7 +27,9 @@ class CellSummarySpec(TypedDict):
 class SymmetrySummarySpec(TypedDict):
     available: bool
     spaceGroup: str | None
+    spaceGroupNumber: int | None
     pointGroup: str | None
+    pointGroupSchoenflies: str | None
     crystalSystem: str | None
     latticeSystem: str | None
 
@@ -123,6 +125,7 @@ def _build_symmetry_summary(atoms: Atoms) -> SymmetrySummarySpec:
         return _unavailable_symmetry_summary()
 
     number = _symmetry_dataset_value(dataset, "number")
+    hall_number = _symmetry_dataset_value(dataset, "hall_number")
     space_group = _symmetry_dataset_value(dataset, "international")
     point_group = _symmetry_dataset_value(dataset, "pointgroup")
 
@@ -136,7 +139,9 @@ def _build_symmetry_summary(atoms: Atoms) -> SymmetrySummarySpec:
     return {
         "available": True,
         "spaceGroup": space_group,
+        "spaceGroupNumber": number,
         "pointGroup": point_group if isinstance(point_group, str) and point_group else None,
+        "pointGroupSchoenflies": _point_group_schoenflies_from_hall_number(hall_number),
         "crystalSystem": crystal_system,
         "latticeSystem": _lattice_system_from_space_group_number(number),
     }
@@ -158,6 +163,21 @@ def _symmetry_dataset_value(dataset: Any, key: str) -> Any:
         return value
     if isinstance(dataset, dict):
         return dataset.get(key)
+    return None
+
+
+def _point_group_schoenflies_from_hall_number(hall_number: Any) -> str | None:
+    if not isinstance(hall_number, int):
+        return None
+
+    try:
+        spacegroup_type = spglib.get_spacegroup_type(hall_number)
+    except Exception:
+        return None
+
+    value = _symmetry_dataset_value(spacegroup_type, "pointgroup_schoenflies")
+    if isinstance(value, str) and value:
+        return value
     return None
 
 
@@ -192,7 +212,9 @@ def _unavailable_symmetry_summary() -> SymmetrySummarySpec:
     return {
         "available": False,
         "spaceGroup": None,
+        "spaceGroupNumber": None,
         "pointGroup": None,
+        "pointGroupSchoenflies": None,
         "crystalSystem": None,
         "latticeSystem": None,
     }
