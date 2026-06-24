@@ -2,6 +2,7 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
+    "incremental": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
@@ -18,6 +19,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2022",
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.tsbuildinfo",
     "useDefineForClassFields": true
   },
   "include": ["src", "tests", "vite.config.ts"]

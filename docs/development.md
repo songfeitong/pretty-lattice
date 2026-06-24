@@ -26,7 +26,7 @@ Useful development options:
 ```bash
 uv run prl gui --no-open
 uv run prl gui --reload
-uv run prl gui --port 0
+uv run prl gui -p 0
 ```
 
 Run checks:

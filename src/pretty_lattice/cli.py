@@ -10,7 +10,12 @@ import uvicorn
 
 from pretty_lattice.server.app import create_app
 
-app = typer.Typer(help="Pretty Lattice command line tools.")
+HELP_OPTION_NAMES = ["-h", "--help"]
+
+app = typer.Typer(
+    help="Pretty Lattice command line tools.",
+    context_settings={"help_option_names": HELP_OPTION_NAMES},
+)
 
 
 @app.callback()
@@ -53,10 +58,15 @@ def _start_browser_opener(url: str, host: str, port: int) -> None:
     ).start()
 
 
-@app.command()
+@app.command(context_settings={"help_option_names": HELP_OPTION_NAMES})
 def gui(
     host: str = typer.Option("127.0.0.1", help="Host address for the local GUI server."),
-    port: int = typer.Option(8765, help="Port for the local GUI server. Use 0 for any free port."),
+    port: int = typer.Option(
+        8765,
+        "--port",
+        "-p",
+        help="Port for the local GUI server. Use 0 for any free port.",
+    ),
     no_open: bool = typer.Option(False, "--no-open", help="Do not open the browser automatically."),
     reload: bool = typer.Option(False, help="Reload the server when Python files change."),
 ) -> None:
