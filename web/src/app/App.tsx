@@ -108,6 +108,10 @@ interface ViewportSize {
   width: number;
 }
 
+interface TabIndicatorRect {
+  left: number;
+  width: number;
+}
 
 export function App() {
   const [scene, setScene] = useState<SceneSpec | null>(null);
@@ -576,6 +580,55 @@ function CommonControlsPanel({
   onActiveTabChange: (tab: CommonPanelTab) => void;
   onComponentVisibilityChange: Dispatch<SetStateAction<ComponentVisibilityState>>;
 }) {
+  const tabTriggerRefs = useRef<Record<CommonPanelTab, HTMLButtonElement | null>>({
+    camera: null,
+    display: null,
+    export: null,
+    style: null,
+  });
+  const [tabIndicatorRect, setTabIndicatorRect] = useState<TabIndicatorRect | null>(null);
+  const contentHeight =
+    activeTab === "display"
+      ? "h-[144px]"
+      : "h-[76px]";
+
+  useEffect(() => {
+    const updateIndicatorRect = () => {
+      const activeTrigger = tabTriggerRefs.current[activeTab];
+      if (!activeTrigger) {
+        return;
+      }
+
+      setTabIndicatorRect({
+        left: activeTrigger.offsetLeft,
+        width: activeTrigger.offsetWidth,
+      });
+    };
+
+    updateIndicatorRect();
+    const animationFrame = window.requestAnimationFrame(updateIndicatorRect);
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateIndicatorRect);
+      return () => {
+        window.cancelAnimationFrame(animationFrame);
+        window.removeEventListener("resize", updateIndicatorRect);
+      };
+    }
+
+    const resizeObserver = new ResizeObserver(updateIndicatorRect);
+    for (const trigger of Object.values(tabTriggerRefs.current)) {
+      if (trigger) {
+        resizeObserver.observe(trigger);
+      }
+    }
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
+    };
+  }, [activeTab]);
+
   return (
     <TooltipProvider>
       <aside
@@ -589,18 +642,32 @@ function CommonControlsPanel({
           value={activeTab}
           onValueChange={(value) => onActiveTabChange(value as CommonPanelTab)}
         >
-          <TabsList className="flex h-8 w-full rounded-lg bg-muted/70 p-1">
+          <TabsList className="relative flex !h-8 w-full overflow-hidden rounded-lg bg-muted/70 p-1">
+            {tabIndicatorRect ? (
+              <span
+                aria-hidden="true"
+                data-slot="common-controls-active-indicator"
+                className="pointer-events-none absolute inset-y-1 left-0 z-0 rounded-md bg-background shadow-sm transition-[transform,width] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                style={{
+                  transform: `translateX(${tabIndicatorRect.left}px)`,
+                  width: tabIndicatorRect.width,
+                }}
+              />
+            ) : null}
             {COMMON_PANEL_TABS.map(({ Icon, label, value }) => {
               const isActive = value === activeTab;
               const trigger = (
                 <TabsTrigger
+                  ref={(node) => {
+                    tabTriggerRefs.current[value] = node;
+                  }}
                   key={value}
                   value={value}
                   aria-label={label}
-                  style={{ flexGrow: isActive ? 2 : 0.9 }}
+                  style={{ flexGrow: isActive ? 1.65 : 0.9 }}
                   className={cn(
-                    "h-6 min-w-0 basis-0 rounded-md text-xs transition-[flex-grow,color,background-color,box-shadow,padding] duration-[360ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none [&_svg]:size-3.5",
-                    isActive ? "px-2.5" : "px-0",
+                    "z-10 !h-6 min-w-0 basis-0 rounded-md !bg-transparent text-xs !shadow-none transition-[flex-grow,color,padding] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[state=active]:!bg-transparent data-[state=active]:!shadow-none motion-reduce:transition-none [&_svg]:size-3.5",
+                    isActive ? "px-2 text-foreground" : "px-0.5 text-muted-foreground",
                   )}
                 >
                   <Icon aria-hidden="true" />

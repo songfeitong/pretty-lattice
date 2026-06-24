@@ -199,7 +199,7 @@ describe("App", () => {
     );
   });
 
-  test("uses smooth tab content and width animation in both directions", async () => {
+  test("uses a single sliding active indicator for tab animation", async () => {
     const user = userEvent.setup();
 
     await renderLoadedStructure(user);
@@ -209,19 +209,32 @@ describe("App", () => {
     expect(content?.className).toContain("transition-[height]");
     expect(content?.className).toContain("h-[144px]");
     expect(content?.className).not.toContain("min-h");
+    const activeIndicator = commonControls.querySelector(
+      "[data-slot='common-controls-active-indicator']",
+    ) as HTMLElement | null;
+    expect(commonControls.querySelector("[data-slot='tabs-list']")?.className).toContain("!h-8");
+    expect(activeIndicator?.className).toContain("transition-[transform,width]");
     const displayTab = within(commonControls).getByRole("tab", { name: "Display" });
     const cameraTab = within(commonControls).getByRole("tab", { name: "Camera" });
-    expect(displayTab.style.flexGrow).toBe("2");
+    expect(displayTab.className).toContain("!bg-transparent");
+    expect(displayTab.className).toContain("!h-6");
+    expect(displayTab.style.flexGrow).toBe("1.65");
     expect(cameraTab.style.flexGrow).toBe("0.9");
-    expect(cameraTab.className).toContain(
-      "transition-[flex-grow",
-    );
-    expect(cameraTab.textContent).toContain("Camera");
+    expect(cameraTab.className).toContain("transition-[flex-grow");
+    expect(cameraTab.textContent).toBe("");
 
     await user.click(cameraTab);
 
     expect(content?.className).toContain("h-[76px]");
-    expect(within(commonControls).getByRole("tab", { name: "Camera" }).style.flexGrow).toBe("2");
+    expect(within(commonControls).getByRole("tab", { name: "Camera" }).className).toContain(
+      "!bg-transparent",
+    );
+    expect(within(commonControls).getByRole("tab", { name: "Camera" }).textContent).toContain(
+      "Camera",
+    );
+    expect(within(commonControls).getByRole("tab", { name: "Camera" }).style.flexGrow).toBe(
+      "1.65",
+    );
     expect(within(commonControls).getByRole("tab", { name: "Display" }).style.flexGrow).toBe(
       "0.9",
     );
