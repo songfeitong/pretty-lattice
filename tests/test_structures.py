@@ -119,13 +119,14 @@ def test_invalid_structure_bytes_raise_project_error() -> None:
         read_structure_bytes(b"not a structure", filename="invalid.cif")
 
 
-def test_project_runtime_dependencies_are_pymatgen_level() -> None:
+def test_project_runtime_dependencies_are_pymatgen_core_level() -> None:
     dependencies = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())["project"][
         "dependencies"
     ]
     dependency_names = {_dependency_name(dependency) for dependency in dependencies}
 
-    assert "pymatgen" in dependency_names
+    assert "pymatgen-core" in dependency_names
+    assert "pymatgen" not in dependency_names
     assert "ase" not in dependency_names
     assert "spglib" not in dependency_names
 

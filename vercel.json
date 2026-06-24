@@ -3,5 +3,10 @@
   "framework": "fastapi",
   "installCommand": "pip install .",
   "buildCommand": "cd web && bun install --frozen-lockfile && bun run build",
-  "bunVersion": "1.3.13"
+  "bunVersion": "1.3.13",
+  "functions": {
+    "app.py": {
+      "excludeFiles": "{.venv/**,.pytest_cache/**,.ruff_cache/**,__pycache__/**,dist/**,docs/**,openspec/**,tests/**,tmp/**,web/node_modules/**,web/src/**,web/tests/**,web/public/**}"
+    }
+  }
 }

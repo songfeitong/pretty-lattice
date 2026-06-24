@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 from itertools import product
 from typing import Literal, NotRequired, TypedDict
 
-from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN, VoronoiNN
 from pymatgen.core import Structure
+from pymatgen.core.local_env import CrystalNN, MinimumDistanceNN, VoronoiNN
 from pymatgen.core.sites import PeriodicSite
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from scipy.spatial import Delaunay, QhullError

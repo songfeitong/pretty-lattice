@@ -11,7 +11,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
     "numpy>=2.0.0",
-    "pymatgen>=2026.5.4",
+    "pymatgen-core>=2026.5.18",
     "typer>=0.16.0",
     "uvicorn[standard]>=0.30.0",
 ]
