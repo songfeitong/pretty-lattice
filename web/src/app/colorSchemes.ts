@@ -1,9 +1,10 @@
 import type { AtomSpec } from "../api/scene";
+import jmolSoftColormap from "../data/colormaps/jmol-soft.json";
 import jmolColormap from "../data/colormaps/jmol.json";
-import vestaModernColormap from "../data/colormaps/vesta-modern.json";
+import vestaSoftColormap from "../data/colormaps/vesta-soft.json";
 import vestaColormap from "../data/colormaps/vesta.json";
 
-export type ColorScheme = "vesta-modern" | "vesta" | "jmol";
+export type ColorScheme = "vesta-soft" | "vesta" | "jmol-soft" | "jmol";
 
 interface ColormapData {
   name: ColorScheme;
@@ -11,14 +12,16 @@ interface ColormapData {
 }
 
 const COLOR_SCHEMES: Record<ColorScheme, ColormapData> = {
-  "vesta-modern": vestaModernColormap as ColormapData,
+  "vesta-soft": vestaSoftColormap as ColormapData,
   vesta: vestaColormap as ColormapData,
+  "jmol-soft": jmolSoftColormap as ColormapData,
   jmol: jmolColormap as ColormapData,
 };
 
 export const COLOR_SCHEME_OPTIONS: { label: string; value: ColorScheme }[] = [
-  { label: "VESTA Modern", value: "vesta-modern" },
+  { label: "VESTA Soft", value: "vesta-soft" },
   { label: "VESTA", value: "vesta" },
+  { label: "Jmol Soft", value: "jmol-soft" },
   { label: "Jmol", value: "jmol" },
 ];
 

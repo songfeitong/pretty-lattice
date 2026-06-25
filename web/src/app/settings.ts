@@ -71,7 +71,7 @@ export const DEFAULT_STYLE: StyleState = {
   atomRadiusModel: "uniform",
   bondColorMode: "by-atom",
   bondThickness: 100,
-  colorScheme: "vesta-modern",
+  colorScheme: "vesta-soft",
 };
 
 export const STYLE_SCALE_MIN: Pick<StyleState, "atomRadius" | "bondThickness"> = {

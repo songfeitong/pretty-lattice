@@ -38,7 +38,7 @@ def main() -> None:
     args = parse_args()
     source = load_colormap(args.input)
     source_name = source.get("name") or args.input.stem
-    output_name = args.name or f"{source_name}-modern"
+    output_name = args.name or f"{source_name}-soft"
     profile = SofteningProfile(
         lightness_center=args.lightness_center,
         lightness_compression=args.lightness_compression,
@@ -81,7 +81,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("input", type=Path, help="Input colormap JSON with name/elements fields.")
     parser.add_argument("output", type=Path, help="Output colormap JSON path.")
-    parser.add_argument("--name", help="Output colormap name. Defaults to '<input-name>-modern'.")
+    parser.add_argument("--name", help="Output colormap name. Defaults to '<input-name>-soft'.")
     parser.add_argument(
         "--report",
         type=int,

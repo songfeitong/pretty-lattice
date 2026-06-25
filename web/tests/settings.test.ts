@@ -32,7 +32,7 @@ describe("settings", () => {
       atomRadiusModel: "uniform",
       bondColorMode: "by-atom",
       bondThickness: 100,
-      colorScheme: "vesta-modern",
+      colorScheme: "vesta-soft",
     });
     expect(STYLE_SCALE_MIN.atomRadius).toBe(0);
     expect(STYLE_SCALE_MAX.bondThickness).toBe(200);

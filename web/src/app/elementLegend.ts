@@ -11,7 +11,7 @@ export interface ElementLegendEntry {
 
 export function deriveElementLegendEntries(
   scene: SceneSpec | null,
-  colorScheme: ColorScheme = "vesta-modern",
+  colorScheme: ColorScheme = "vesta-soft",
 ): ElementLegendEntry[] {
   if (!scene) {
     return [];

@@ -51,6 +51,7 @@ import {
   STYLE_SCALE_MAX,
   STYLE_SCALE_MIN,
   createDefaultComponentOpacity,
+  createDefaultExportSettings,
   createDefaultStyle,
   parseExportDimensionInput,
   setExportAspectRatioLocked,
@@ -139,11 +140,15 @@ const JMOL_TOKEN_STYLE = {
   background:
     "linear-gradient(90deg, #ffffff 0 22%, #909090 22% 44%, #3050f8 44% 66%, #ff0d0d 66% 100%)",
 } as const;
+const JMOL_SOFT_TOKEN_STYLE = {
+  background:
+    "linear-gradient(90deg, #dedede 0 22%, #919191 22% 44%, #506dc2 44% 66%, #d2685a 66% 100%)",
+} as const;
 const VESTA_TOKEN_STYLE = {
   background:
     "linear-gradient(90deg, #ffcccc 0 22%, #814929 22% 44%, #b0bae6 44% 66%, #ff0300 66% 100%)",
 } as const;
-const VESTA_MODERN_TOKEN_STYLE = {
+const VESTA_SOFT_TOKEN_STYLE = {
   background:
     "linear-gradient(90deg, #f2c0c0 0 22%, #8d5434 22% 44%, #a9b3df 44% 66%, #d16759 66% 100%)",
 } as const;
@@ -426,6 +431,43 @@ function ExportTabContent({
     onSettingsChange(setExportDimension(settings, dimension, value, exportProjectedSize));
   }
 
+  const [resetFeedbackPhase, setResetFeedbackPhase] = useState<"a" | "b" | null>(null);
+  const resetFeedbackTickRef = useRef(0);
+  const resetFeedbackTimeoutRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (resetFeedbackTimeoutRef.current !== null) {
+        window.clearTimeout(resetFeedbackTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  function handleResetQualityClick() {
+    const defaultSettings = createDefaultExportSettings();
+    onSettingsChange({
+      ...settings,
+      aspectRatioLocked: defaultSettings.aspectRatioLocked,
+      height: defaultSettings.height,
+      meshQuality: defaultSettings.meshQuality,
+      pixelsPerProjectedUnit: defaultSettings.pixelsPerProjectedUnit,
+      supersampling: defaultSettings.supersampling,
+      width: defaultSettings.width,
+    });
+
+    if (resetFeedbackTimeoutRef.current !== null) {
+      window.clearTimeout(resetFeedbackTimeoutRef.current);
+    }
+
+    resetFeedbackTickRef.current += 1;
+    setResetFeedbackPhase(resetFeedbackTickRef.current % 2 === 0 ? "b" : "a");
+    resetFeedbackTimeoutRef.current = window.setTimeout(() => {
+      setResetFeedbackPhase(null);
+      resetFeedbackTimeoutRef.current = null;
+    }, RESET_OPACITY_FEEDBACK_ANIMATION_MS);
+  }
+
   return (
     <div className="flex flex-col gap-2.5">
       <section aria-labelledby="export-components-label">
@@ -440,12 +482,35 @@ function ExportTabContent({
       <Separator className="my-0.5" />
 
       <section aria-labelledby="export-quality-label" className="flex flex-col gap-2.5">
-        <h2
-          id="export-quality-label"
-          className="px-1.5 text-xs font-bold leading-tight text-muted-foreground"
-        >
-          Quality
-        </h2>
+        <div className="grid grid-cols-[minmax(5.5rem,1fr)_6.75rem_2.35rem] items-center gap-2 px-1.5">
+          <h2
+            id="export-quality-label"
+            className="text-xs font-bold leading-tight text-muted-foreground"
+          >
+            Quality
+          </h2>
+          <span aria-hidden="true" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Reset quality"
+                  className={cn(
+                    TOOL_ICON_BUTTON_CLASS,
+                    resetFeedbackPhase === "a" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS : null,
+                    resetFeedbackPhase === "b" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_B_CLASS : null,
+                  )}
+                  onClick={handleResetQualityClick}
+                >
+                  <RotateCcw aria-hidden="true" />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">Reset quality</TooltipContent>
+          </Tooltip>
+        </div>
 
         <div className="flex items-end justify-between gap-3 px-1.5">
           <div className="grid grid-cols-[2.75rem_1.25rem_2.75rem] items-end gap-[0.1875rem]">
@@ -1036,8 +1101,11 @@ function colorSchemeTokenStyle(value: ColorScheme): CSSProperties {
   if (value === "jmol") {
     return JMOL_TOKEN_STYLE;
   }
-  if (value === "vesta-modern") {
-    return VESTA_MODERN_TOKEN_STYLE;
+  if (value === "jmol-soft") {
+    return JMOL_SOFT_TOKEN_STYLE;
+  }
+  if (value === "vesta-soft") {
+    return VESTA_SOFT_TOKEN_STYLE;
   }
   return VESTA_TOKEN_STYLE;
 }

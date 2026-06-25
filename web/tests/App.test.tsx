@@ -486,7 +486,7 @@ describe("App", () => {
     expect(commonControls.querySelectorAll(".opacity-slider-snap-marker")).toHaveLength(2);
     expect(atomRadiusModelSelect.textContent).toContain("Uniform");
     expect(bondStyleSelect.textContent).toContain("By atom");
-    expect(colorSchemeSelect.textContent).toContain("VESTA Modern");
+    expect(colorSchemeSelect.textContent).toContain("VESTA Soft");
 
     await user.click(atomRadiusModelSelect);
     expect(await screen.findByText("Atom radius model")).toBeTruthy();
@@ -582,6 +582,15 @@ describe("App", () => {
     const oneXSupersampling = within(commonControls).getByRole("tab", {
       name: "1x supersampling",
     });
+    const highMeshQuality = within(commonControls).getByRole("tab", {
+      name: "High mesh quality",
+    });
+    const xHighMeshQuality = within(commonControls).getByRole("tab", {
+      name: "XHigh mesh quality",
+    });
+    const resetQualityButton = within(commonControls).getByRole("button", {
+      name: "Reset quality",
+    }) as HTMLButtonElement;
     const formatSelect = within(commonControls).getByRole("combobox", {
       name: "Format",
     });
@@ -592,6 +601,7 @@ describe("App", () => {
     expect(widthInput.value).toBe("2400");
     expect(heightInput.value).toBe("2400");
     expect(twoXSupersampling.getAttribute("aria-selected")).toBe("true");
+    expect(highMeshQuality.getAttribute("aria-selected")).toBe("true");
     expect(formatSelect.textContent).toContain("PNG");
     expect(exportPngButton.isConnected).toBe(true);
 
@@ -618,12 +628,24 @@ describe("App", () => {
     expect(heightInput.value).toBe("1000");
 
     await user.click(oneXSupersampling);
-    await user.click(
-      within(commonControls).getByRole("tab", { name: "XHigh mesh quality" }),
-    );
+    await user.click(xHighMeshQuality);
     await user.click(formatSelect);
     await user.click(await screen.findByRole("option", { name: "PDF" }));
     expect(formatSelect.textContent).toContain("PDF");
+    expect(oneXSupersampling.getAttribute("aria-selected")).toBe("true");
+    expect(xHighMeshQuality.getAttribute("aria-selected")).toBe("true");
+
+    await user.click(resetQualityButton);
+
+    expect(resetQualityButton.className).toContain("tool-icon-button-reset-feedback");
+    expect(widthInput.value).toBe("2400");
+    expect(heightInput.value).toBe("2400");
+    expect(twoXSupersampling.getAttribute("aria-selected")).toBe("true");
+    expect(highMeshQuality.getAttribute("aria-selected")).toBe("true");
+    expect(formatSelect.textContent).toContain("PDF");
+    expect(
+      within(commonControls).getByRole("button", { name: "Lock aspect ratio" }).isConnected,
+    ).toBe(true);
 
     const exportPdfButton = within(commonControls).getByRole("button", {
       name: "Export PDF",
@@ -632,12 +654,12 @@ describe("App", () => {
     await waitFor(() => expect(exportRequests).toHaveLength(2));
 
     expect(exportRequests[1]?.settings).toMatchObject({
-      aspectRatioLocked: true,
+      aspectRatioLocked: false,
       format: "pdf",
-      height: 1000,
-      meshQuality: "xhigh",
-      supersampling: 1,
-      width: 1333,
+      height: 2400,
+      meshQuality: "high",
+      supersampling: 2,
+      width: 2400,
     });
     expect(exportDownloads[1]?.fileName).toBe("NaCl.pdf");
   });
