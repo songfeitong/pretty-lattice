@@ -287,6 +287,43 @@ describe("LatticeScene camera commands", () => {
     );
   });
 
+  test("keeps the view scale snapshot aligned if a controls change event is missed", () => {
+    const scene = orthogonalScene();
+    const defaultCamera = createDefaultCrystalCameraState();
+    const cameraInteractionStore = createCameraInteractionStore();
+    const viewScaleSnapshots: number[] = [];
+    cameraInteractionStore.subscribeViewScale(() => {
+      viewScaleSnapshots.push(cameraInteractionStore.getViewScaleSnapshot());
+    });
+    const initialCommandVersion =
+      cameraInteractionStore.getViewScaleCommandSnapshot().version;
+
+    render(
+      <LatticeScene
+        cameraCommandVersion={0}
+        cameraInteractionStore={cameraInteractionStore}
+        cameraState={defaultCamera}
+        componentOpacity={createDefaultComponentOpacity()}
+        interactionLocked={false}
+        interactionMode="trackball"
+        renderBackend="webgl"
+        resetCounter={0}
+        scene={scene}
+        style={createDefaultStyle()}
+      />,
+    );
+
+    const initialZoom = mockCamera.zoom;
+    mockCamera.zoom = initialZoom * 1.006;
+    act(() => latestFrameCallback?.());
+
+    expect(viewScaleSnapshots).toHaveLength(1);
+    expect(viewScaleSnapshots[0]).toBeCloseTo(1.006);
+    expect(cameraInteractionStore.getViewScaleCommandSnapshot().version).toBe(
+      initialCommandVersion,
+    );
+  });
+
   test("applies camera state commands from the interaction store without rerendering", () => {
     const scene = orthogonalScene();
     const defaultCamera = createDefaultCrystalCameraState();

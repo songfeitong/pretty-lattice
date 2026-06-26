@@ -759,6 +759,18 @@ function PreviewCameraController({
     [camera],
   );
 
+  const publishCameraViewScaleSnapshot = useCallback(
+    (nextViewScale: number) => {
+      if (Math.abs(nextViewScale - syncedViewScaleRef.current) < VIEW_SCALE_SYNC_EPSILON) {
+        return;
+      }
+
+      syncedViewScaleRef.current = nextViewScale;
+      cameraInteractionStore.setViewScaleSnapshot(nextViewScale);
+    },
+    [cameraInteractionStore],
+  );
+
   const startCameraControlsInteraction = useCallback(() => {
     const interaction = cameraControlsInteractionRef.current;
     interaction.idleFrames = 0;
@@ -1024,21 +1036,18 @@ function PreviewCameraController({
         effectiveSafeArea,
       );
 
-      if (Math.abs(nextViewScale - syncedViewScaleRef.current) < VIEW_SCALE_SYNC_EPSILON) {
-        return;
-      }
-
-      syncedViewScaleRef.current = nextViewScale;
-      cameraInteractionStore.setViewScaleSnapshot(nextViewScale);
+      publishCameraViewScaleSnapshot(nextViewScale);
     }
 
     controls.addEventListener("change", handleControlsChange);
     return () => controls.removeEventListener("change", handleControlsChange);
   }, [
     camera,
-    cameraInteractionStore,
     effectiveSafeArea,
     fitZoom,
+    interactionMode,
+    publishCameraViewScaleSnapshot,
+    resetCounter,
     size.height,
     size.width,
   ]);
@@ -1058,13 +1067,14 @@ function PreviewCameraController({
     }
 
     if (camera instanceof OrthographicCamera) {
-      syncOrthographicFrustumToCameraZoom(
+      const nextViewScale = syncOrthographicFrustumToCameraZoom(
         camera,
         fitZoom,
         size.width,
         size.height,
         effectiveSafeArea,
       );
+      publishCameraViewScaleSnapshot(nextViewScale);
     }
 
     settleCameraControlsInteraction();
