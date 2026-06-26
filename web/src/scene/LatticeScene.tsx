@@ -1802,6 +1802,7 @@ function CellFrame({ opacity, vectors }: { opacity: number; vectors: VectorTuple
       <lineBasicMaterial
         color={CELL_FRAME_COLOR}
         depthWrite={opacity >= 1}
+        fog={false}
         linewidth={CELL_FRAME_LINE_WIDTH_PIXELS}
         opacity={opacity}
         transparent={opacity < 1}
