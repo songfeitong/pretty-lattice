@@ -17,6 +17,7 @@ import {
   Fog,
   Mesh,
   MeshBasicMaterial,
+  MeshLambertMaterial,
   MOUSE,
   OrthographicCamera,
   Quaternion,
@@ -139,14 +140,17 @@ const FOG_START_OFFSET_EARLY = -0.7;
 const FOG_START_OFFSET_LATE = 0.35;
 const FOG_FALLOFF_SPAN_STRONG = 0.35;
 const FOG_FALLOFF_SPAN_SOFT = 1.15;
-const ATOM_HALO_COLOR = "#5f6670";
-const ATOM_HALO_PULSE_MS = 240;
-const ATOM_HALO_SELECT_MS = 150;
-const ATOM_HALO_SELECTED_SCALE = 1.16;
-const ATOM_HALO_PULSE_SCALE = ATOM_HALO_SELECTED_SCALE;
-const ATOM_HALO_PULSE_MIN_SCALE = 1.03;
-const ATOM_HALO_SELECTED_OPACITY = 0.48;
-const ATOM_HALO_PULSE_OPACITY = 0.62;
+const ATOM_HIGHLIGHT_TARGET_COLOR = new Color("#ffffff");
+const ATOM_HIGHLIGHT_PULSE_MS = 240;
+const ATOM_HIGHLIGHT_SELECT_MS = 150;
+const ATOM_HIGHLIGHT_EMISSIVE_COLOR_MIX = 0.5;
+const ATOM_HIGHLIGHT_SELECTED_COLOR_MIX = 0.26;
+const ATOM_HIGHLIGHT_PULSE_COLOR_MIX = 0.34;
+const ATOM_HIGHLIGHT_SELECTED_EMISSIVE_INTENSITY = 0.32;
+const ATOM_HIGHLIGHT_PULSE_EMISSIVE_INTENSITY = 0.42;
+const ATOM_HIGHLIGHT_HALO_SELECTED_SCALE = 1.12;
+const ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE = 1.03;
+const ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY = 0.28;
 
 export {
   BOND_RADIUS,
@@ -205,6 +209,7 @@ export function LatticeScene({
   onCameraOrientationChange,
   onAtomInspect,
   onAtomPulse,
+  onLockedInteractionAttempt,
   resetCounter,
   renderBackend,
   safeArea = EMPTY_SAFE_AREA,
@@ -234,6 +239,7 @@ export function LatticeScene({
   onCameraOrientationChange?: () => void;
   onAtomInspect?: (atomId: string | null) => void;
   onAtomPulse?: (atomId: string) => void;
+  onLockedInteractionAttempt?: () => void;
   resetCounter: number;
   renderBackend: RenderBackend;
   safeArea?: PreviewSafeArea;
@@ -311,8 +317,10 @@ export function LatticeScene({
         meshDetail={PREVIEW_SCENE_MESH_DETAIL}
         scene={scene}
         inspectedAtomId={inspectedAtomId}
+        interactionLocked={interactionLocked}
         onAtomInspect={onAtomInspect}
         onAtomPulse={onAtomPulse}
+        onLockedInteractionAttempt={onLockedInteractionAttempt}
         pulseAtomId={pulseAtomId}
         pulseToken={pulseToken}
         showAtoms={showAtoms}
@@ -376,8 +384,10 @@ function PreviewSceneContent({
   meshDetail,
   scene,
   inspectedAtomId,
+  interactionLocked,
   onAtomInspect,
   onAtomPulse,
+  onLockedInteractionAttempt,
   pulseAtomId,
   pulseToken,
   showAtoms,
@@ -389,8 +399,10 @@ function PreviewSceneContent({
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
   inspectedAtomId: string | null;
+  interactionLocked: boolean;
   onAtomInspect?: (atomId: string | null) => void;
   onAtomPulse?: (atomId: string) => void;
+  onLockedInteractionAttempt?: () => void;
   pulseAtomId: string | null;
   pulseToken: number;
   showAtoms: boolean;
@@ -409,8 +421,10 @@ function PreviewSceneContent({
         meshDetail={meshDetail}
         scene={scene}
         inspectedAtomId={inspectedAtomId}
+        interactionLocked={interactionLocked}
         onAtomInspect={onAtomInspect}
         onAtomPulse={onAtomPulse}
+        onLockedInteractionAttempt={onLockedInteractionAttempt}
         pulseAtomId={pulseAtomId}
         pulseToken={pulseToken}
         showAtoms={showAtoms}
@@ -555,11 +569,13 @@ function StructureSceneObjects({
   atomById,
   componentOpacity,
   groupPosition,
+  interactionLocked = false,
   meshDetail,
   scene,
   inspectedAtomId = null,
   onAtomInspect,
   onAtomPulse,
+  onLockedInteractionAttempt,
   pulseAtomId = null,
   pulseToken = 0,
   showAtoms,
@@ -569,19 +585,29 @@ function StructureSceneObjects({
   atomById: Map<string, AtomSpec>;
   componentOpacity: ComponentOpacityState;
   groupPosition: VectorTuple;
+  interactionLocked?: boolean;
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
   inspectedAtomId?: string | null;
   onAtomInspect?: (atomId: string | null) => void;
   onAtomPulse?: (atomId: string) => void;
+  onLockedInteractionAttempt?: () => void;
   pulseAtomId?: string | null;
   pulseToken?: number;
   showAtoms: boolean;
   showUnitCell: boolean;
   style: StyleState;
 }) {
+  const handlePointerMissed = useCallback(() => {
+    if (interactionLocked) {
+      return;
+    }
+
+    onAtomInspect?.(null);
+  }, [interactionLocked, onAtomInspect]);
+
   return (
-    <group onPointerMissed={() => onAtomInspect?.(null)}>
+    <group onPointerMissed={handlePointerMissed}>
       <group position={groupPosition}>
         {showUnitCell ? (
           <CellFrame
@@ -617,9 +643,11 @@ function StructureSceneObjects({
                 atom={atom}
                 colorScheme={style.colorScheme}
                 inspected={inspectedAtomId === atom.id}
+                interactionLocked={interactionLocked}
                 meshDetail={meshDetail}
                 onInspect={onAtomInspect}
                 onPulse={onAtomPulse}
+                onLockedInteractionAttempt={onLockedInteractionAttempt}
                 pulseToken={pulseAtomId === atom.id ? pulseToken : 0}
                 radiusModel={style.atomRadiusModel}
                 radiusScale={style.atomRadius / 100}
@@ -1056,9 +1084,11 @@ interface CameraPoseAnimation {
   targetSpan: number;
 }
 
-interface HaloSelectionTransition {
-  startOpacity: number;
-  startScale: number;
+interface AtomSelectionHighlightTransition {
+  startColorMix: number;
+  startEmissiveIntensity: number;
+  startHaloOpacity: number;
+  startHaloScale: number;
   startTimeMs: number;
 }
 
@@ -1235,13 +1265,28 @@ function applyStandardCameraPose(
   camera.position.set(...standardPose.cameraPosition);
 }
 
+function applyAtomHighlight(
+  material: MeshLambertMaterial,
+  baseColor: Color,
+  colorMix: number,
+  emissiveIntensity: number,
+) {
+  material.color.copy(baseColor).lerp(ATOM_HIGHLIGHT_TARGET_COLOR, colorMix);
+  material.emissive
+    .copy(baseColor)
+    .lerp(ATOM_HIGHLIGHT_TARGET_COLOR, ATOM_HIGHLIGHT_EMISSIVE_COLOR_MIX);
+  material.emissiveIntensity = emissiveIntensity;
+}
+
 function Atom({
   atom,
   colorScheme,
   inspected,
+  interactionLocked,
   meshDetail,
   onInspect,
   onPulse,
+  onLockedInteractionAttempt,
   opacity,
   pulseToken,
   radiusModel,
@@ -1250,34 +1295,38 @@ function Atom({
   atom: AtomSpec;
   colorScheme: StyleState["colorScheme"];
   inspected: boolean;
+  interactionLocked: boolean;
   meshDetail: SceneMeshDetail;
   onInspect?: (atomId: string | null) => void;
   onPulse?: (atomId: string) => void;
+  onLockedInteractionAttempt?: () => void;
   opacity: number;
   pulseToken: number;
   radiusModel: AtomRadiusModel;
   radiusScale: number;
 }) {
+  const atomMaterialRef = useRef<MeshLambertMaterial | null>(null);
   const haloMaterialRef = useRef<MeshBasicMaterial | null>(null);
   const haloMeshRef = useRef<Mesh | null>(null);
+  const currentColorMixRef = useRef(0);
+  const currentEmissiveIntensityRef = useRef(0);
+  const currentHaloOpacityRef = useRef(0);
+  const currentHaloScaleRef = useRef(ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE);
   const pulseStartTimeRef = useRef<number | null>(null);
-  const selectionTransitionRef = useRef<HaloSelectionTransition | null>(null);
-  const [isPulsing, setIsPulsing] = useState(false);
+  const selectionTransitionRef = useRef<AtomSelectionHighlightTransition | null>(null);
   const isTransparent = opacity < 1;
   const radius = atomRadiusForModel(atom, radiusModel);
   const scaledRadius = radius * radiusScale;
   const color = atomColorForScheme(atom, colorScheme);
-  const showHalo = inspected || isPulsing;
+  const baseColor = useMemo(() => new Color(color), [color]);
 
   useEffect(() => {
     if (pulseToken === 0) {
       pulseStartTimeRef.current = null;
-      setIsPulsing(false);
       return;
     }
 
     pulseStartTimeRef.current = performance.now();
-    setIsPulsing(true);
   }, [pulseToken]);
 
   useEffect(() => {
@@ -1286,45 +1335,75 @@ function Atom({
       return;
     }
 
-    const haloMesh = haloMeshRef.current;
-    const haloMaterial = haloMaterialRef.current;
     selectionTransitionRef.current = {
-      startOpacity: haloMaterial?.opacity ?? 0,
-      startScale: haloMesh?.scale.x ?? ATOM_HALO_PULSE_MIN_SCALE,
+      startColorMix: currentColorMixRef.current,
+      startEmissiveIntensity: currentEmissiveIntensityRef.current,
+      startHaloOpacity: currentHaloOpacityRef.current,
+      startHaloScale: currentHaloScaleRef.current,
       startTimeMs: performance.now(),
     };
     pulseStartTimeRef.current = null;
-    setIsPulsing(false);
   }, [inspected]);
 
   useFrame(() => {
-    const haloMesh = haloMeshRef.current;
-    const haloMaterial = haloMaterialRef.current;
-    if (!haloMesh || !haloMaterial) {
+    const atomMaterial = atomMaterialRef.current;
+    if (!atomMaterial) {
       return;
     }
+    const haloMaterial = haloMaterialRef.current;
+    const haloMesh = haloMeshRef.current;
 
     if (inspected) {
       const selectionTransition = selectionTransitionRef.current;
       if (!selectionTransition) {
-        haloMesh.scale.setScalar(ATOM_HALO_SELECTED_SCALE);
-        haloMaterial.opacity = ATOM_HALO_SELECTED_OPACITY;
+        currentColorMixRef.current = ATOM_HIGHLIGHT_SELECTED_COLOR_MIX;
+        currentEmissiveIntensityRef.current = ATOM_HIGHLIGHT_SELECTED_EMISSIVE_INTENSITY;
+        currentHaloOpacityRef.current = ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY;
+        currentHaloScaleRef.current = ATOM_HIGHLIGHT_HALO_SELECTED_SCALE;
+        applyAtomHighlight(
+          atomMaterial,
+          baseColor,
+          ATOM_HIGHLIGHT_SELECTED_COLOR_MIX,
+          ATOM_HIGHLIGHT_SELECTED_EMISSIVE_INTENSITY,
+        );
+        if (haloMaterial && haloMesh) {
+          haloMesh.scale.setScalar(ATOM_HIGHLIGHT_HALO_SELECTED_SCALE);
+          haloMaterial.opacity = ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY;
+        }
         return;
       }
 
       const progress = Math.min(
         1,
-        (performance.now() - selectionTransition.startTimeMs) / ATOM_HALO_SELECT_MS,
+        (performance.now() - selectionTransition.startTimeMs) / ATOM_HIGHLIGHT_SELECT_MS,
       );
       const easedProgress = easeOutCubic(progress);
-      const scale =
-        selectionTransition.startScale +
-        (ATOM_HALO_SELECTED_SCALE - selectionTransition.startScale) * easedProgress;
-      const nextOpacity =
-        selectionTransition.startOpacity +
-        (ATOM_HALO_SELECTED_OPACITY - selectionTransition.startOpacity) * easedProgress;
-      haloMesh.scale.setScalar(scale);
-      haloMaterial.opacity = nextOpacity;
+      const colorMix =
+        selectionTransition.startColorMix +
+        (ATOM_HIGHLIGHT_SELECTED_COLOR_MIX - selectionTransition.startColorMix) *
+          easedProgress;
+      const emissiveIntensity =
+        selectionTransition.startEmissiveIntensity +
+        (ATOM_HIGHLIGHT_SELECTED_EMISSIVE_INTENSITY -
+          selectionTransition.startEmissiveIntensity) *
+          easedProgress;
+      const haloOpacity =
+        selectionTransition.startHaloOpacity +
+        (ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY - selectionTransition.startHaloOpacity) *
+          easedProgress;
+      const haloScale =
+        selectionTransition.startHaloScale +
+        (ATOM_HIGHLIGHT_HALO_SELECTED_SCALE - selectionTransition.startHaloScale) *
+          easedProgress;
+      currentColorMixRef.current = colorMix;
+      currentEmissiveIntensityRef.current = emissiveIntensity;
+      currentHaloOpacityRef.current = haloOpacity;
+      currentHaloScaleRef.current = haloScale;
+      applyAtomHighlight(atomMaterial, baseColor, colorMix, emissiveIntensity);
+      if (haloMaterial && haloMesh) {
+        haloMesh.scale.setScalar(haloScale);
+        haloMaterial.opacity = haloOpacity;
+      }
 
       if (progress >= 1) {
         selectionTransitionRef.current = null;
@@ -1334,46 +1413,70 @@ function Atom({
 
     const pulseStartTime = pulseStartTimeRef.current;
     if (pulseStartTime === null) {
-      haloMesh.scale.setScalar(ATOM_HALO_PULSE_MIN_SCALE);
-      haloMaterial.opacity = 0;
+      currentColorMixRef.current = 0;
+      currentEmissiveIntensityRef.current = 0;
+      currentHaloOpacityRef.current = 0;
+      currentHaloScaleRef.current = ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE;
+      applyAtomHighlight(atomMaterial, baseColor, 0, 0);
+      if (haloMaterial && haloMesh) {
+        haloMesh.scale.setScalar(ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE);
+        haloMaterial.opacity = 0;
+      }
       return;
     }
 
-    const progress = Math.min(1, (performance.now() - pulseStartTime) / ATOM_HALO_PULSE_MS);
+    const progress = Math.min(
+      1,
+      (performance.now() - pulseStartTime) / ATOM_HIGHLIGHT_PULSE_MS,
+    );
     const fadeIn = Math.min(1, progress / 0.28);
     const fadeOut = progress < 0.28 ? 1 : 1 - (progress - 0.28) / 0.72;
     const fade = fadeIn * Math.max(0, fadeOut) ** 0.72;
-    const easeOut = 1 - (1 - progress) ** 3;
-    const scale = ATOM_HALO_PULSE_MIN_SCALE +
-      (ATOM_HALO_PULSE_SCALE - ATOM_HALO_PULSE_MIN_SCALE) * easeOut;
-    haloMesh.scale.setScalar(scale);
-    haloMaterial.opacity = ATOM_HALO_PULSE_OPACITY * fade;
+    const colorMix = ATOM_HIGHLIGHT_PULSE_COLOR_MIX * fade;
+    const emissiveIntensity = ATOM_HIGHLIGHT_PULSE_EMISSIVE_INTENSITY * fade;
+    currentColorMixRef.current = colorMix;
+    currentEmissiveIntensityRef.current = emissiveIntensity;
+    currentHaloOpacityRef.current = 0;
+    currentHaloScaleRef.current = ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE;
+    applyAtomHighlight(atomMaterial, baseColor, colorMix, emissiveIntensity);
+    if (haloMaterial && haloMesh) {
+      haloMesh.scale.setScalar(ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE);
+      haloMaterial.opacity = 0;
+    }
 
     if (progress >= 1) {
       pulseStartTimeRef.current = null;
-      setIsPulsing(false);
     }
   });
 
   const handleClick = useCallback(
     (event: ThreeEvent<MouseEvent>) => {
       event.stopPropagation();
+      if (interactionLocked) {
+        return;
+      }
+
       onPulse?.(atom.id);
     },
-    [atom.id, onPulse],
+    [atom.id, interactionLocked, onLockedInteractionAttempt, onPulse],
   );
 
   const handleDoubleClick = useCallback(
     (event: ThreeEvent<MouseEvent>) => {
       event.stopPropagation();
+      if (interactionLocked) {
+        onLockedInteractionAttempt?.();
+        return;
+      }
+
       onInspect?.(atom.id);
     },
-    [atom.id, onInspect],
+    [atom.id, interactionLocked, onInspect, onLockedInteractionAttempt],
   );
 
   return (
     <group position={atom.position}>
-      {showHalo ? (
+      {inspected ? (
         <mesh ref={haloMeshRef} renderOrder={2}>
           <sphereGeometry
             args={[
@@ -1384,7 +1487,7 @@ function Atom({
           />
           <meshBasicMaterial
             ref={haloMaterialRef}
-            color={ATOM_HALO_COLOR}
+            color={color}
             depthWrite={false}
             opacity={0}
             transparent
@@ -1403,6 +1506,7 @@ function Atom({
           ]}
         />
         <meshLambertMaterial
+          ref={atomMaterialRef}
           key={isTransparent ? "transparent" : "opaque"}
           color={color}
           depthWrite={!isTransparent}

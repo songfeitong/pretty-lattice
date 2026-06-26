@@ -837,6 +837,7 @@ export function App() {
             }
             onAtomInspect={handleAtomInspect}
             onAtomPulse={handleAtomPulse}
+            onLockedInteractionAttempt={triggerLockedInteractionFeedback}
             cameraInteractionStore={cameraInteractionStore}
             suspendCameraOrientationUpdates={
               isCameraCommandAnimationActive ||
