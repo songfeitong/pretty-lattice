@@ -12,20 +12,13 @@ export interface SceneSpec {
 export type BondAlgorithm = "crystal-nn" | "minimum-distance" | "vesta";
 export type AtomRadiusModel = "uniform" | "atomic" | "vdw" | "ionic";
 
-export const AUTO_BOND_ALGORITHM_ATOM_COUNT_THRESHOLD = 200;
-export const DEFAULT_BOND_ALGORITHM: BondAlgorithm = "crystal-nn";
+export const DEFAULT_BOND_ALGORITHM: BondAlgorithm = "vesta";
 
 export const BOND_ALGORITHM_OPTIONS: { label: string; value: BondAlgorithm }[] = [
+  { label: "VESTA", value: "vesta" },
   { label: "CrystalNN", value: "crystal-nn" },
   { label: "Minimum distance", value: "minimum-distance" },
-  { label: "VESTA", value: "vesta" },
 ];
-
-export function defaultBondAlgorithmForAtomCount(atomCount: number): BondAlgorithm {
-  return atomCount >= AUTO_BOND_ALGORITHM_ATOM_COUNT_THRESHOLD
-    ? "vesta"
-    : DEFAULT_BOND_ALGORITHM;
-}
 
 export interface StructureSummary {
   formula: string;

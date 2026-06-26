@@ -158,7 +158,7 @@ async def test_structure_preview_upload_endpoint_returns_bond_warning(monkeypatc
     assert payload["warnings"] == [
         {
             "code": "bond-analysis-failed",
-            "message": "Bond analysis with CrystalNN failed: neighbor graph unavailable",
+            "message": "Bond analysis with VESTA failed: neighbor graph unavailable",
         }
     ]
 

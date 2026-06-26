@@ -226,9 +226,9 @@ describe("App", () => {
     ).toEqual(["Atoms", "Bonds", "Unit cell", "Polyhedra"]);
   });
 
-  test("shows VESTA as the automatic default for large structures", async () => {
+  test("shows VESTA as the automatic default for uploaded structures", async () => {
     const user = userEvent.setup();
-    queueFetchResponse(jsonResponse(sceneWithPeriodicImages({ atomCount: 200 })));
+    queueFetchResponse(jsonResponse(sceneWithPeriodicImages({ atomCount: 5 })));
 
     render(<App />);
 
@@ -928,7 +928,7 @@ describe("App", () => {
     await user.click(await screen.findByRole("option", { name: "VESTA" }));
 
     await waitFor(() => expect(fetchCalls).toHaveLength(3));
-    expect(fetchCalls[2]?.input).toBe("/api/structure-preview?bondAlgorithm=vesta");
+    expect(fetchCalls[2]?.input).toBe("/api/structure-preview");
     expect(fetchCalls[2]?.init?.body).toBeInstanceOf(File);
   });
 
@@ -947,7 +947,7 @@ describe("App", () => {
     expect(alert.className).toContain("left-[386px]");
     expect(screen.getByTestId("lattice-canvas").isConnected).toBe(true);
     expect(screen.getByRole("combobox", { name: "Bond algorithm" }).textContent).toContain(
-      "CrystalNN",
+      "VESTA",
     );
   });
 
@@ -1091,7 +1091,7 @@ describe("App", () => {
         warnings: [
           {
             code: "bond-analysis-failed",
-            message: "Bond analysis with CrystalNN failed: neighbor graph unavailable",
+            message: "Bond analysis with VESTA failed: neighbor graph unavailable",
           },
         ],
       }),
@@ -1101,7 +1101,7 @@ describe("App", () => {
     await user.upload(getFileInput(), structureFile());
 
     expect((await screen.findByRole("alert")).textContent).toContain(
-      "Bond analysis with CrystalNN failed",
+      "Bond analysis with VESTA failed",
     );
     const alert = screen.getByRole("alert");
     expect(alert.className).toContain("border-amber-200");

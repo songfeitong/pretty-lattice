@@ -18,7 +18,6 @@ import {
   BACKEND_UNAVAILABLE_TITLE,
   BACKEND_UNAVAILABLE_MESSAGE,
   STATIC_SCENE_PREVIEW_NAME,
-  defaultBondAlgorithmForAtomCount,
   hasStaticScenePreview,
   isBackendUnavailablePreviewError,
   loadStaticScenePreview,
@@ -275,7 +274,6 @@ export function App() {
 
     try {
       const nextScene = await uploadStructurePreview(file);
-      setBondAlgorithm(defaultBondAlgorithmForAtomCount(nextScene.summary.atomCount));
       setScene(nextScene);
       setComponentVisibility(createDefaultComponentVisibility(nextScene));
       setPreviewStatus("ready");

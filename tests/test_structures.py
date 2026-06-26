@@ -291,13 +291,17 @@ def test_non_periodic_structure_keeps_only_canonical_atom_instances() -> None:
 def test_scene_response_supports_selected_bond_algorithms() -> None:
     structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
 
-    crystal_scene = build_scene_response(structure)
+    default_scene = build_scene_response(structure)
+    crystal_scene = build_scene_response(structure, bond_algorithm="crystal-nn")
     minimum_distance_scene = build_scene_response(structure, bond_algorithm="minimum-distance")
     vesta_scene = build_scene_response(structure, bond_algorithm="vesta")
 
+    assert default_scene["bonds"]
     assert crystal_scene["bonds"]
     assert minimum_distance_scene["bonds"]
     assert vesta_scene["bonds"]
+    assert default_scene["bonds"] == vesta_scene["bonds"]
+    assert "warnings" not in default_scene
     assert "warnings" not in crystal_scene
     assert "warnings" not in minimum_distance_scene
     assert "warnings" not in vesta_scene
@@ -305,9 +309,9 @@ def test_scene_response_supports_selected_bond_algorithms() -> None:
 
 @pytest.mark.parametrize(
     ("atom_count", "expected_algorithm"),
-    [(199, "crystal-nn"), (200, "vesta")],
+    [(5, "vesta"), (199, "vesta"), (200, "vesta")],
 )
-def test_scene_response_auto_selects_default_bond_algorithm_by_atom_count(
+def test_scene_response_defaults_to_vesta_bonding(
     monkeypatch: pytest.MonkeyPatch,
     atom_count: int,
     expected_algorithm: str,
@@ -327,6 +331,30 @@ def test_scene_response_auto_selects_default_bond_algorithm_by_atom_count(
     build_scene_response(structure)
 
     assert captured_algorithms == [expected_algorithm]
+
+
+def test_vesta_bonding_uses_batched_neighbor_table(monkeypatch: pytest.MonkeyPatch) -> None:
+    structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
+    captured_atom_counts: list[int] = []
+    original_get_all_nn_info = scene_module._VestaCutOffDictNN.get_all_nn_info
+
+    def capture_get_all_nn_info(
+        self: scene_module._VestaCutOffDictNN,
+        structure_arg: Structure,
+    ) -> list[list[dict[str, object]]]:
+        captured_atom_counts.append(len(structure_arg))
+        return original_get_all_nn_info(self, structure_arg)
+
+    def fail_get_nn_info(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("VESTA connectivity should use the batched neighbor table.")
+
+    monkeypatch.setattr(scene_module._VestaCutOffDictNN, "get_all_nn_info", capture_get_all_nn_info)
+    monkeypatch.setattr(scene_module._VestaCutOffDictNN, "get_nn_info", fail_get_nn_info)
+
+    scene = build_scene_response(structure, bond_algorithm="vesta")
+
+    assert captured_atom_counts == [len(structure)]
+    assert scene["bonds"]
 
 
 def test_scene_response_generates_polyhedra_for_complete_coordination_environment() -> None:
@@ -427,14 +455,10 @@ def test_scene_response_marks_boundary_bonds_independently_from_one_hop() -> Non
     ]
 
     assert boundary_only_bonds
-    assert any(
+    assert all(
         (
             "boundary" in atom_by_id[bond["startAtomId"]]["imageReasons"]
             or "boundary" in atom_by_id[bond["endAtomId"]]["imageReasons"]
-        )
-        and (
-            "bonded" not in atom_by_id[bond["startAtomId"]]["imageReasons"]
-            or "bonded" not in atom_by_id[bond["endAtomId"]]["imageReasons"]
         )
         for bond in boundary_only_bonds
     )
@@ -454,7 +478,7 @@ def test_scene_response_returns_warning_when_bond_analysis_fails(monkeypatch) ->
     assert scene["warnings"] == [
         {
             "code": "bond-analysis-failed",
-            "message": "Bond analysis with CrystalNN failed: neighbor graph unavailable",
+            "message": "Bond analysis with VESTA failed: neighbor graph unavailable",
         }
     ]
 
@@ -474,7 +498,7 @@ def test_scene_response_returns_warning_when_polyhedra_analysis_fails(monkeypatc
     assert scene["warnings"] == [
         {
             "code": "polyhedra-analysis-failed",
-            "message": "Polyhedra analysis with CrystalNN failed: polyhedra hull unavailable",
+            "message": "Polyhedra analysis with VESTA failed: polyhedra hull unavailable",
         }
     ]
 

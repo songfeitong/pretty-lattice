@@ -9,6 +9,7 @@ from typing import Literal, NotRequired, TypedDict
 from pymatgen.core import Structure
 from pymatgen.core.local_env import CrystalNN, CutOffDictNN, MinimumDistanceNN
 from pymatgen.core.sites import PeriodicSite
+from pymatgen.core.structure import PeriodicNeighbor
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from scipy.spatial import Delaunay, QhullError
 
@@ -17,8 +18,7 @@ from pretty_lattice.structures.symmetry import point_group_schoenflies_symbol
 _BOUNDARY_TOLERANCE = 1e-6
 _CANONICAL_IMAGE_OFFSET = (0, 0, 0)
 _FLOAT_ZERO_TOLERANCE = 1e-12
-AUTO_BOND_ALGORITHM_ATOM_COUNT_THRESHOLD = 200
-DEFAULT_BOND_ALGORITHM = "crystal-nn"
+DEFAULT_BOND_ALGORITHM = "vesta"
 
 BondAlgorithm = Literal["crystal-nn", "minimum-distance", "vesta"]
 ImageReason = Literal["boundary", "bonded"]
@@ -164,9 +164,7 @@ def build_scene_response(
     bond_algorithm: str | None = None,
 ) -> SceneSpec:
     normalized_bond_algorithm = normalize_bond_algorithm(bond_algorithm)
-    selected_bond_algorithm = normalized_bond_algorithm or _default_bond_algorithm_for_structure(
-        structure
-    )
+    selected_bond_algorithm = normalized_bond_algorithm or DEFAULT_BOND_ALGORITHM
     cell_vectors = [_vector3(vector) for vector in structure.lattice.matrix]
     can_generate_periodic_images = _has_valid_3d_periodic_cell(structure)
 
@@ -306,12 +304,6 @@ def normalize_bond_algorithm(value: str | None) -> BondAlgorithm | None:
     )
 
 
-def _default_bond_algorithm_for_structure(structure: Structure) -> BondAlgorithm:
-    if len(structure) >= AUTO_BOND_ALGORITHM_ATOM_COUNT_THRESHOLD:
-        return "vesta"
-    return DEFAULT_BOND_ALGORITHM
-
-
 def _vector3(values: Sequence[float]) -> list[float]:
     return [_clean_float(values[0]), _clean_float(values[1]), _clean_float(values[2])]
 
@@ -412,6 +404,11 @@ def _build_connectivity(
     structure: Structure,
 ) -> _ConnectivityResult:
     neighbor_analyzer = _neighbor_analyzer_for_bond_algorithm(bond_algorithm)
+    neighbor_info_by_site = _neighbor_info_by_site_for_connectivity(
+        bond_algorithm=bond_algorithm,
+        neighbor_analyzer=neighbor_analyzer,
+        structure=structure,
+    )
     source_keys = [*canonical_source_keys, *boundary_source_keys]
     bond_records: dict[tuple[str, str], _BondRecord] = {}
     connections_by_source: dict[_AtomKey, list[_ConnectedAtom]] = {
@@ -424,7 +421,12 @@ def _build_connectivity(
         source_atom_id = _atom_instance_id(source_site.site_id, source_image_offset)
         source_is_boundary_image = source_image_offset != _CANONICAL_IMAGE_OFFSET
 
-        for neighbor in neighbor_analyzer.get_nn_info(structure, source_site_index):
+        neighbor_info = (
+            neighbor_info_by_site[source_site_index]
+            if neighbor_info_by_site is not None
+            else neighbor_analyzer.get_nn_info(structure, source_site_index)
+        )
+        for neighbor in neighbor_info:
             target_site_index = int(neighbor["site_index"])
             target_site = site_render_data[target_site_index]
             target_image_offset = _add_image_offsets(
@@ -492,6 +494,18 @@ def _build_connectivity(
         ],
         connections_by_source=connections_by_source,
     )
+
+
+def _neighbor_info_by_site_for_connectivity(
+    *,
+    bond_algorithm: BondAlgorithm,
+    neighbor_analyzer: object,
+    structure: Structure,
+) -> list[list[dict]] | None:
+    if bond_algorithm == "vesta":
+        return neighbor_analyzer.get_all_nn_info(structure)  # type: ignore[attr-defined]
+
+    return None
 
 
 def _build_bonds(*, connectivity: _ConnectivityResult) -> list[BondSpec]:
@@ -644,12 +658,31 @@ def _neighbor_analyzer_for_bond_algorithm(bond_algorithm: BondAlgorithm):
 
 
 class _VestaCutOffDictNN(CutOffDictNN):
+    def get_all_nn_info(self, structure: Structure) -> list[list[dict]]:
+        return [
+            self._neighbor_info_for_site_neighbors(
+                site=structure[site_index],
+                neighbors=neighbors,
+            )
+            for site_index, neighbors in enumerate(structure.get_all_neighbors(self._max_dist))
+        ]
+
     def get_nn_info(self, structure: Structure, n: int) -> list[dict]:
-        site = structure[n]
+        return self._neighbor_info_for_site_neighbors(
+            site=structure[n],
+            neighbors=structure.get_neighbors(structure[n], self._max_dist),
+        )
+
+    def _neighbor_info_for_site_neighbors(
+        self,
+        *,
+        site: PeriodicSite,
+        neighbors: Iterable[PeriodicNeighbor],
+    ) -> list[dict]:
         site_key = _site_element_symbol(site)
         neighbor_info: list[dict] = []
 
-        for neighbor in structure.get_neighbors(site, self._max_dist):
+        for neighbor in neighbors:
             distance = neighbor.nn_distance
             neighbor_key = _site_element_symbol(neighbor)
             cutoff = self._lookup_dict.get(site_key, {}).get(neighbor_key, 0.0)
@@ -657,9 +690,9 @@ class _VestaCutOffDictNN(CutOffDictNN):
                 neighbor_info.append(
                     {
                         "site": neighbor,
-                        "image": self._get_image(structure, neighbor),
+                        "image": neighbor.image,
                         "weight": distance,
-                        "site_index": self._get_original_site(structure, neighbor),
+                        "site_index": neighbor.index,
                     }
                 )
 
