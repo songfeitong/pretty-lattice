@@ -1,5 +1,5 @@
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Color,
   DoubleSide,
@@ -293,7 +293,7 @@ export function StructureSceneObjects({
           />
         ) : null}
         {scene.polyhedra.map((polyhedron) => (
-          <Polyhedron
+          <MemoizedPolyhedron
             key={polyhedron.id}
             atomById={atomById}
             colorScheme={style.colorScheme}
@@ -303,7 +303,7 @@ export function StructureSceneObjects({
           />
         ))}
         {scene.bonds.map((bond) => (
-          <Bond
+          <MemoizedBond
             key={bond.id}
             atomById={atomById}
             bond={bond}
@@ -317,7 +317,7 @@ export function StructureSceneObjects({
         ))}
         {showAtoms
           ? scene.atoms.map((atom) => (
-              <Atom
+              <MemoizedAtom
                 key={atom.id}
                 atom={atom}
                 colorScheme={style.colorScheme}
@@ -407,24 +407,53 @@ function Atom({
   const currentHaloScaleRef = useRef(ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE);
   const pulseStartTimeRef = useRef<number | null>(null);
   const selectionTransitionRef = useRef<AtomSelectionHighlightTransition | null>(null);
+  const [isHighlightAnimationActive, setIsHighlightAnimationActive] = useState(false);
   const isTransparent = opacity < 1;
   const radius = atomRadiusForModel(atom, radiusModel);
   const scaledRadius = radius * radiusScale;
   const color = atomColorForScheme(atom, colorScheme);
   const baseColor = useMemo(() => new Color(color), [color]);
 
+  const resetHighlight = useCallback(() => {
+    currentColorMixRef.current = 0;
+    currentEmissiveIntensityRef.current = 0;
+    currentHaloOpacityRef.current = 0;
+    currentHaloScaleRef.current = ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE;
+
+    const atomMaterial = atomMaterialRef.current;
+    if (atomMaterial) {
+      applyAtomHighlight(atomMaterial, baseColor, 0, 0);
+    }
+
+    const haloMaterial = haloMaterialRef.current;
+    const haloMesh = haloMeshRef.current;
+    if (haloMaterial && haloMesh) {
+      haloMesh.scale.setScalar(ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE);
+      haloMaterial.opacity = 0;
+    }
+  }, [baseColor]);
+
   useEffect(() => {
     if (pulseToken === 0) {
       pulseStartTimeRef.current = null;
+      if (!inspected) {
+        resetHighlight();
+        setIsHighlightAnimationActive(false);
+      }
       return;
     }
 
     pulseStartTimeRef.current = performance.now();
-  }, [pulseToken]);
+    setIsHighlightAnimationActive(true);
+  }, [inspected, pulseToken, resetHighlight]);
 
   useEffect(() => {
     if (!inspected) {
       selectionTransitionRef.current = null;
+      if (pulseStartTimeRef.current === null) {
+        resetHighlight();
+        setIsHighlightAnimationActive(false);
+      }
       return;
     }
 
@@ -436,111 +465,12 @@ function Atom({
       startTimeMs: performance.now(),
     };
     pulseStartTimeRef.current = null;
-  }, [inspected]);
+    setIsHighlightAnimationActive(true);
+  }, [baseColor, inspected, resetHighlight]);
 
-  useFrame(() => {
-    const atomMaterial = atomMaterialRef.current;
-    if (!atomMaterial) {
-      return;
-    }
-    const haloMaterial = haloMaterialRef.current;
-    const haloMesh = haloMeshRef.current;
-
-    if (inspected) {
-      const selectionTransition = selectionTransitionRef.current;
-      if (!selectionTransition) {
-        currentColorMixRef.current = ATOM_HIGHLIGHT_SELECTED_COLOR_MIX;
-        currentEmissiveIntensityRef.current = ATOM_HIGHLIGHT_SELECTED_EMISSIVE_INTENSITY;
-        currentHaloOpacityRef.current = ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY;
-        currentHaloScaleRef.current = ATOM_HIGHLIGHT_HALO_SELECTED_SCALE;
-        applyAtomHighlight(
-          atomMaterial,
-          baseColor,
-          ATOM_HIGHLIGHT_SELECTED_COLOR_MIX,
-          ATOM_HIGHLIGHT_SELECTED_EMISSIVE_INTENSITY,
-        );
-        if (haloMaterial && haloMesh) {
-          haloMesh.scale.setScalar(ATOM_HIGHLIGHT_HALO_SELECTED_SCALE);
-          haloMaterial.opacity = ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY;
-        }
-        return;
-      }
-
-      const progress = Math.min(
-        1,
-        (performance.now() - selectionTransition.startTimeMs) / ATOM_HIGHLIGHT_SELECT_MS,
-      );
-      const easedProgress = easeOutCubic(progress);
-      const colorMix =
-        selectionTransition.startColorMix +
-        (ATOM_HIGHLIGHT_SELECTED_COLOR_MIX - selectionTransition.startColorMix) *
-          easedProgress;
-      const emissiveIntensity =
-        selectionTransition.startEmissiveIntensity +
-        (ATOM_HIGHLIGHT_SELECTED_EMISSIVE_INTENSITY -
-          selectionTransition.startEmissiveIntensity) *
-          easedProgress;
-      const haloOpacity =
-        selectionTransition.startHaloOpacity +
-        (ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY - selectionTransition.startHaloOpacity) *
-          easedProgress;
-      const haloScale =
-        selectionTransition.startHaloScale +
-        (ATOM_HIGHLIGHT_HALO_SELECTED_SCALE - selectionTransition.startHaloScale) *
-          easedProgress;
-      currentColorMixRef.current = colorMix;
-      currentEmissiveIntensityRef.current = emissiveIntensity;
-      currentHaloOpacityRef.current = haloOpacity;
-      currentHaloScaleRef.current = haloScale;
-      applyAtomHighlight(atomMaterial, baseColor, colorMix, emissiveIntensity);
-      if (haloMaterial && haloMesh) {
-        haloMesh.scale.setScalar(haloScale);
-        haloMaterial.opacity = haloOpacity;
-      }
-
-      if (progress >= 1) {
-        selectionTransitionRef.current = null;
-      }
-      return;
-    }
-
-    const pulseStartTime = pulseStartTimeRef.current;
-    if (pulseStartTime === null) {
-      currentColorMixRef.current = 0;
-      currentEmissiveIntensityRef.current = 0;
-      currentHaloOpacityRef.current = 0;
-      currentHaloScaleRef.current = ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE;
-      applyAtomHighlight(atomMaterial, baseColor, 0, 0);
-      if (haloMaterial && haloMesh) {
-        haloMesh.scale.setScalar(ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE);
-        haloMaterial.opacity = 0;
-      }
-      return;
-    }
-
-    const progress = Math.min(
-      1,
-      (performance.now() - pulseStartTime) / ATOM_HIGHLIGHT_PULSE_MS,
-    );
-    const fadeIn = Math.min(1, progress / 0.28);
-    const fadeOut = progress < 0.28 ? 1 : 1 - (progress - 0.28) / 0.72;
-    const fade = fadeIn * Math.max(0, fadeOut) ** 0.72;
-    const colorMix = ATOM_HIGHLIGHT_PULSE_COLOR_MIX * fade;
-    const emissiveIntensity = ATOM_HIGHLIGHT_PULSE_EMISSIVE_INTENSITY * fade;
-    currentColorMixRef.current = colorMix;
-    currentEmissiveIntensityRef.current = emissiveIntensity;
-    currentHaloOpacityRef.current = 0;
-    currentHaloScaleRef.current = ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE;
-    applyAtomHighlight(atomMaterial, baseColor, colorMix, emissiveIntensity);
-    if (haloMaterial && haloMesh) {
-      haloMesh.scale.setScalar(ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE);
-      haloMaterial.opacity = 0;
-    }
-
-    if (progress >= 1) {
-      pulseStartTimeRef.current = null;
-    }
-  });
+  const handleHighlightAnimationComplete = useCallback(() => {
+    setIsHighlightAnimationActive(false);
+  }, []);
 
   const handleClick = useCallback(
     (event: ThreeEvent<MouseEvent>) => {
@@ -607,8 +537,163 @@ function Atom({
           transparent={isTransparent}
         />
       </mesh>
+      {isHighlightAnimationActive ? (
+        <AtomHighlightAnimator
+          atomMaterialRef={atomMaterialRef}
+          baseColor={baseColor}
+          currentColorMixRef={currentColorMixRef}
+          currentEmissiveIntensityRef={currentEmissiveIntensityRef}
+          currentHaloOpacityRef={currentHaloOpacityRef}
+          currentHaloScaleRef={currentHaloScaleRef}
+          haloMaterialRef={haloMaterialRef}
+          haloMeshRef={haloMeshRef}
+          inspected={inspected}
+          onComplete={handleHighlightAnimationComplete}
+          pulseStartTimeRef={pulseStartTimeRef}
+          selectionTransitionRef={selectionTransitionRef}
+        />
+      ) : null}
     </group>
   );
+}
+
+function AtomHighlightAnimator({
+  atomMaterialRef,
+  baseColor,
+  currentColorMixRef,
+  currentEmissiveIntensityRef,
+  currentHaloOpacityRef,
+  currentHaloScaleRef,
+  haloMaterialRef,
+  haloMeshRef,
+  inspected,
+  onComplete,
+  pulseStartTimeRef,
+  selectionTransitionRef,
+}: {
+  atomMaterialRef: { current: StructureMeshMaterial | null };
+  baseColor: Color;
+  currentColorMixRef: { current: number };
+  currentEmissiveIntensityRef: { current: number };
+  currentHaloOpacityRef: { current: number };
+  currentHaloScaleRef: { current: number };
+  haloMaterialRef: { current: MeshBasicMaterial | null };
+  haloMeshRef: { current: Mesh | null };
+  inspected: boolean;
+  onComplete: () => void;
+  pulseStartTimeRef: { current: number | null };
+  selectionTransitionRef: { current: AtomSelectionHighlightTransition | null };
+}) {
+  useFrame(() => {
+    const atomMaterial = atomMaterialRef.current;
+    if (!atomMaterial) {
+      return;
+    }
+    const haloMaterial = haloMaterialRef.current;
+    const haloMesh = haloMeshRef.current;
+
+    if (inspected) {
+      const selectionTransition = selectionTransitionRef.current;
+      if (!selectionTransition) {
+        currentColorMixRef.current = ATOM_HIGHLIGHT_SELECTED_COLOR_MIX;
+        currentEmissiveIntensityRef.current = ATOM_HIGHLIGHT_SELECTED_EMISSIVE_INTENSITY;
+        currentHaloOpacityRef.current = ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY;
+        currentHaloScaleRef.current = ATOM_HIGHLIGHT_HALO_SELECTED_SCALE;
+        applyAtomHighlight(
+          atomMaterial,
+          baseColor,
+          ATOM_HIGHLIGHT_SELECTED_COLOR_MIX,
+          ATOM_HIGHLIGHT_SELECTED_EMISSIVE_INTENSITY,
+        );
+        if (haloMaterial && haloMesh) {
+          haloMesh.scale.setScalar(ATOM_HIGHLIGHT_HALO_SELECTED_SCALE);
+          haloMaterial.opacity = ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY;
+        }
+        onComplete();
+        return;
+      }
+
+      const progress = Math.min(
+        1,
+        (performance.now() - selectionTransition.startTimeMs) / ATOM_HIGHLIGHT_SELECT_MS,
+      );
+      const easedProgress = easeOutCubic(progress);
+      const colorMix =
+        selectionTransition.startColorMix +
+        (ATOM_HIGHLIGHT_SELECTED_COLOR_MIX - selectionTransition.startColorMix) *
+          easedProgress;
+      const emissiveIntensity =
+        selectionTransition.startEmissiveIntensity +
+        (ATOM_HIGHLIGHT_SELECTED_EMISSIVE_INTENSITY -
+          selectionTransition.startEmissiveIntensity) *
+          easedProgress;
+      const haloOpacity =
+        selectionTransition.startHaloOpacity +
+        (ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY - selectionTransition.startHaloOpacity) *
+          easedProgress;
+      const haloScale =
+        selectionTransition.startHaloScale +
+        (ATOM_HIGHLIGHT_HALO_SELECTED_SCALE - selectionTransition.startHaloScale) *
+          easedProgress;
+      currentColorMixRef.current = colorMix;
+      currentEmissiveIntensityRef.current = emissiveIntensity;
+      currentHaloOpacityRef.current = haloOpacity;
+      currentHaloScaleRef.current = haloScale;
+      applyAtomHighlight(atomMaterial, baseColor, colorMix, emissiveIntensity);
+      if (haloMaterial && haloMesh) {
+        haloMesh.scale.setScalar(haloScale);
+        haloMaterial.opacity = haloOpacity;
+      }
+
+      if (progress >= 1) {
+        selectionTransitionRef.current = null;
+        onComplete();
+      }
+      return;
+    }
+
+    const pulseStartTime = pulseStartTimeRef.current;
+    if (pulseStartTime === null) {
+      currentColorMixRef.current = 0;
+      currentEmissiveIntensityRef.current = 0;
+      currentHaloOpacityRef.current = 0;
+      currentHaloScaleRef.current = ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE;
+      applyAtomHighlight(atomMaterial, baseColor, 0, 0);
+      if (haloMaterial && haloMesh) {
+        haloMesh.scale.setScalar(ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE);
+        haloMaterial.opacity = 0;
+      }
+      onComplete();
+      return;
+    }
+
+    const progress = Math.min(
+      1,
+      (performance.now() - pulseStartTime) / ATOM_HIGHLIGHT_PULSE_MS,
+    );
+    const fadeIn = Math.min(1, progress / 0.28);
+    const fadeOut = progress < 0.28 ? 1 : 1 - (progress - 0.28) / 0.72;
+    const fade = fadeIn * Math.max(0, fadeOut) ** 0.72;
+    const colorMix = ATOM_HIGHLIGHT_PULSE_COLOR_MIX * fade;
+    const emissiveIntensity = ATOM_HIGHLIGHT_PULSE_EMISSIVE_INTENSITY * fade;
+    currentColorMixRef.current = colorMix;
+    currentEmissiveIntensityRef.current = emissiveIntensity;
+    currentHaloOpacityRef.current = 0;
+    currentHaloScaleRef.current = ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE;
+    applyAtomHighlight(atomMaterial, baseColor, colorMix, emissiveIntensity);
+    if (haloMaterial && haloMesh) {
+      haloMesh.scale.setScalar(ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE);
+      haloMaterial.opacity = 0;
+    }
+
+    if (progress >= 1) {
+      pulseStartTimeRef.current = null;
+      applyAtomHighlight(atomMaterial, baseColor, 0, 0);
+      onComplete();
+    }
+  });
+
+  return null;
 }
 
 function Bond({
@@ -886,3 +971,7 @@ function CellFrame({
 
   return <primitive object={line} />;
 }
+
+const MemoizedAtom = memo(Atom);
+const MemoizedBond = memo(Bond);
+const MemoizedPolyhedron = memo(Polyhedron);

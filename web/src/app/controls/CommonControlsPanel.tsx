@@ -1,1 +1,4 @@
-export { CommonControlsPanel } from "./commonPanel/CommonControlsPanel";
+export {
+  CommonControlsPanel,
+  type CommonPanelTab,
+} from "./commonPanel/CommonControlsPanel";

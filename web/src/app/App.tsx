@@ -57,6 +57,7 @@ import { computeStructureExportProjectedSize } from "../scene/exportFrame";
 import { OrientationGizmo } from "../scene/OrientationGizmo";
 import {
   CommonControlsPanel,
+  type CommonPanelTab,
 } from "./controls/CommonControlsPanel";
 import { ViewControlRail } from "./controls/ViewControlRail";
 import { createCameraInteractionStore } from "./cameraInteractionStore";
@@ -82,6 +83,7 @@ import {
   createDefaultComponentVisibility,
   createDefaultExportSettings,
   createDefaultStyle,
+  type ExportProjectedSize,
   type ExportSettingsState,
   hasPolyhedra,
   previewSafeAreaForInspector,
@@ -164,6 +166,8 @@ export function App() {
   const [exportSettings, setExportSettings] = useState(createDefaultExportSettings);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportProjectedSize, setExportProjectedSize] =
+    useState<ExportProjectedSize | null>(null);
   const [cameraCommandVersion, setCameraCommandVersion] = useState(0);
   const [cameraAnimatedCommandVersion, setCameraAnimatedCommandVersion] = useState(0);
   const [cameraOrientationVersion, setCameraOrientationVersion] = useState(0);
@@ -175,6 +179,8 @@ export function App() {
   const [pulseAtom, setPulseAtom] = useState<{ atomId: string; token: number } | null>(null);
   const [cameraControlsFrozenState, setCameraControlsFrozenState] =
     useState<CrystalCameraState | null>(null);
+  const [activeCommonPanelTab, setActiveCommonPanelTab] =
+    useState<CommonPanelTab>("display");
   const [viewState, setViewState] = useState(createPreviewViewState);
   const [cameraInteractionStore] = useState(createCameraInteractionStore);
   const [lockedInteractionFeedbackCount, setLockedInteractionFeedbackCount] = useState(0);
@@ -186,6 +192,7 @@ export function App() {
   const cameraControlFreezeCandidateRef = useRef<CrystalCameraState | null>(null);
   const cameraControlFreezeRequestRef = useRef(0);
   const cameraRollInteractionBaseStateRef = useRef<CrystalCameraState | null>(null);
+  const inspectedAtomIdRef = useRef<string | null>(null);
   const isCameraCommandAnimationActiveRef = useRef(false);
   const isCameraControlsInteractionActiveRef = useRef(false);
   const isCameraRollInteractionActiveRef = useRef(false);
@@ -202,6 +209,10 @@ export function App() {
   const cameraControlsPanelState = useMemo<CrystalCameraState>(() => {
     return cameraControlsFrozenState ?? viewState.camera;
   }, [cameraControlsFrozenState, viewState.camera]);
+
+  useEffect(() => {
+    inspectedAtomIdRef.current = inspectedAtomId;
+  }, [inspectedAtomId]);
 
   const syncCameraOrientationToViewState = useCallback(() => {
     setCameraOrientationVersion((version) => version + 1);
@@ -248,6 +259,7 @@ export function App() {
       setComponentOpacity(createDefaultComponentOpacity());
       setStyle(createDefaultStyle());
       setExportSettings(createDefaultExportSettings());
+      setActiveCommonPanelTab("display");
       setLockedInteractionFeedbackCount(0);
       setIsStructureSummaryCollapsed(true);
       setPreviewUiResetVersion((version) => version + 1);
@@ -321,18 +333,20 @@ export function App() {
   }, [startAnimatedCameraCommand]);
 
   const handleAtomPulse = useCallback((atomId: string) => {
-    if (atomId === inspectedAtomId) {
+    if (atomId === inspectedAtomIdRef.current) {
       return;
     }
 
+    inspectedAtomIdRef.current = null;
     setInspectedAtomId(null);
     setPulseAtom((currentPulseAtom) => ({
       atomId,
       token: (currentPulseAtom?.token ?? 0) + 1,
     }));
-  }, [inspectedAtomId]);
+  }, []);
 
   const handleAtomInspect = useCallback((atomId: string | null) => {
+    inspectedAtomIdRef.current = atomId;
     setInspectedAtomId(atomId);
   }, []);
 
@@ -633,7 +647,7 @@ export function App() {
     [currentFile, scene],
   );
 
-  const exportProjectedSize = useMemo(() => {
+  const computeCurrentExportProjectedSize = useCallback(() => {
     if (!visibleScene) {
       return null;
     }
@@ -647,13 +661,32 @@ export function App() {
       style,
     });
   }, [
-    cameraOrientationVersion,
     componentOpacity,
     componentVisibility.atoms,
     componentVisibility.unitCell,
     style,
     visibleScene,
   ]);
+  const refreshExportProjectedSize = useCallback(() => {
+    const projectedSize = computeCurrentExportProjectedSize();
+    setExportProjectedSize(projectedSize);
+    return projectedSize;
+  }, [computeCurrentExportProjectedSize]);
+  const prepareExportSettings = useCallback(() => {
+    const projectedSize = refreshExportProjectedSize();
+    if (projectedSize === null) {
+      return exportSettings;
+    }
+
+    const nextExportSettings = syncExportSettingsProjectedSize(
+      exportSettings,
+      projectedSize,
+    );
+    if (nextExportSettings !== exportSettings) {
+      setExportSettings(nextExportSettings);
+    }
+    return nextExportSettings;
+  }, [exportSettings, refreshExportProjectedSize]);
   const legendEntries = useMemo(
     () => deriveElementLegendEntries(scene, style.colorScheme),
     [scene, style.colorScheme],
@@ -688,14 +721,27 @@ export function App() {
   }, [componentVisibility.atoms, inspectedAtomId, inspectedAtomInfo, visibleScene]);
 
   useEffect(() => {
-    if (exportProjectedSize === null) {
+    if (visibleScene) {
+      return;
+    }
+
+    setExportProjectedSize(null);
+  }, [visibleScene]);
+
+  useEffect(() => {
+    if (activeCommonPanelTab !== "export") {
+      return;
+    }
+
+    const projectedSize = refreshExportProjectedSize();
+    if (projectedSize === null) {
       return;
     }
 
     setExportSettings((currentSettings) =>
-      syncExportSettingsProjectedSize(currentSettings, exportProjectedSize),
+      syncExportSettingsProjectedSize(currentSettings, projectedSize),
     );
-  }, [exportProjectedSize]);
+  }, [activeCommonPanelTab, cameraOrientationVersion, refreshExportProjectedSize]);
 
   const handleExportSettingsChange = useCallback(
     (nextExportSettings: ExportSettingsState) => {
@@ -714,13 +760,14 @@ export function App() {
     setExportError(null);
 
     try {
+      const settingsForExport = prepareExportSettings();
       const exportFiles = await createFigureExportFiles({
         cameraOrientationRef,
         componentOpacity,
         componentVisibility,
         fileName: selectedFileName,
         scene,
-        settings: exportSettings,
+        settings: settingsForExport,
         style,
       });
       await downloadFigureExportFiles(exportFiles, selectedFileName);
@@ -736,8 +783,8 @@ export function App() {
   }, [
     componentOpacity,
     componentVisibility,
-    exportSettings,
     isExporting,
+    prepareExportSettings,
     scene,
     selectedFileName,
     style,
@@ -1049,6 +1096,7 @@ export function App() {
               exportSettings={exportSettings}
               hasPolyhedra={hasPolyhedra(scene)}
               isExporting={isExporting}
+              onActiveTabChange={setActiveCommonPanelTab}
               onAtomRadiusModelChange={(atomRadiusModel) => {
                 setStyle((currentStyle) => ({ ...currentStyle, atomRadiusModel }));
               }}

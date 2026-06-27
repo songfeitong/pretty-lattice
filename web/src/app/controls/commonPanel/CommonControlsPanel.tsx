@@ -36,7 +36,7 @@ import { ExportTabContent } from "./ExportTab";
 import { OrientationTabContent } from "./OrientationTab";
 import { StyleTabContent } from "./StyleTab";
 
-type CommonPanelTab = "camera" | "display" | "style" | "export";
+export type CommonPanelTab = "camera" | "display" | "style" | "export";
 
 interface TabIndicatorRect {
   left: number;
@@ -73,6 +73,7 @@ export function CommonControlsPanel({
   onCameraRollChange,
   onCameraSecondaryChange,
   onCameraStateChange,
+  onActiveTabChange,
   onExport,
   onExportSettingsChange,
   onStyleChange,
@@ -94,6 +95,7 @@ export function CommonControlsPanel({
   onCameraRollChange: (rollDegrees: number) => void;
   onCameraSecondaryChange: (secondary: CrystalCameraScreenDirection) => void;
   onCameraStateChange: (cameraState: CrystalCameraState) => void;
+  onActiveTabChange?: (tab: CommonPanelTab) => void;
   onComponentOpacityChange: Dispatch<SetStateAction<ComponentOpacityState>>;
   onComponentVisibilityChange: Dispatch<SetStateAction<ComponentVisibilityState>>;
   onExport: () => void;
@@ -212,16 +214,18 @@ export function CommonControlsPanel({
   }, [activeTab]);
 
   function handleTabValueChange(value: string) {
+    const nextTab = value as CommonPanelTab;
     const currentHeight = contentRef.current?.getBoundingClientRect().height;
     if (currentHeight && currentHeight > 0) {
       setContentHeight(currentHeight);
     }
 
-    if (value === "camera") {
+    if (nextTab === "camera") {
       setHasMountedCameraTab(true);
     }
 
-    setActiveTab(value as CommonPanelTab);
+    setActiveTab(nextTab);
+    onActiveTabChange?.(nextTab);
   }
 
   return (
