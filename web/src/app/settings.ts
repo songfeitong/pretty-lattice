@@ -7,6 +7,10 @@ import type {
   VisibilityDependency,
 } from "../api/scene";
 import type { ColorScheme } from "./colorSchemes";
+import {
+  DEFAULT_MATERIAL_PRESET_ID,
+  type MaterialPresetId,
+} from "./materialPresets";
 import type { PreviewSafeArea } from "../scene/LatticeScene";
 
 export const INSPECTOR_PREVIEW_SAFE_AREA: PreviewSafeArea = {
@@ -67,6 +71,7 @@ export interface StyleState {
   fogEnabled: boolean;
   fogStart: number;
   fogStrength: number;
+  materialPreset: MaterialPresetId;
 }
 
 export const DEFAULT_STYLE: StyleState = {
@@ -78,6 +83,7 @@ export const DEFAULT_STYLE: StyleState = {
   fogEnabled: false,
   fogStart: 50,
   fogStrength: 50,
+  materialPreset: DEFAULT_MATERIAL_PRESET_ID,
 };
 
 export const STYLE_SCALE_MIN: Pick<StyleState, "atomRadius" | "bondThickness"> = {

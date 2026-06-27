@@ -593,6 +593,9 @@ describe("App", () => {
     const colorSchemeSelect = within(commonControls).getByRole("combobox", {
       name: "Color scheme",
     });
+    const materialSelect = within(commonControls).getByRole("combobox", {
+      name: "Material",
+    });
     const fogSwitch = within(commonControls).getByRole("switch", {
       name: "Fog",
     });
@@ -621,6 +624,7 @@ describe("App", () => {
     expect(bondThicknessInput.value).toBe("100");
     expect(commonControls.querySelectorAll(".opacity-slider-snap-marker")).toHaveLength(2);
     expect(atomRadiusModelSelect.textContent).toContain("Uniform");
+    expect(materialSelect.textContent).toContain("Classic Matte");
     expect(bondStyleSelect.textContent).toContain("By atom");
     expect(colorSchemeSelect.textContent).toContain("VESTA Soft");
     expect(fogSwitch.getAttribute("aria-checked")).toBe("false");
@@ -731,6 +735,58 @@ describe("App", () => {
     expect(fogStartSlider.value).toBe("50");
     expect(fogStrengthInput.value).toBe("50");
     expect(fogStrengthSlider.value).toBe("50");
+  });
+
+  test("selects material presets without re-uploading or changing independent controls", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user);
+
+    const commonControls = screen.getByRole("complementary", { name: "Common controls" });
+    await user.click(within(commonControls).getByRole("tab", { name: "Style" }));
+
+    const materialSelect = within(commonControls).getByRole("combobox", {
+      name: "Material",
+    });
+    const bondStyleSelect = within(commonControls).getByRole("combobox", {
+      name: "Bond style",
+    });
+    const colorSchemeSelect = within(commonControls).getByRole("combobox", {
+      name: "Color scheme",
+    });
+
+    await user.click(bondStyleSelect);
+    await user.click(await screen.findByRole("option", { name: "Uniform" }));
+    await user.click(colorSchemeSelect);
+    await user.click(await screen.findByRole("option", { name: "Jmol" }));
+
+    await user.click(within(commonControls).getByRole("tab", { name: "Display" }));
+    const atomsOpacityInput = within(commonControls).getByRole("textbox", {
+      name: "Atoms opacity value",
+    }) as HTMLInputElement;
+    await user.clear(atomsOpacityInput);
+    await user.type(atomsOpacityInput, "64{Enter}");
+
+    await user.click(within(commonControls).getByRole("tab", { name: "Style" }));
+    const nextMaterialSelect = within(commonControls).getByRole("combobox", {
+      name: "Material",
+    });
+    const nextBondStyleSelect = within(commonControls).getByRole("combobox", {
+      name: "Bond style",
+    });
+    const nextColorSchemeSelect = within(commonControls).getByRole("combobox", {
+      name: "Color scheme",
+    });
+    await user.click(nextMaterialSelect);
+    await user.click(await screen.findByRole("option", { name: "Glossy" }));
+
+    expect(nextMaterialSelect.textContent).toContain("Glossy");
+    expect(nextBondStyleSelect.textContent).toContain("Uniform");
+    expect(nextColorSchemeSelect.textContent).toContain("Jmol");
+    expect(fetchCalls).toHaveLength(1);
+
+    await user.click(within(commonControls).getByRole("tab", { name: "Display" }));
+    expect(atomsOpacityInput.value).toBe("64");
   });
 
   test("lets export controls update settings and route PNG and PDF actions", async () => {

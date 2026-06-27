@@ -60,6 +60,11 @@ import {
   type ColorScheme,
 } from "../colorSchemes";
 import {
+  MATERIAL_PRESET_OPTIONS,
+  materialPresetById,
+  type MaterialPresetId,
+} from "../materialPresets";
+import {
   COMPONENT_OPACITY_MAX,
   EXPORT_FORMAT_OPTIONS,
   EXPORT_MESH_QUALITY_OPTIONS,
@@ -888,6 +893,13 @@ function StyleTabContent({
     }));
   }
 
+  function setMaterialPreset(materialPreset: MaterialPresetId) {
+    onStyleChange((currentStyle) => ({
+      ...currentStyle,
+      materialPreset,
+    }));
+  }
+
   function setFogEnabled(fogEnabled: boolean) {
     onStyleChange((currentStyle) => ({
       ...currentStyle,
@@ -1109,6 +1121,42 @@ function StyleTabContent({
 
       <div className="flex flex-col gap-0.5">
         <div className="grid min-h-8 grid-cols-[minmax(5.5rem,1fr)_9.5rem] items-center gap-2 rounded-md px-1.5 text-sm">
+          <span className="min-w-0 truncate leading-tight">Material</span>
+          <Select
+            value={style.materialPreset}
+            onValueChange={(value) => setMaterialPreset(value)}
+          >
+            <SelectTrigger
+              size="sm"
+              aria-label="Material"
+              className="!h-6 w-full !px-2 !py-0"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              className="!bg-background !text-foreground"
+            >
+              <SelectGroup>
+                {MATERIAL_PRESET_OPTIONS.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    textValue={option.label}
+                    className="min-h-6 py-0.5 text-sm"
+                  >
+                    <MaterialPresetOptionLabel
+                      label={option.label}
+                      value={option.value}
+                    />
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid min-h-8 grid-cols-[minmax(5.5rem,1fr)_9.5rem] items-center gap-2 rounded-md px-1.5 text-sm">
           <span className="min-w-0 truncate leading-tight">Bond style</span>
           <Select
             value={style.bondColorMode}
@@ -1227,6 +1275,48 @@ function AtomRadiusModelSelect({
       </SelectContent>
     </Select>
   );
+}
+
+function MaterialPresetOptionLabel({
+  label,
+  value,
+}: {
+  label: string;
+  value: MaterialPresetId;
+}) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-2">
+      <span
+        aria-hidden="true"
+        className="h-3 w-6 shrink-0 rounded-full border border-border"
+        style={materialPresetTokenStyle(value)}
+      />
+      <span className="min-w-0 truncate">{label}</span>
+    </span>
+  );
+}
+
+function materialPresetTokenStyle(value: MaterialPresetId): CSSProperties {
+  const preset = materialPresetById(value);
+  if (preset.material.kind === "basic") {
+    return {
+      background: "linear-gradient(180deg, #d8dde5 0%, #929aa8 100%)",
+    };
+  }
+
+  if (preset.material.kind === "lambert") {
+    return {
+      background:
+        "linear-gradient(145deg, rgba(255, 255, 255, 0.56) 0 20%, rgba(255, 255, 255, 0) 42%), linear-gradient(180deg, #d7dce4 0%, #aab2be 100%)",
+    };
+  }
+
+  const highlightAlpha = Math.round((1 - preset.material.roughness) * 80) / 100;
+  return {
+    background:
+      `linear-gradient(145deg, rgba(255, 255, 255, ${highlightAlpha}) 0 16%, rgba(255, 255, 255, 0.18) 17% 30%, rgba(255, 255, 255, 0) 44%), ` +
+      "linear-gradient(180deg, #dde4ed 0%, #a0aebc 52%, #7f8996 100%)",
+  };
 }
 
 function BondStyleOptionLabel({

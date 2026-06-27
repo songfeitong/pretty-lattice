@@ -9,6 +9,11 @@ import {
   visibleSceneForComponents,
 } from "../src/app/settings";
 import {
+  STRUCTURE_MATERIAL_TARGETS,
+  resolveStructureMaterialFamilyForStyle,
+  resolveStructureMaterialFamilyForTarget,
+} from "../src/scene/materialPresetResolver";
+import {
   BOND_COLOR,
   BOND_2D_RADIAL_SEGMENTS,
   BOND_RADIUS,
@@ -226,6 +231,36 @@ describe("computeSceneLayout", () => {
     expect(BOND_2D_RADIAL_SEGMENTS).toBe(12);
     expect(BOND_RADIUS).toBe(0.14);
     expect(BOND_TUBE_RADIAL_SEGMENTS).toBe(24);
+  });
+
+  test("resolves one selected material family across structure objects", () => {
+    const style = {
+      ...createDefaultStyle(),
+      materialPreset: "glossy",
+    };
+    const atomFamily = resolveStructureMaterialFamilyForTarget(style, "atom");
+    const bondFamily = resolveStructureMaterialFamilyForTarget(style, "bond");
+    const polyhedronFamily = resolveStructureMaterialFamilyForTarget(style, "polyhedron");
+
+    expect(STRUCTURE_MATERIAL_TARGETS).toEqual(["atom", "bond", "polyhedron"]);
+    expect(atomFamily.id).toBe("glossy");
+    expect(atomFamily.material).toEqual({
+      flatShading: false,
+      kind: "standard",
+      metalness: 0,
+      roughness: 0.32,
+    });
+    expect(atomFamily.lighting.cameraLights).toHaveLength(2);
+    expect(atomFamily.lighting.cameraLights[1]).toEqual({
+      intensity: 0.85,
+      offset: [-0.08, 0.38, 0.12],
+    });
+    expect(bondFamily).toEqual(atomFamily);
+    expect(polyhedronFamily).toEqual(atomFamily);
+    expect(resolveStructureMaterialFamilyForStyle({
+      ...style,
+      materialPreset: "flat-2d",
+    }).material.kind).toBe("basic");
   });
 
   test("keeps preview mesh detail fixed while export presets scale together", () => {

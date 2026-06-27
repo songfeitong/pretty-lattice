@@ -42,6 +42,7 @@ describe("settings", () => {
       fogEnabled: false,
       fogStart: 50,
       fogStrength: 50,
+      materialPreset: "classic-matte",
     });
     expect(STYLE_FOG_START_MIN).toBe(0);
     expect(STYLE_FOG_START_MAX).toBe(100);

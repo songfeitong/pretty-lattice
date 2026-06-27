@@ -1,5 +1,6 @@
 import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import {
+  type Ref,
   memo,
   useCallback,
   useEffect,
@@ -18,9 +19,11 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshLambertMaterial,
+  MeshStandardMaterial,
   MOUSE,
   OrthographicCamera,
   Quaternion,
+  type Side,
   TOUCH,
   Vector3,
 } from "three";
@@ -61,7 +64,10 @@ import {
   applyOrthographicExportFrame,
   type StructureExportFramePlan,
 } from "./exportFrame";
-import { PREVIEW_AMBIENT_LIGHT_INTENSITY } from "./renderAppearance";
+import {
+  resolveStructureMaterialFamilyForStyle,
+  type ResolvedStructureMaterialFamily,
+} from "./materialPresetResolver";
 import {
   BOND_RADIUS,
   CELL_FRAME_COLOR,
@@ -151,6 +157,10 @@ const ATOM_HIGHLIGHT_PULSE_EMISSIVE_INTENSITY = 0.42;
 const ATOM_HIGHLIGHT_HALO_SELECTED_SCALE = 1.12;
 const ATOM_HIGHLIGHT_HALO_PULSE_MIN_SCALE = 1.03;
 const ATOM_HIGHLIGHT_HALO_SELECTED_OPACITY = 0.28;
+type StructureMeshMaterial =
+  | MeshBasicMaterial
+  | MeshLambertMaterial
+  | MeshStandardMaterial;
 
 export {
   BOND_RADIUS,
@@ -286,6 +296,10 @@ export function LatticeScene({
     () => createPreviewRendererFactory(renderBackend),
     [renderBackend],
   );
+  const materialFamily = useMemo(
+    () => resolveStructureMaterialFamilyForStyle(style),
+    [style.materialPreset],
+  );
 
   return (
     <Canvas
@@ -295,8 +309,8 @@ export function LatticeScene({
       gl={rendererFactory}
       data-testid="lattice-canvas"
     >
-      <ambientLight intensity={PREVIEW_AMBIENT_LIGHT_INTENSITY} />
-      <CameraHeadlight />
+      <ambientLight intensity={materialFamily.lighting.ambientIntensity} />
+      <MaterialPresetCameraLights materialFamily={materialFamily} />
       <PreviewCameraController
         cameraAnimatedCommandVersion={cameraAnimatedCommandVersion}
         cameraCommandVersion={cameraCommandVersion}
@@ -314,6 +328,7 @@ export function LatticeScene({
       <PreviewSceneContent
         componentOpacity={componentOpacity}
         layout={layout}
+        materialFamily={materialFamily}
         meshDetail={PREVIEW_SCENE_MESH_DETAIL}
         scene={scene}
         inspectedAtomId={inspectedAtomId}
@@ -333,6 +348,24 @@ export function LatticeScene({
         suspendUpdates={suspendCameraOrientationUpdates}
       />
     </Canvas>
+  );
+}
+
+function MaterialPresetCameraLights({
+  materialFamily,
+}: {
+  materialFamily: ResolvedStructureMaterialFamily;
+}) {
+  return (
+    <>
+      {materialFamily.lighting.cameraLights.map((light, index) => (
+        <CameraHeadlight
+          key={`${index}:${light.intensity}:${light.offset.join(",")}`}
+          intensity={light.intensity}
+          offset={light.offset}
+        />
+      ))}
+    </>
   );
 }
 
@@ -381,6 +414,7 @@ function CameraOrientationTracker({
 function PreviewSceneContent({
   componentOpacity,
   layout,
+  materialFamily,
   meshDetail,
   scene,
   inspectedAtomId,
@@ -396,6 +430,7 @@ function PreviewSceneContent({
 }: {
   componentOpacity: ComponentOpacityState;
   layout: SceneLayout;
+  materialFamily: ResolvedStructureMaterialFamily;
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
   inspectedAtomId: string | null;
@@ -418,6 +453,7 @@ function PreviewSceneContent({
         atomById={atomById}
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}
+        materialFamily={materialFamily}
         meshDetail={meshDetail}
         scene={scene}
         inspectedAtomId={inspectedAtomId}
@@ -440,6 +476,7 @@ export function ExportSceneContent({
   componentOpacity,
   exportFramePlan,
   layout,
+  materialFamily,
   meshDetail,
   scene,
   showAtoms,
@@ -450,6 +487,7 @@ export function ExportSceneContent({
   componentOpacity: ComponentOpacityState;
   exportFramePlan: StructureExportFramePlan;
   layout: SceneLayout;
+  materialFamily: ResolvedStructureMaterialFamily;
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
   showAtoms: boolean;
@@ -476,6 +514,7 @@ export function ExportSceneContent({
         atomById={atomById}
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}
+        materialFamily={materialFamily}
         meshDetail={meshDetail}
         scene={scene}
         showAtoms={showAtoms}
@@ -570,6 +609,7 @@ function StructureSceneObjects({
   componentOpacity,
   groupPosition,
   interactionLocked = false,
+  materialFamily,
   meshDetail,
   scene,
   inspectedAtomId = null,
@@ -586,6 +626,7 @@ function StructureSceneObjects({
   componentOpacity: ComponentOpacityState;
   groupPosition: VectorTuple;
   interactionLocked?: boolean;
+  materialFamily: ResolvedStructureMaterialFamily;
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
   inspectedAtomId?: string | null;
@@ -620,6 +661,7 @@ function StructureSceneObjects({
             key={polyhedron.id}
             atomById={atomById}
             colorScheme={style.colorScheme}
+            materialFamily={materialFamily}
             opacity={componentOpacity.polyhedra / 100}
             polyhedron={polyhedron}
           />
@@ -631,6 +673,7 @@ function StructureSceneObjects({
             bond={bond}
             colorMode={style.bondColorMode}
             colorScheme={style.colorScheme}
+            materialFamily={materialFamily}
             meshDetail={meshDetail}
             thicknessScale={style.bondThickness / 100}
             opacity={componentOpacity.bonds / 100}
@@ -644,6 +687,7 @@ function StructureSceneObjects({
                 colorScheme={style.colorScheme}
                 inspected={inspectedAtomId === atom.id}
                 interactionLocked={interactionLocked}
+                materialFamily={materialFamily}
                 meshDetail={meshDetail}
                 onInspect={onAtomInspect}
                 onPulse={onAtomPulse}
@@ -1276,16 +1320,18 @@ function applyStandardCameraPose(
 }
 
 function applyAtomHighlight(
-  material: MeshLambertMaterial,
+  material: StructureMeshMaterial,
   baseColor: Color,
   colorMix: number,
   emissiveIntensity: number,
 ) {
   material.color.copy(baseColor).lerp(ATOM_HIGHLIGHT_TARGET_COLOR, colorMix);
-  material.emissive
-    .copy(baseColor)
-    .lerp(ATOM_HIGHLIGHT_TARGET_COLOR, ATOM_HIGHLIGHT_EMISSIVE_COLOR_MIX);
-  material.emissiveIntensity = emissiveIntensity;
+  if ("emissive" in material) {
+    material.emissive
+      .copy(baseColor)
+      .lerp(ATOM_HIGHLIGHT_TARGET_COLOR, ATOM_HIGHLIGHT_EMISSIVE_COLOR_MIX);
+    material.emissiveIntensity = emissiveIntensity;
+  }
 }
 
 function Atom({
@@ -1293,6 +1339,7 @@ function Atom({
   colorScheme,
   inspected,
   interactionLocked,
+  materialFamily,
   meshDetail,
   onInspect,
   onPulse,
@@ -1306,6 +1353,7 @@ function Atom({
   colorScheme: StyleState["colorScheme"];
   inspected: boolean;
   interactionLocked: boolean;
+  materialFamily: ResolvedStructureMaterialFamily;
   meshDetail: SceneMeshDetail;
   onInspect?: (atomId: string | null) => void;
   onPulse?: (atomId: string) => void;
@@ -1315,7 +1363,7 @@ function Atom({
   radiusModel: AtomRadiusModel;
   radiusScale: number;
 }) {
-  const atomMaterialRef = useRef<MeshLambertMaterial | null>(null);
+  const atomMaterialRef = useRef<StructureMeshMaterial | null>(null);
   const haloMaterialRef = useRef<MeshBasicMaterial | null>(null);
   const haloMeshRef = useRef<Mesh | null>(null);
   const currentColorMixRef = useRef(0);
@@ -1515,11 +1563,11 @@ function Atom({
             meshDetail.sphereHeightSegments,
           ]}
         />
-        <meshLambertMaterial
-          ref={atomMaterialRef}
-          key={isTransparent ? "transparent" : "opaque"}
+        <StructureMaterial
           color={color}
           depthWrite={!isTransparent}
+          materialFamily={materialFamily}
+          materialRef={atomMaterialRef}
           opacity={opacity}
           transparent={isTransparent}
         />
@@ -1533,6 +1581,7 @@ function Bond({
   bond,
   colorMode,
   colorScheme,
+  materialFamily,
   meshDetail,
   opacity,
   thicknessScale,
@@ -1541,6 +1590,7 @@ function Bond({
   bond: BondSpec;
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
+  materialFamily: ResolvedStructureMaterialFamily;
   meshDetail: SceneMeshDetail;
   opacity: number;
   thicknessScale: number;
@@ -1588,7 +1638,7 @@ function Bond({
         color={BOND_COLOR}
         isTransparent={isTransparent}
         length={geometry.length}
-        material="basic"
+        materialFamily={materialFamily}
         opacity={opacity}
         position={geometry.center}
         quaternion={geometry.quaternion}
@@ -1604,6 +1654,7 @@ function Bond({
         endColor={geometry.endColor}
         isTransparent={isTransparent}
         length={geometry.length}
+        materialFamily={materialFamily}
         opacity={opacity}
         position={geometry.center}
         quaternion={geometry.quaternion}
@@ -1619,6 +1670,7 @@ function Bond({
       color={BOND_COLOR}
       isTransparent={isTransparent}
       length={geometry.length}
+      materialFamily={materialFamily}
       opacity={opacity}
       position={geometry.center}
       quaternion={geometry.quaternion}
@@ -1632,6 +1684,7 @@ function TwoToneBondCylinder({
   endColor,
   isTransparent,
   length,
+  materialFamily,
   opacity,
   position,
   quaternion,
@@ -1642,6 +1695,7 @@ function TwoToneBondCylinder({
   endColor: string;
   isTransparent: boolean;
   length: number;
+  materialFamily: ResolvedStructureMaterialFamily;
   opacity: number;
   position: Vector3;
   quaternion: Quaternion;
@@ -1663,9 +1717,9 @@ function TwoToneBondCylinder({
 
   return (
     <mesh geometry={geometry} position={position} quaternion={quaternion}>
-      <meshLambertMaterial
-        key={isTransparent ? "two-tone-transparent" : "two-tone-opaque"}
+      <StructureMaterial
         depthWrite={!isTransparent}
+        materialFamily={materialFamily}
         opacity={opacity}
         transparent={isTransparent}
         vertexColors
@@ -1678,7 +1732,7 @@ function BondCylinder({
   color,
   isTransparent,
   length,
-  material = "lambert",
+  materialFamily,
   opacity,
   position,
   quaternion,
@@ -1688,20 +1742,13 @@ function BondCylinder({
   color: string;
   isTransparent: boolean;
   length: number;
-  material?: "basic" | "lambert";
+  materialFamily: ResolvedStructureMaterialFamily;
   opacity: number;
   position: Vector3;
   quaternion: Quaternion;
   radialSegments: number;
   radius: number;
 }) {
-  const materialProps = {
-    color,
-    depthWrite: !isTransparent,
-    opacity,
-    transparent: isTransparent,
-  };
-
   return (
     <mesh position={position} quaternion={quaternion}>
       <cylinderGeometry
@@ -1712,18 +1759,81 @@ function BondCylinder({
           radialSegments,
         ]}
       />
-      {material === "basic" ? (
-        <meshBasicMaterial
-          key={isTransparent ? "basic-transparent" : "basic-opaque"}
-          {...materialProps}
-        />
-      ) : (
-        <meshLambertMaterial
-          key={isTransparent ? "lambert-transparent" : "lambert-opaque"}
-          {...materialProps}
-        />
-      )}
+      <StructureMaterial
+        color={color}
+        depthWrite={!isTransparent}
+        materialFamily={materialFamily}
+        opacity={opacity}
+        transparent={isTransparent}
+      />
     </mesh>
+  );
+}
+
+function StructureMaterial({
+  color,
+  depthWrite,
+  materialFamily,
+  materialRef,
+  opacity,
+  side,
+  transparent,
+  vertexColors,
+}: {
+  color?: string;
+  depthWrite: boolean;
+  materialFamily: ResolvedStructureMaterialFamily;
+  materialRef?: Ref<StructureMeshMaterial>;
+  opacity: number;
+  side?: Side;
+  transparent: boolean;
+  vertexColors?: boolean;
+}) {
+  const materialKey = [
+    materialFamily.id,
+    transparent ? "transparent" : "opaque",
+    vertexColors ? "vertex-colors" : "solid",
+    side ?? "front",
+  ].join(":");
+  const commonProps = {
+    color,
+    depthWrite,
+    opacity,
+    side,
+    transparent,
+    vertexColors,
+  };
+
+  if (materialFamily.material.kind === "basic") {
+    return (
+      <meshBasicMaterial
+        ref={materialRef as Ref<MeshBasicMaterial>}
+        key={materialKey}
+        {...commonProps}
+      />
+    );
+  }
+
+  if (materialFamily.material.kind === "lambert") {
+    return (
+      <meshLambertMaterial
+        ref={materialRef as Ref<MeshLambertMaterial>}
+        key={materialKey}
+        flatShading={materialFamily.material.flatShading}
+        {...commonProps}
+      />
+    );
+  }
+
+  return (
+    <meshStandardMaterial
+      ref={materialRef as Ref<MeshStandardMaterial>}
+      key={materialKey}
+      flatShading={materialFamily.material.flatShading}
+      metalness={materialFamily.material.metalness}
+      roughness={materialFamily.material.roughness}
+      {...commonProps}
+    />
   );
 }
 
@@ -1802,11 +1912,13 @@ function addCylinderSideStrip(
 function Polyhedron({
   atomById,
   colorScheme,
+  materialFamily,
   opacity,
   polyhedron,
 }: {
   atomById: Map<string, AtomSpec>;
   colorScheme: StyleState["colorScheme"];
+  materialFamily: ResolvedStructureMaterialFamily;
   opacity: number;
   polyhedron: PolyhedronSpec;
 }) {
@@ -1831,9 +1943,10 @@ function Polyhedron({
   return (
     <group>
       <mesh geometry={geometry}>
-        <meshLambertMaterial
+        <StructureMaterial
           color={color}
           depthWrite={false}
+          materialFamily={materialFamily}
           opacity={opacity}
           side={DoubleSide}
           transparent

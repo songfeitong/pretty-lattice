@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "defaultPresetId": "classic-matte",
+  "presets": [
+    {
+      "id": "classic-matte",
+      "label": "Classic Matte",
+      "description": "Soft diffuse shading close to the original preview look.",
+      "material": {
+        "kind": "lambert",
+        "flatShading": false
+      },
+      "lighting": {
+        "ambientIntensity": 0.68,
+        "cameraLights": [
+          {
+            "intensity": 1.78,
+            "offset": [0.32, 0.22, 0]
+          }
+        ]
+      }
+    },
+    {
+      "id": "modern-matte",
+      "label": "Modern Matte",
+      "description": "A smoother physically based matte surface with broader highlights.",
+      "material": {
+        "kind": "standard",
+        "metalness": 0,
+        "roughness": 0.54,
+        "flatShading": false
+      },
+      "lighting": {
+        "ambientIntensity": 0.58,
+        "cameraLights": [
+          {
+            "intensity": 1.95,
+            "offset": [0.32, 0.22, 0]
+          }
+        ]
+      }
+    },
+    {
+      "id": "glossy",
+      "label": "Glossy",
+      "description": "A low-roughness non-metal surface for crisp light response.",
+      "material": {
+        "kind": "standard",
+        "metalness": 0,
+        "roughness": 0.32,
+        "flatShading": false
+      },
+      "lighting": {
+        "ambientIntensity": 0.46,
+        "cameraLights": [
+          {
+            "intensity": 2.05,
+            "offset": [0.32, 0.22, 0]
+          },
+          {
+            "intensity": 0.85,
+            "offset": [-0.08, 0.38, 0.12]
+          }
+        ]
+      }
+    },
+    {
+      "id": "flat-2d",
+      "label": "Flat 2D",
+      "description": "Unlit flat color for diagram-like structure views.",
+      "material": {
+        "kind": "basic"
+      },
+      "lighting": {
+        "ambientIntensity": 1,
+        "cameraLights": []
+      }
+    }
+  ]
+}

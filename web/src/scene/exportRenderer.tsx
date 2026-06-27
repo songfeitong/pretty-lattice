@@ -16,7 +16,7 @@ import {
 } from "./LatticeScene";
 import { CameraHeadlight } from "./CameraHeadlight";
 import { computeStructureExportFramePlan } from "./exportFrame";
-import { PREVIEW_AMBIENT_LIGHT_INTENSITY } from "./renderAppearance";
+import { resolveStructureMaterialFamilyForStyle } from "./materialPresetResolver";
 import { DEFAULT_RENDERER_PARAMETERS } from "./renderBackend";
 
 export interface RasterExportImage {
@@ -67,6 +67,7 @@ export async function renderStructureRasterPng({
   document.body.appendChild(canvas);
 
   const layout = computeSceneLayout(scene, style.atomRadiusModel);
+  const materialFamily = resolveStructureMaterialFamilyForStyle(style);
   const exportFramePlan = computeStructureExportFramePlan({
     cameraPose,
     componentOpacity,
@@ -111,13 +112,20 @@ export async function renderStructureRasterPng({
 
     const store = root.render(
       <>
-        <ambientLight intensity={PREVIEW_AMBIENT_LIGHT_INTENSITY} />
-        <CameraHeadlight />
+        <ambientLight intensity={materialFamily.lighting.ambientIntensity} />
+        {materialFamily.lighting.cameraLights.map((light, index) => (
+          <CameraHeadlight
+            key={`${index}:${light.intensity}:${light.offset.join(",")}`}
+            intensity={light.intensity}
+            offset={light.offset}
+          />
+        ))}
         <ExportSceneContent
           cameraPose={cameraPose}
           componentOpacity={componentOpacity}
           exportFramePlan={exportFramePlan}
           layout={layout}
+          materialFamily={materialFamily}
           meshDetail={meshDetail}
           scene={scene}
           showAtoms={showAtoms}
