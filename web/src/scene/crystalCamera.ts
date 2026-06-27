@@ -196,14 +196,19 @@ export function applyCrystalCameraRoll(
   const basis = computeCrystalBasisVectors(vectors);
   const primary = coefficientsToVector(state.direct, basis.direct, new Vector3(0, 0, 1)).normalize();
   const anchor = vestaLikeSecondaryForPrimary(basis, primary);
-  const secondary = anchor
+  const rollAnchorDirection = defaultSecondaryDirectionForPrimary(state.primary);
+  const rolledAnchor = anchor
     .clone()
     .applyAxisAngle(primary, degreesToRadians(rollDegrees))
     .normalize();
+  const screenFrame = completeScreenFrame(state.primary, primary, rollAnchorDirection, rolledAnchor);
+  const safeSecondaryDirection = normalizeSecondaryDirection(state.primary, state.secondary);
+  const secondary = screenVectorForDirection(screenFrame, safeSecondaryDirection);
 
   return {
     ...state,
     reciprocal: normalizeCoefficients(vectorToReciprocalCoefficients(secondary, basis)),
+    secondary: safeSecondaryDirection,
     rollDegrees: normalizeRollDegrees(rollDegrees),
   };
 }
@@ -233,8 +238,11 @@ export function stateFromViewVectors(
   const secondaryVector = screenVectorForDirection(poseVectors, safeSecondaryDirection);
   const safePrimary = normalizeOrFallback(primaryVector, new Vector3(0, 0, 1));
   const anchor = vestaLikeSecondaryForPrimary(basis, safePrimary);
+  const rollAnchorDirection = defaultSecondaryDirectionForPrimary(primary);
+  const rollVector = screenVectorForDirection(poseVectors, rollAnchorDirection);
+  const safeRollVector = projectPerpendicular(rollVector, safePrimary, anchor);
   const safeSecondary = projectPerpendicular(secondaryVector, safePrimary, anchor);
-  const rollDegrees = signedAngleAroundAxis(anchor, safeSecondary, safePrimary);
+  const rollDegrees = signedAngleAroundAxis(anchor, safeRollVector, safePrimary);
 
   return {
     direct: normalizeCoefficients(vectorToDirectCoefficients(safePrimary, basis)),

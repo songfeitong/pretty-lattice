@@ -1385,6 +1385,9 @@ describe("App", () => {
       "x b*",
       "x c*",
     ]);
+    expect(
+      within(commonControls).getByRole("textbox", { name: "Roll value" }),
+    ).toHaveProperty("value", "0");
   });
 
   test("routes gizmo clicks through the selected camera primary direction", async () => {

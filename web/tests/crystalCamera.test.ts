@@ -100,6 +100,30 @@ describe("crystal camera math", () => {
     expect(state.reciprocal).toEqual([-1, 0, 0]);
   });
 
+  test("secondary direction changes do not redefine roll zero", () => {
+    const state = stateFromViewVectors(
+      CUBIC_CELL,
+      "outward",
+      "right",
+      new Vector3(0, 1, 0),
+      new Vector3(0, 0, 1),
+    );
+
+    expect(state.secondary).toBe("right");
+    expect(state.rollDegrees).toBeCloseTo(0);
+    expect(state.direct).toEqual([0, 0, 1]);
+    expect(state.reciprocal).toEqual([1, 0, 0]);
+
+    const rolledState = applyCrystalCameraRoll(CUBIC_CELL, state, 90);
+    const rolledVectors = computeCrystalCameraVectors(CUBIC_CELL, rolledState);
+
+    expect(rolledState.secondary).toBe("right");
+    expect(rolledState.rollDegrees).toBe(90);
+    expectVectorClose(rolledVectors.outward, [0, 0, 1]);
+    expectVectorClose(rolledVectors.up, [-1, 0, 0]);
+    expectVectorClose(rolledVectors.right, [0, 1, 0]);
+  });
+
   test("normalizes coefficients and silently falls back from degenerate vectors", () => {
     expect(normalizeCoefficients([2, -4, 0.0000000001])).toEqual([0.5, -1, 0]);
 
