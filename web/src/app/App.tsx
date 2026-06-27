@@ -1,7 +1,8 @@
-import { AlertTriangleIcon } from "lucide-react";
+import { AlertTriangleIcon, FolderOpen, ImageDown, RotateCcw } from "lucide-react";
 import { Quaternion } from "three";
 import {
   type ChangeEvent,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
@@ -13,6 +14,14 @@ import {
 import { cn } from "@/lib/utils";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { AtomInspectorCard } from "./AtomInspectorCard";
 import {
   DEFAULT_BOND_ALGORITHM,
@@ -95,6 +104,7 @@ const LOCKED_INTERACTION_WHEEL_IDLE_MS = 150;
 const MAX_STRUCTURE_UPLOAD_BYTES = 10 * 1024 * 1024;
 const STRUCTURE_FILE_TOO_LARGE_MESSAGE = "File is too large to preview.";
 const STRUCTURE_PARSE_ERROR_MESSAGE = "pymatgen could not parse this file.";
+const REDISPATCHED_CONTEXT_MENU_EVENT = "__prettyLatticeRedispatchedContextMenu";
 
 interface LockedInteractionPointer {
   pointerId: number;
@@ -102,6 +112,10 @@ interface LockedInteractionPointer {
   startY: number;
   triggered: boolean;
 }
+
+type RedispatchedContextMenuEvent = MouseEvent & {
+  [REDISPATCHED_CONTEXT_MENU_EVENT]?: boolean;
+};
 
 export function App() {
   const isStaticScenePreview = hasStaticScenePreview();
@@ -138,6 +152,7 @@ export function App() {
   const [cameraInteractionStore] = useState(createCameraInteractionStore);
   const [lockedInteractionFeedbackCount, setLockedInteractionFeedbackCount] = useState(0);
   const [isStructureSummaryCollapsed, setIsStructureSummaryCollapsed] = useState(true);
+  const [previewUiResetVersion, setPreviewUiResetVersion] = useState(0);
   const viewportSize = useViewportSize();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraOrientationRef = useRef(new Quaternion());
@@ -194,6 +209,31 @@ export function App() {
     setIsCameraRollInteractionActive(false);
     setCameraControlsFrozenState(null);
   }, []);
+
+  const resetLoadedPreviewState = useCallback(
+    (nextScene: SceneSpec | null) => {
+      setErrorMessage(null);
+      setExportError(null);
+      setInspectedAtomId(null);
+      setPulseAtom(null);
+      setIsInspectorOpen(false);
+      setComponentVisibility(createDefaultComponentVisibility(nextScene));
+      setComponentOpacity(createDefaultComponentOpacity());
+      setStyle(createDefaultStyle());
+      setExportSettings(createDefaultExportSettings());
+      setLockedInteractionFeedbackCount(0);
+      setIsStructureSummaryCollapsed(true);
+      setPreviewUiResetVersion((version) => version + 1);
+
+      cameraOrientationRef.current.identity();
+      clearCameraDerivedUiFreezeState();
+      cameraInteractionStore.requestViewScale(DEFAULT_VIEW_SCALE);
+      setCameraCommandVersion((version) => version + 1);
+      setCameraOrientationVersion((version) => version + 1);
+      setViewState(createPreviewViewState());
+    },
+    [cameraInteractionStore, clearCameraDerivedUiFreezeState],
+  );
 
   const startAnimatedCameraCommand = useCallback((cameraState: CrystalCameraState) => {
     const frozenCameraState = cameraControlsPanelState;
@@ -448,9 +488,8 @@ export function App() {
 
         setScene(nextScene);
         setSelectedFileName(STATIC_SCENE_PREVIEW_NAME);
+        resetLoadedPreviewState(nextScene);
         setPreviewStatus("ready");
-        setErrorMessage(null);
-        setComponentVisibility(createDefaultComponentVisibility(nextScene));
       } catch {
         if (!isCurrent) {
           return;
@@ -470,7 +509,7 @@ export function App() {
     return () => {
       isCurrent = false;
     };
-  }, [isStaticScenePreview]);
+  }, [isStaticScenePreview, resetLoadedPreviewState]);
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -501,31 +540,9 @@ export function App() {
     setPreviewStatus("loading");
     setErrorMessage(null);
     setScene(null);
-    setInspectedAtomId(null);
-    setPulseAtom(null);
     setCurrentFile(file);
-    setIsInspectorOpen(false);
     setBondAlgorithm(DEFAULT_BOND_ALGORITHM);
-    setComponentVisibility(createDefaultComponentVisibility());
-    setComponentOpacity(createDefaultComponentOpacity());
-    setStyle(createDefaultStyle());
-    setExportSettings(createDefaultExportSettings());
-    setExportError(null);
-    cameraOrientationRef.current.identity();
-    cameraControlFreezeRequestRef.current += 1;
-    cameraControlFreezeCandidateRef.current = null;
-    cameraRollInteractionBaseStateRef.current = null;
-    isCameraCommandAnimationActiveRef.current = false;
-    isCameraControlsInteractionActiveRef.current = false;
-    isCameraRollInteractionActiveRef.current = false;
-    setIsCameraCommandAnimationActive(false);
-    setIsCameraControlsInteractionActive(false);
-    setIsCameraRollInteractionActive(false);
-    setCameraControlsFrozenState(null);
-    setCameraCommandVersion((version) => version + 1);
-    setCameraOrientationVersion((version) => version + 1);
-    setViewState(createPreviewViewState());
-    setIsStructureSummaryCollapsed(true);
+    resetLoadedPreviewState(null);
 
     try {
       const nextScene = await uploadStructurePreview(file);
@@ -699,6 +716,43 @@ export function App() {
     style,
   ]);
 
+  const handleResetAllSettings = useCallback(async () => {
+    if (!scene || previewStatus === "loading") {
+      return;
+    }
+
+    if (bondAlgorithm === DEFAULT_BOND_ALGORITHM || !currentFile) {
+      setBondAlgorithm(DEFAULT_BOND_ALGORITHM);
+      setPreviewStatus("ready");
+      resetLoadedPreviewState(scene);
+      return;
+    }
+
+    setPreviewStatus("loading");
+    setErrorMessage(null);
+
+    try {
+      const nextScene = await uploadStructurePreview(currentFile);
+      setBondAlgorithm(DEFAULT_BOND_ALGORITHM);
+      setScene(nextScene);
+      resetLoadedPreviewState(nextScene);
+      setPreviewStatus("ready");
+    } catch (error) {
+      setPreviewStatus(scene ? "ready" : "error");
+      setErrorMessage(
+        isBackendUnavailablePreviewError(error)
+          ? error.message
+          : STRUCTURE_PARSE_ERROR_MESSAGE,
+      );
+    }
+  }, [
+    bondAlgorithm,
+    currentFile,
+    previewStatus,
+    resetLoadedPreviewState,
+    scene,
+  ]);
+
   const clearLockedInteractionWheelGate = useCallback(() => {
     if (lockedInteractionWheelIdleTimeoutRef.current === null) {
       return;
@@ -788,6 +842,35 @@ export function App() {
     }
   }, []);
 
+  const handleSceneContextMenuCapture = useCallback((event: ReactMouseEvent<HTMLElement>) => {
+    const nativeEvent = event.nativeEvent as RedispatchedContextMenuEvent;
+    if (nativeEvent[REDISPATCHED_CONTEXT_MENU_EVENT]) {
+      return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof Element) || !target.closest("canvas")) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const redispatchedEvent = new MouseEvent("contextmenu", {
+      bubbles: true,
+      button: nativeEvent.button,
+      buttons: nativeEvent.buttons,
+      cancelable: true,
+      clientX: nativeEvent.clientX,
+      clientY: nativeEvent.clientY,
+      ctrlKey: nativeEvent.ctrlKey,
+      metaKey: nativeEvent.metaKey,
+      shiftKey: nativeEvent.shiftKey,
+    }) as RedispatchedContextMenuEvent;
+    redispatchedEvent[REDISPATCHED_CONTEXT_MENU_EVENT] = true;
+    event.currentTarget.dispatchEvent(redispatchedEvent);
+  }, []);
+
   return (
     <main className="relative h-dvh min-w-80 overflow-hidden bg-background text-foreground">
       <input
@@ -798,70 +881,104 @@ export function App() {
         onChange={(event) => void handleFileChange(event)}
       />
 
-      <section
-        className="scene-stage absolute inset-0 transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
-        style={{ transform: `translateX(${sceneOffsetX}px)` }}
-        aria-label="Crystal structure preview"
-        onPointerCancelCapture={handleScenePointerEndCapture}
-        onPointerDownCapture={handleScenePointerDownCapture}
-        onPointerMoveCapture={handleScenePointerMoveCapture}
-        onPointerUpCapture={handleScenePointerEndCapture}
-        onWheelCapture={handleSceneWheelCapture}
-      >
-        {visibleScene ? (
-          <LatticeScene
-            cameraAnimatedCommandVersion={cameraAnimatedCommandVersion}
-            cameraCommandVersion={cameraCommandVersion}
-            cameraState={viewState.camera}
-            cameraOrientationRef={cameraOrientationRef}
-            onCameraOrientationChange={handleCameraOrientationChange}
-            onCameraCommandAnimationActiveChange={handleCameraCommandAnimationActiveChange}
-            onCameraControlsInteractionActiveChange={
-              handleCameraControlsInteractionActiveChange
-            }
-            onAtomInspect={handleAtomInspect}
-            onAtomPulse={handleAtomPulse}
-            onLockedInteractionAttempt={triggerLockedInteractionFeedback}
-            cameraInteractionStore={cameraInteractionStore}
-            suspendCameraOrientationUpdates={
-              isCameraCommandAnimationActive ||
-              isCameraControlsInteractionActive ||
-              isCameraRollInteractionActive
-            }
-            interactionLocked={viewState.interactionLocked}
-            interactionMode={viewState.interactionMode}
-            layoutScene={scene ?? visibleScene}
-            resetCounter={viewState.resetCounter}
-            safeArea={previewSafeArea}
-            scene={visibleScene}
-            inspectedAtomId={inspectedAtomId}
-            pulseAtomId={pulseAtom?.atomId ?? null}
-            pulseToken={pulseAtom?.token ?? 0}
-            componentOpacity={componentOpacity}
-            style={style}
-            showAtoms={componentVisibility.atoms}
-            showUnitCell={componentVisibility.unitCell}
-          />
-        ) : (
-          <div
-            className="grid h-full w-full place-items-center bg-background text-sm text-muted-foreground"
-            data-state={previewStatus}
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <section
+            className="scene-stage absolute inset-0 transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+            style={{ transform: `translateX(${sceneOffsetX}px)` }}
+            aria-label="Crystal structure preview"
+            onPointerCancelCapture={handleScenePointerEndCapture}
+            onContextMenuCapture={handleSceneContextMenuCapture}
+            onPointerDownCapture={handleScenePointerDownCapture}
+            onPointerMoveCapture={handleScenePointerMoveCapture}
+            onPointerUpCapture={handleScenePointerEndCapture}
+            onWheelCapture={handleSceneWheelCapture}
           >
-            {previewStatus === "loading" ? (
-              <span className="inline-flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  data-testid="loading-structure-spinner"
-                  className="inline-flex size-3 shrink-0 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground motion-safe:animate-spin motion-safe:[animation-duration:450ms]"
-                />
-                Loading structure
-              </span>
+            {visibleScene ? (
+              <LatticeScene
+                cameraAnimatedCommandVersion={cameraAnimatedCommandVersion}
+                cameraCommandVersion={cameraCommandVersion}
+                cameraState={viewState.camera}
+                cameraOrientationRef={cameraOrientationRef}
+                onCameraOrientationChange={handleCameraOrientationChange}
+                onCameraCommandAnimationActiveChange={handleCameraCommandAnimationActiveChange}
+                onCameraControlsInteractionActiveChange={
+                  handleCameraControlsInteractionActiveChange
+                }
+                onAtomInspect={handleAtomInspect}
+                onAtomPulse={handleAtomPulse}
+                onLockedInteractionAttempt={triggerLockedInteractionFeedback}
+                cameraInteractionStore={cameraInteractionStore}
+                suspendCameraOrientationUpdates={
+                  isCameraCommandAnimationActive ||
+                  isCameraControlsInteractionActive ||
+                  isCameraRollInteractionActive
+                }
+                interactionLocked={viewState.interactionLocked}
+                interactionMode={viewState.interactionMode}
+                layoutScene={scene ?? visibleScene}
+                resetCounter={viewState.resetCounter}
+                safeArea={previewSafeArea}
+                scene={visibleScene}
+                inspectedAtomId={inspectedAtomId}
+                pulseAtomId={pulseAtom?.atomId ?? null}
+                pulseToken={pulseAtom?.token ?? 0}
+                componentOpacity={componentOpacity}
+                style={style}
+                showAtoms={componentVisibility.atoms}
+                showUnitCell={componentVisibility.unitCell}
+              />
             ) : (
-              "No structure loaded"
+              <div
+                className="grid h-full w-full place-items-center bg-background text-sm text-muted-foreground"
+                data-state={previewStatus}
+              >
+                {previewStatus === "loading" ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      data-testid="loading-structure-spinner"
+                      className="inline-flex size-3 shrink-0 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground motion-safe:animate-spin motion-safe:[animation-duration:450ms]"
+                    />
+                    Loading structure
+                  </span>
+                ) : (
+                  "No structure loaded"
+                )}
+              </div>
             )}
-          </div>
-        )}
-      </section>
+          </section>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-40">
+          <ContextMenuGroup>
+            <ContextMenuItem onSelect={() => fileInputRef.current?.click()}>
+              <FolderOpen aria-hidden="true" />
+              Open file
+            </ContextMenuItem>
+            <ContextMenuItem
+              disabled={!scene || isExporting || previewStatus === "loading"}
+              onSelect={() => {
+                void handleExportFigure();
+              }}
+            >
+              <ImageDown aria-hidden="true" />
+              Export figure
+            </ContextMenuItem>
+          </ContextMenuGroup>
+          <ContextMenuSeparator />
+          <ContextMenuGroup>
+            <ContextMenuItem
+              disabled={!scene || previewStatus === "loading"}
+              onSelect={() => {
+                void handleResetAllSettings();
+              }}
+            >
+              <RotateCcw aria-hidden="true" />
+              Reset All
+            </ContextMenuItem>
+          </ContextMenuGroup>
+        </ContextMenuContent>
+      </ContextMenu>
 
       {visibleScene ? (
         <OrientationGizmo
@@ -908,6 +1025,7 @@ export function App() {
         {scene ? (
           <div>
             <CommonControlsPanel
+              key={previewUiResetVersion}
               cameraState={cameraControlsPanelState}
               cellVectors={scene.cell.vectors}
               componentOpacity={componentOpacity}

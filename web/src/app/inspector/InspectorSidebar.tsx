@@ -27,7 +27,11 @@ import {
   INTERACTION_MODE_OPTIONS,
   type InteractionMode,
 } from "../viewState";
-import { COMMON_PANEL_BODY_TEXT_CLASS } from "../controls/commonPanel/styles";
+
+const INSPECTOR_BODY_TEXT_CLASS = "text-sm";
+const INSPECTOR_SELECT_TRIGGER_CLASS =
+  "!h-[26px] w-full !px-2 !py-0 bg-background text-sm";
+const INSPECTOR_SELECT_ITEM_CLASS = "min-h-[26px] py-1 text-sm";
 
 export function InspectorToggle({
   isOpen,
@@ -153,7 +157,7 @@ function SettingsPanel({
           <SelectTrigger
             size="sm"
             aria-label="Mouse control"
-            className={cn("!h-6 w-full !px-2 !py-0 bg-background", COMMON_PANEL_BODY_TEXT_CLASS)}
+            className={INSPECTOR_SELECT_TRIGGER_CLASS}
           >
             <SelectValue />
           </SelectTrigger>
@@ -163,7 +167,7 @@ function SettingsPanel({
                 <SelectItem
                   key={option.value}
                   value={option.value}
-                  className={cn("min-h-6 py-0.5", COMMON_PANEL_BODY_TEXT_CLASS)}
+                  className={INSPECTOR_SELECT_ITEM_CLASS}
                 >
                   {option.label}
                 </SelectItem>
@@ -182,7 +186,7 @@ function SettingsPanel({
           <SelectTrigger
             size="sm"
             aria-label="Bonding algorithm"
-            className={cn("!h-6 w-full !px-2 !py-0 bg-background", COMMON_PANEL_BODY_TEXT_CLASS)}
+            className={INSPECTOR_SELECT_TRIGGER_CLASS}
           >
             <SelectValue />
           </SelectTrigger>
@@ -192,7 +196,7 @@ function SettingsPanel({
                 <SelectItem
                   key={option.value}
                   value={option.value}
-                  className={cn("min-h-6 py-0.5", COMMON_PANEL_BODY_TEXT_CLASS)}
+                  className={INSPECTOR_SELECT_ITEM_CLASS}
                 >
                   {option.label}
                 </SelectItem>
@@ -216,7 +220,7 @@ function InspectorSelectRow({
     <div
       className={cn(
         "grid min-h-8 grid-cols-[minmax(0,1fr)_9.5rem] items-center gap-2",
-        COMMON_PANEL_BODY_TEXT_CLASS,
+        INSPECTOR_BODY_TEXT_CLASS,
       )}
     >
       <span className="leading-tight text-foreground">{label}</span>

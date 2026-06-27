@@ -71,8 +71,9 @@ mock.module("@react-three/fiber", () => {
       gl?: unknown;
       orthographic?: boolean;
     }) => (
-      <div
+      <canvas
         data-render-backend="webgl"
+        onContextMenu={(event) => event.stopPropagation()}
         {...props}
       />
     ),
@@ -298,6 +299,79 @@ describe("App", () => {
     );
   });
 
+  test("offers open and export from the preview context menu", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user);
+
+    const fileInput = getFileInput();
+    const originalClick = fileInput.click;
+    let fileInputClickCount = 0;
+    fileInput.click = () => {
+      fileInputClickCount += 1;
+    };
+
+    try {
+      await openPreviewContextMenu();
+      await user.click(await screen.findByRole("menuitem", { name: "Open file" }));
+
+      expect(fileInputClickCount).toBe(1);
+
+      await openPreviewContextMenu();
+      await user.click(await screen.findByRole("menuitem", { name: "Export figure" }));
+
+      await waitFor(() => expect(exportRequests).toHaveLength(1));
+      expect(exportRequests[0]?.settings.format).toBe("png");
+      expect(exportDirectDownloads[0]?.sourceFileName).toBe("NaCl.cif");
+      expect(exportDirectDownloads[0]?.file.fileName).toBe("NaCl.png");
+    } finally {
+      fileInput.click = originalClick;
+    }
+  });
+
+  test("resets local preview settings from the context menu without reuploading", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user);
+
+    const commonControls = screen.getByRole("complementary", { name: "Common controls" });
+    await user.click(within(commonControls).getByRole("checkbox", { name: "Atoms" }));
+    await user.click(within(commonControls).getByRole("tab", { name: "Style" }));
+    await user.click(within(commonControls).getByRole("combobox", { name: "Color scheme" }));
+    await user.click(await screen.findByRole("option", { name: "Jmol" }));
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    await user.click(screen.getByRole("combobox", { name: "Mouse control" }));
+    await user.click(await screen.findByRole("option", { name: "Orbit" }));
+
+    await openPreviewContextMenu();
+    await user.click(await screen.findByRole("menuitem", { name: "Reset All" }));
+
+    expect(fetchCalls).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Sidebar" }).getAttribute("aria-expanded")).toBe(
+      "false",
+    );
+
+    const resetControls = screen.getByRole("complementary", { name: "Common controls" });
+    expect(
+      within(resetControls).getByRole("tab", { name: "Display" }).getAttribute("aria-selected"),
+    ).toBe("true");
+    expect(
+      within(resetControls)
+        .getByRole("checkbox", { name: "Atoms" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+
+    await user.click(within(resetControls).getByRole("tab", { name: "Style" }));
+    expect(
+      within(resetControls).getByRole("combobox", { name: "Color scheme" }).textContent,
+    ).toContain("VESTA Soft");
+
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    expect(screen.getByRole("combobox", { name: "Mouse control" }).textContent).toContain(
+      "Trackball",
+    );
+  });
+
   test("shows a compact spinner while a structure is loading", async () => {
     const user = userEvent.setup();
     let resolveScene: (scene: SceneSpec) => void = () => {};
@@ -385,10 +459,10 @@ describe("App", () => {
     expect(within(inspector).queryByText("Renderer")).toBeNull();
     expect(within(inspector).queryByRole("combobox", { name: "Renderer" })).toBeNull();
     expect(within(inspector).getByText("Mouse control").parentElement?.className).toContain(
-      "text-[13px]",
+      "text-sm",
     );
     expect(within(inspector).getByText("Bonding algorithm").parentElement?.className).toContain(
-      "text-[13px]",
+      "text-sm",
     );
     expect(legend.getAttribute("style")).toContain("calc(50% + 10px)");
     expect(inspectorButton.getAttribute("aria-expanded")).toBe("true");
@@ -399,7 +473,7 @@ describe("App", () => {
     );
 
     const interactionSelect = within(inspector).getByRole("combobox", { name: "Mouse control" });
-    expect(interactionSelect.className).toContain("!h-6");
+    expect(interactionSelect.className).toContain("!h-[26px]");
     expect(interactionSelect.textContent).toContain("Trackball");
 
     await user.click(interactionSelect);
@@ -1450,6 +1524,44 @@ describe("App", () => {
     expect(fetchCalls[2]?.init?.body).toBeInstanceOf(File);
   });
 
+  test("reuploads on reset all only when the current bond algorithm is not default", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user);
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    queueFetchResponse(jsonResponse(sceneWithPeriodicImages({ atomCount: 6 })));
+
+    await user.click(screen.getByRole("combobox", { name: "Bonding algorithm" }));
+    await user.click(await screen.findByRole("option", { name: "Minimum distance" }));
+
+    await waitFor(() => expect(fetchCalls).toHaveLength(2));
+    expect(fetchCalls[1]?.input).toBe(
+      "/api/structure-preview?bondAlgorithm=minimum-distance",
+    );
+    expect(screen.getByRole("combobox", { name: "Bonding algorithm" }).textContent).toContain(
+      "Minimum distance",
+    );
+
+    const commonControls = screen.getByRole("complementary", { name: "Common controls" });
+    await user.click(within(commonControls).getByRole("checkbox", { name: "Atoms" }));
+    queueFetchResponse(jsonResponse(sceneWithPeriodicImages()));
+
+    await openPreviewContextMenu();
+    await user.click(await screen.findByRole("menuitem", { name: "Reset All" }));
+
+    await waitFor(() => expect(fetchCalls).toHaveLength(3));
+    expect(fetchCalls[2]?.input).toBe("/api/structure-preview");
+    expect(fetchCalls[2]?.init?.body).toBeInstanceOf(File);
+
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    expect(screen.getByRole("combobox", { name: "Bonding algorithm" }).textContent).toContain(
+      "VESTA",
+    );
+    expect(
+      screen.getByRole("checkbox", { name: "Atoms" }).getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+
   test("keeps the loaded scene and places backend alerts beside the view rail", async () => {
     const user = userEvent.setup();
 
@@ -1642,6 +1754,11 @@ async function renderLoadedStructure(user: UserEvent, scene = sceneWithPeriodicI
   render(<App />);
   await user.upload(getFileInput(), structureFile());
   await screen.findByTestId("lattice-canvas");
+}
+
+async function openPreviewContextMenu() {
+  fireEvent.contextMenu(screen.getByTestId("lattice-canvas"));
+  await screen.findByRole("menu");
 }
 
 function queueFetchResponse(response: Response) {
