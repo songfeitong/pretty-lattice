@@ -2,8 +2,11 @@ import type { SceneSpec } from "../api/scene";
 import type { MeshQuality } from "./exportSettings";
 
 export type AtomRenderingMode = "mesh" | "instanced";
+export type BondRenderingMode = "mesh" | "batched";
 
 export const DEFAULT_ATOM_RENDERING_MODE: AtomRenderingMode = "mesh";
+export const DEFAULT_BOND_RENDERING_MODE: BondRenderingMode = "mesh";
+export const LARGE_SCENE_BOND_RENDERING_MODE: BondRenderingMode = "batched";
 export const DEFAULT_PREVIEW_MESH_QUALITY: MeshQuality = "medium";
 export const LARGE_SCENE_PREVIEW_MESH_QUALITY: MeshQuality = "low";
 export const PREVIEW_PERFORMANCE_ATOM_COUNT_THRESHOLD = 1000;
@@ -22,6 +25,16 @@ export function defaultAtomRenderingModeForScene(
   }
 
   return DEFAULT_ATOM_RENDERING_MODE;
+}
+
+export function defaultBondRenderingModeForScene(
+  scene: Pick<SceneSpec, "summary"> | null,
+): BondRenderingMode {
+  if (hasLargePreviewAtomCount(scene)) {
+    return LARGE_SCENE_BOND_RENDERING_MODE;
+  }
+
+  return DEFAULT_BOND_RENDERING_MODE;
 }
 
 export function defaultPreviewMeshQualityForScene(

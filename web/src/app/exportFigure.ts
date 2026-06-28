@@ -6,6 +6,7 @@ import type {
   ComponentOpacityState,
   ComponentVisibilityState,
   AtomRenderingMode,
+  BondRenderingMode,
   ExportBackground,
   ExportFormat,
   ExportSettingsState,
@@ -23,6 +24,7 @@ import type { CameraOrientationRef } from "../scene/LatticeScene";
 export interface CreateFigureExportOptions {
   cameraOrientationRef: CameraOrientationRef;
   atomRenderingMode: AtomRenderingMode;
+  bondRenderingMode: BondRenderingMode;
   componentOpacity: ComponentOpacityState;
   componentVisibility: ComponentVisibilityState;
   fileName: string | null;
@@ -65,6 +67,7 @@ const DARK_BACKGROUND_UNIT_CELL_LINE_COLOR = "#bbbbbb";
 export async function createFigureExportFiles({
   cameraOrientationRef,
   atomRenderingMode,
+  bondRenderingMode,
   componentOpacity,
   componentVisibility,
   fileName,
@@ -85,6 +88,7 @@ export async function createFigureExportFiles({
       await createStructureExportFile({
         cameraOrientationRef,
         atomRenderingMode,
+        bondRenderingMode,
         componentOpacity,
         componentVisibility,
         fileName,
@@ -129,6 +133,7 @@ export async function createFigureExportFiles({
 export async function createFigureExportFile({
   cameraOrientationRef,
   atomRenderingMode,
+  bondRenderingMode,
   componentOpacity,
   componentVisibility,
   fileName,
@@ -139,6 +144,7 @@ export async function createFigureExportFile({
   return createStructureExportFile({
     cameraOrientationRef,
     atomRenderingMode,
+    bondRenderingMode,
     componentOpacity,
     componentVisibility,
     fileName,
@@ -151,6 +157,7 @@ export async function createFigureExportFile({
 async function createStructureExportFile({
   cameraOrientationRef,
   atomRenderingMode,
+  bondRenderingMode,
   componentOpacity,
   componentVisibility,
   fileName,
@@ -171,6 +178,7 @@ async function createStructureExportFile({
   const cameraPose = createCameraPoseSnapshot(cameraOrientationRef.current);
   const rasterImage = await renderExportRaster({
     atomRenderingMode,
+    bondRenderingMode,
     cameraPose,
     componentOpacity,
     componentVisibility,
@@ -776,6 +784,7 @@ const CRC32_TABLE = new Uint32Array(
 
 async function renderExportRaster({
   atomRenderingMode,
+  bondRenderingMode,
   cameraPose,
   componentOpacity,
   componentVisibility,
@@ -784,6 +793,7 @@ async function renderExportRaster({
   visibleScene,
 }: {
   atomRenderingMode: AtomRenderingMode;
+  bondRenderingMode: BondRenderingMode;
   cameraPose: CameraPoseSnapshot;
   componentOpacity: ComponentOpacityState;
   componentVisibility: ComponentVisibilityState;
@@ -795,6 +805,7 @@ async function renderExportRaster({
 
   return renderStructureRasterImage({
     atomRenderingMode,
+    bondRenderingMode,
     backgroundColor: exportBackgroundColor(settings.background),
     cameraPose,
     componentOpacity,

@@ -9,6 +9,7 @@ import {
   STYLE_SCALE_MAX,
   STYLE_SCALE_MIN,
   defaultAtomRenderingModeForScene,
+  defaultBondRenderingModeForScene,
   defaultPreviewMeshQualityForScene,
   createDefaultExportSettings,
   createDefaultStyle,
@@ -45,6 +46,10 @@ describe("settings", () => {
     expect(defaultAtomRenderingModeForScene(sceneWithAtomCount(belowThreshold))).toBe("mesh");
     expect(defaultAtomRenderingModeForScene(sceneWithAtomCount(atThreshold))).toBe("mesh");
     expect(defaultAtomRenderingModeForScene(sceneWithAtomCount(aboveThreshold))).toBe("instanced");
+    expect(defaultBondRenderingModeForScene(null)).toBe("mesh");
+    expect(defaultBondRenderingModeForScene(sceneWithAtomCount(belowThreshold))).toBe("mesh");
+    expect(defaultBondRenderingModeForScene(sceneWithAtomCount(atThreshold))).toBe("mesh");
+    expect(defaultBondRenderingModeForScene(sceneWithAtomCount(aboveThreshold))).toBe("batched");
 
     expect(defaultPreviewMeshQualityForScene(null)).toBe("medium");
     expect(defaultPreviewMeshQualityForScene(sceneWithAtomCount(belowThreshold))).toBe("medium");

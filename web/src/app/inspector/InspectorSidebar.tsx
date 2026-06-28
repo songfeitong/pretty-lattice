@@ -32,6 +32,7 @@ import {
   MESH_QUALITY_LABELS,
   MESH_QUALITY_OPTIONS,
   type AtomRenderingMode,
+  type BondRenderingMode,
   type MeshQuality,
 } from "../../model";
 
@@ -79,6 +80,7 @@ export function InspectorToggle({
 
 export function InspectorSidebar({
   atomRenderingMode,
+  bondRenderingMode,
   bondAlgorithm,
   interactionMode,
   isOpen,
@@ -86,12 +88,14 @@ export function InspectorSidebar({
   previewMeshQuality,
   showFpsOverlay,
   onAtomRenderingModeChange,
+  onBondRenderingModeChange,
   onBondAlgorithmChange,
   onInteractionModeChange,
   onPreviewMeshQualityChange,
   onShowFpsOverlayChange,
 }: {
   atomRenderingMode: AtomRenderingMode;
+  bondRenderingMode: BondRenderingMode;
   bondAlgorithm: BondAlgorithm;
   interactionMode: InteractionMode;
   isOpen: boolean;
@@ -99,6 +103,7 @@ export function InspectorSidebar({
   previewMeshQuality: MeshQuality;
   showFpsOverlay: boolean;
   onAtomRenderingModeChange: (mode: AtomRenderingMode) => void;
+  onBondRenderingModeChange: (mode: BondRenderingMode) => void;
   onBondAlgorithmChange: (bondAlgorithm: BondAlgorithm) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
   onPreviewMeshQualityChange: (meshQuality: MeshQuality) => void;
@@ -141,12 +146,14 @@ export function InspectorSidebar({
           <TabsContent value="settings" className="m-0">
             <SettingsPanel
               atomRenderingMode={atomRenderingMode}
+              bondRenderingMode={bondRenderingMode}
               bondAlgorithm={bondAlgorithm}
               interactionMode={interactionMode}
               isSceneLoading={isSceneLoading}
               previewMeshQuality={previewMeshQuality}
               showFpsOverlay={showFpsOverlay}
               onAtomRenderingModeChange={onAtomRenderingModeChange}
+              onBondRenderingModeChange={onBondRenderingModeChange}
               onBondAlgorithmChange={onBondAlgorithmChange}
               onInteractionModeChange={onInteractionModeChange}
               onPreviewMeshQualityChange={onPreviewMeshQualityChange}
@@ -161,24 +168,28 @@ export function InspectorSidebar({
 
 function SettingsPanel({
   atomRenderingMode,
+  bondRenderingMode,
   bondAlgorithm,
   interactionMode,
   isSceneLoading,
   previewMeshQuality,
   showFpsOverlay,
   onAtomRenderingModeChange,
+  onBondRenderingModeChange,
   onBondAlgorithmChange,
   onInteractionModeChange,
   onPreviewMeshQualityChange,
   onShowFpsOverlayChange,
 }: {
   atomRenderingMode: AtomRenderingMode;
+  bondRenderingMode: BondRenderingMode;
   bondAlgorithm: BondAlgorithm;
   interactionMode: InteractionMode;
   isSceneLoading: boolean;
   previewMeshQuality: MeshQuality;
   showFpsOverlay: boolean;
   onAtomRenderingModeChange: (mode: AtomRenderingMode) => void;
+  onBondRenderingModeChange: (mode: BondRenderingMode) => void;
   onBondAlgorithmChange: (bondAlgorithm: BondAlgorithm) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
   onPreviewMeshQualityChange: (meshQuality: MeshQuality) => void;
@@ -192,7 +203,7 @@ function SettingsPanel({
         onCheckedChange={onShowFpsOverlayChange}
       />
 
-      <InspectorSelectRow label="Atom rendering">
+      <InspectorSelectRow label="Atom Mesh">
         <Select
           value={atomRenderingMode}
           onValueChange={(value) => onAtomRenderingModeChange(value as AtomRenderingMode)}
@@ -207,10 +218,35 @@ function SettingsPanel({
           <SelectContent position="popper" className="!bg-background !text-foreground">
             <SelectGroup>
               <SelectItem value="mesh" className={INSPECTOR_SELECT_ITEM_CLASS}>
-                Mesh
+                Independent
               </SelectItem>
               <SelectItem value="instanced" className={INSPECTOR_SELECT_ITEM_CLASS}>
                 Instanced
+              </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </InspectorSelectRow>
+
+      <InspectorSelectRow label="Bond Mesh">
+        <Select
+          value={bondRenderingMode}
+          onValueChange={(value) => onBondRenderingModeChange(value as BondRenderingMode)}
+        >
+          <SelectTrigger
+            size="sm"
+            aria-label="Bond rendering mode"
+            className={INSPECTOR_SELECT_TRIGGER_CLASS}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper" className="!bg-background !text-foreground">
+            <SelectGroup>
+              <SelectItem value="mesh" className={INSPECTOR_SELECT_ITEM_CLASS}>
+                Independent
+              </SelectItem>
+              <SelectItem value="batched" className={INSPECTOR_SELECT_ITEM_CLASS}>
+                Batched
               </SelectItem>
             </SelectGroup>
           </SelectContent>

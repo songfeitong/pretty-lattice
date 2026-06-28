@@ -6,6 +6,7 @@ import type { SceneSpec } from "../api/scene";
 import type {
   ComponentOpacityState,
   AtomRenderingMode,
+  BondRenderingMode,
   ExportMeshQuality,
   ExportSupersampling,
   StyleState,
@@ -52,6 +53,7 @@ export interface RasterExportTextItem {
 
 export interface RenderStructureRasterOptions {
   atomRenderingMode: AtomRenderingMode;
+  bondRenderingMode: BondRenderingMode;
   backgroundColor: string | null;
   cameraPose: CameraPoseSnapshot;
   componentOpacity: ComponentOpacityState;
@@ -80,6 +82,7 @@ export interface RenderLatticeVectorsRasterOptions {
 
 export async function renderStructureRasterImage({
   atomRenderingMode,
+  bondRenderingMode,
   backgroundColor,
   cameraPose,
   componentOpacity,
@@ -167,6 +170,7 @@ export async function renderStructureRasterImage({
         ))}
         <ExportSceneContent
           atomRenderingMode={atomRenderingMode}
+          bondRenderingMode={bondRenderingMode}
           cameraPose={cameraPose}
           componentOpacity={componentOpacity}
           exportFramePlan={exportFramePlan}

@@ -320,21 +320,30 @@ describe("App", () => {
     const atomRenderingSelect = within(sidebar).getByRole("combobox", {
       name: "Atom rendering mode",
     });
+    const bondRenderingSelect = within(sidebar).getByRole("combobox", {
+      name: "Bond rendering mode",
+    });
     const previewMeshSelect = within(sidebar).getByRole("combobox", {
       name: "Preview 3D mesh",
     });
 
-    expect(atomRenderingSelect.textContent).toContain("Mesh");
+    expect(atomRenderingSelect.textContent).toContain("Independent");
+    expect(bondRenderingSelect.textContent).toContain("Independent");
     expect(previewMeshSelect.textContent).toContain("Medium");
 
     await user.click(atomRenderingSelect);
     await user.click(await screen.findByRole("option", { name: "Instanced" }));
+    await user.click(bondRenderingSelect);
+    await user.click(await screen.findByRole("option", { name: "Batched" }));
     await user.click(previewMeshSelect);
     await user.click(await screen.findByRole("option", { name: "XHigh" }));
 
     expect(
       within(sidebar).getByRole("combobox", { name: "Atom rendering mode" }).textContent,
     ).toContain("Instanced");
+    expect(
+      within(sidebar).getByRole("combobox", { name: "Bond rendering mode" }).textContent,
+    ).toContain("Batched");
     expect(
       within(sidebar).getByRole("combobox", { name: "Preview 3D mesh" }).textContent,
     ).toContain("XHigh");
@@ -357,6 +366,9 @@ describe("App", () => {
         name: "Atom rendering mode",
       }).textContent,
     ).toContain("Instanced");
+    expect(
+      within(sidebar).getByRole("combobox", { name: "Bond rendering mode" }).textContent,
+    ).toContain("Batched");
     expect(
       within(sidebar).getByRole("combobox", { name: "Preview 3D mesh" }).textContent,
     ).toContain("Low");
@@ -552,8 +564,14 @@ describe("App", () => {
     expect(within(inspector).queryByRole("combobox", { name: "Renderer" })).toBeNull();
     expect(
       within(inspector).getByRole("combobox", { name: "Atom rendering mode" }).textContent,
-    ).toContain("Mesh");
-    expect(within(inspector).getByText("Atom rendering").parentElement?.className).toContain(
+    ).toContain("Independent");
+    expect(
+      within(inspector).getByRole("combobox", { name: "Bond rendering mode" }).textContent,
+    ).toContain("Independent");
+    expect(within(inspector).getByText("Atom Mesh").parentElement?.className).toContain(
+      "text-sm",
+    );
+    expect(within(inspector).getByText("Bond Mesh").parentElement?.className).toContain(
       "text-sm",
     );
     expect(within(inspector).getByText("Mouse control").parentElement?.className).toContain(

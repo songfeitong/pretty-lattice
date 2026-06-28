@@ -84,7 +84,7 @@ function selectionRingTexture(): CanvasTexture | null {
 
   context.beginPath();
   context.arc(center, center, radius, 0, Math.PI * 2);
-  context.strokeStyle = "rgba(15, 23, 42, 0.6)";
+  context.strokeStyle = "rgba(15, 23, 42, 0.5)";
   context.lineWidth = 60;
   context.stroke();
 

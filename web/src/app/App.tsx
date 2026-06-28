@@ -86,8 +86,10 @@ import {
   createDefaultExportSettings,
   createDefaultStyle,
   defaultAtomRenderingModeForScene,
+  defaultBondRenderingModeForScene,
   defaultPreviewMeshQualityForScene,
   type AtomRenderingMode,
+  type BondRenderingMode,
   type ExportProjectedSize,
   type ExportSettingsState,
   type MeshQuality,
@@ -177,6 +179,9 @@ export function App() {
     useState<ExportProjectedSize | null>(null);
   const [atomRenderingMode, setAtomRenderingMode] = useState<AtomRenderingMode>(
     () => defaultAtomRenderingModeForScene(null),
+  );
+  const [bondRenderingMode, setBondRenderingMode] = useState<BondRenderingMode>(
+    () => defaultBondRenderingModeForScene(null),
   );
   const [previewMeshQuality, setPreviewMeshQuality] = useState<MeshQuality>(
     () => defaultPreviewMeshQualityForScene(null),
@@ -294,6 +299,7 @@ export function App() {
       setComponentOpacity(createDefaultComponentOpacity());
       setStyle(createDefaultStyle());
       setAtomRenderingMode(defaultAtomRenderingModeForScene(nextScene));
+      setBondRenderingMode(defaultBondRenderingModeForScene(nextScene));
       setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
       setExportSettings(createDefaultExportSettings());
       setActiveCommonPanelTab("display");
@@ -384,6 +390,10 @@ export function App() {
   const handleAtomRenderingModeChange = useCallback((nextMode: AtomRenderingMode) => {
     setPulseAtom(null);
     setAtomRenderingMode(nextMode);
+  }, []);
+
+  const handleBondRenderingModeChange = useCallback((nextMode: BondRenderingMode) => {
+    setBondRenderingMode(nextMode);
   }, []);
 
   const handlePreviewMeshQualityChange = useCallback((nextQuality: MeshQuality) => {
@@ -648,6 +658,7 @@ export function App() {
       setScene(nextScene);
       setComponentVisibility(createDefaultComponentVisibility(nextScene));
       setAtomRenderingMode(defaultAtomRenderingModeForScene(nextScene));
+      setBondRenderingMode(defaultBondRenderingModeForScene(nextScene));
       setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
       setPreviewStatus("ready");
     } catch (error) {
@@ -686,6 +697,9 @@ export function App() {
         setScene(nextScene);
         setInspectedAtomId(null);
         setPulseAtom(null);
+        setAtomRenderingMode(defaultAtomRenderingModeForScene(nextScene));
+        setBondRenderingMode(defaultBondRenderingModeForScene(nextScene));
+        setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
         setPreviewStatus("ready");
       } catch (error) {
         if (isBackendUnavailablePreviewError(error)) {
@@ -826,6 +840,7 @@ export function App() {
         componentOpacity,
         componentVisibility,
         atomRenderingMode,
+        bondRenderingMode,
         fileName: selectedFileName,
         scene,
         settings: settingsForExport,
@@ -845,6 +860,7 @@ export function App() {
     componentOpacity,
     componentVisibility,
     atomRenderingMode,
+    bondRenderingMode,
     isExporting,
     prepareExportSettings,
     scene,
@@ -1022,6 +1038,7 @@ export function App() {
                 cameraCommandVersion={cameraCommandVersion}
                 cameraState={viewState.camera}
                 atomRenderingMode={atomRenderingMode}
+                bondRenderingMode={bondRenderingMode}
                 cameraOrientationRef={cameraOrientationRef}
                 onCameraOrientationFrame={requestOrientationGizmoFrame}
                 onCameraOrientationChange={handleCameraOrientationChange}
@@ -1230,6 +1247,7 @@ export function App() {
 
           <InspectorSidebar
             atomRenderingMode={atomRenderingMode}
+            bondRenderingMode={bondRenderingMode}
             bondAlgorithm={bondAlgorithm}
             interactionMode={viewState.interactionMode}
             isOpen={isInspectorOpen}
@@ -1237,6 +1255,7 @@ export function App() {
             previewMeshQuality={previewMeshQuality}
             showFpsOverlay={viewState.showFpsOverlay}
             onAtomRenderingModeChange={handleAtomRenderingModeChange}
+            onBondRenderingModeChange={handleBondRenderingModeChange}
             onBondAlgorithmChange={(nextBondAlgorithm) => {
               void handleBondAlgorithmChange(nextBondAlgorithm);
             }}

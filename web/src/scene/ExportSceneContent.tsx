@@ -3,7 +3,12 @@ import { OrthographicCamera } from "three";
 import { useThree } from "@react-three/fiber";
 
 import type { SceneSpec } from "../api/scene";
-import type { AtomRenderingMode, ComponentOpacityState, StyleState } from "../model";
+import type {
+  AtomRenderingMode,
+  BondRenderingMode,
+  ComponentOpacityState,
+  StyleState,
+} from "../model";
 import type { CameraPoseSnapshot } from "./cameraPose";
 import { applyCameraPoseSnapshot } from "./cameraPose";
 import type { ResolvedStructureMaterialFamily } from "./materialPresetResolver";
@@ -14,6 +19,7 @@ import { applyOrthographicExportFrame, type StructureExportFramePlan } from "./e
 
 export function ExportSceneContent({
   atomRenderingMode,
+  bondRenderingMode,
   cameraPose,
   componentOpacity,
   exportFramePlan,
@@ -28,6 +34,7 @@ export function ExportSceneContent({
   unitCellLineWidthScale = 1,
 }: {
   atomRenderingMode: AtomRenderingMode;
+  bondRenderingMode: BondRenderingMode;
   cameraPose: CameraPoseSnapshot;
   componentOpacity: ComponentOpacityState;
   exportFramePlan: StructureExportFramePlan;
@@ -59,6 +66,7 @@ export function ExportSceneContent({
       <SceneFog layout={layout} style={style} />
       <MemoizedStructureSceneObjects
         atomRenderingMode={atomRenderingMode}
+        bondRenderingMode={bondRenderingMode}
         atomById={atomById}
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}

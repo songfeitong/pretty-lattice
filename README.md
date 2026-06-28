@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="assets/logo.svg" width="148" alt="Pretty Lattice logo" />
-</p>
 
 <h1 align="center">Pretty Lattice</h1>
 

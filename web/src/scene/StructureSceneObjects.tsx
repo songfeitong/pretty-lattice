@@ -1,10 +1,14 @@
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
+  BatchedMesh,
+  BufferGeometry,
   Color,
+  CylinderGeometry,
   DoubleSide,
   Fog,
   Group,
+  Matrix4,
   Quaternion,
   SpriteMaterial,
   Vector3,
@@ -23,6 +27,7 @@ import type {
 import { atomColorForScheme } from "../model/colorSchemes";
 import type {
   AtomRenderingMode,
+  BondRenderingMode,
   BondColorMode,
   ComponentOpacityState,
   ExportMeshQuality,
@@ -103,6 +108,7 @@ export const EXPORT_SCENE_MESH_DETAIL_PRESETS: Record<ExportMeshQuality, SceneMe
 
 export function PreviewSceneContent({
   atomRenderingMode,
+  bondRenderingMode,
   componentOpacity,
   layout,
   materialFamily,
@@ -121,6 +127,7 @@ export function PreviewSceneContent({
   unitCellLineWidthScale = 1,
 }: {
   atomRenderingMode: AtomRenderingMode;
+  bondRenderingMode: BondRenderingMode;
   componentOpacity: ComponentOpacityState;
   layout: SceneLayout;
   materialFamily: ResolvedStructureMaterialFamily;
@@ -145,6 +152,7 @@ export function PreviewSceneContent({
       <SceneFog layout={layout} style={style} />
       <MemoizedStructureSceneObjects
         atomRenderingMode={atomRenderingMode}
+        bondRenderingMode={bondRenderingMode}
         atomById={atomById}
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}
@@ -249,6 +257,7 @@ function lerp(start: number, end: number, amount: number): number {
 export function StructureSceneObjects({
   atomById,
   atomRenderingMode = "mesh",
+  bondRenderingMode = "mesh",
   componentOpacity,
   groupPosition,
   interactionLocked = false,
@@ -269,6 +278,7 @@ export function StructureSceneObjects({
 }: {
   atomById: Map<string, AtomSpec>;
   atomRenderingMode?: AtomRenderingMode;
+  bondRenderingMode?: BondRenderingMode;
   componentOpacity: ComponentOpacityState;
   groupPosition: VectorTuple;
   interactionLocked?: boolean;
@@ -316,11 +326,10 @@ export function StructureSceneObjects({
             polyhedron={polyhedron}
           />
         ))}
-        {scene.bonds.map((bond) => (
-          <MemoizedBond
-            key={bond.id}
+        {bondRenderingMode === "batched" ? (
+          <BatchedBonds
             atomById={atomById}
-            bond={bond}
+            bonds={scene.bonds}
             colorMode={style.bondColorMode}
             colorScheme={style.colorScheme}
             materialFamily={materialFamily}
@@ -328,7 +337,21 @@ export function StructureSceneObjects({
             thicknessScale={style.bondThickness / 100}
             opacity={componentOpacity.bonds / 100}
           />
-        ))}
+        ) : (
+          scene.bonds.map((bond) => (
+            <MemoizedBond
+              key={bond.id}
+              atomById={atomById}
+              bond={bond}
+              colorMode={style.bondColorMode}
+              colorScheme={style.colorScheme}
+              materialFamily={materialFamily}
+              meshDetail={meshDetail}
+              thicknessScale={style.bondThickness / 100}
+              opacity={componentOpacity.bonds / 100}
+            />
+          ))
+        )}
         {showAtoms && atomRenderingMode === "instanced" ? (
           <InstancedAtoms
             atoms={scene.atoms}
@@ -712,6 +735,310 @@ function AtomHighlightAnimator({
   });
 
   return null;
+}
+
+interface BondBatchItem {
+  center: Vector3;
+  endColor: string;
+  id: string;
+  length: number;
+  quaternion: Quaternion;
+  startColor: string;
+}
+
+interface BondBatchBuild {
+  itemCount: number;
+  items: BondBatchItem[];
+  key: string;
+  maxIndexCount: number;
+  maxVertexCount: number;
+  mode: BondColorMode;
+  radialSegments: number;
+  radius: number;
+}
+
+function BatchedBonds({
+  atomById,
+  bonds,
+  colorMode,
+  colorScheme,
+  materialFamily,
+  meshDetail,
+  opacity,
+  thicknessScale,
+}: {
+  atomById: Map<string, AtomSpec>;
+  bonds: BondSpec[];
+  colorMode: BondColorMode;
+  colorScheme: StyleState["colorScheme"];
+  materialFamily: ResolvedStructureMaterialFamily;
+  meshDetail: SceneMeshDetail;
+  opacity: number;
+  thicknessScale: number;
+}) {
+  const meshRef = useRef<BatchedMesh | null>(null);
+  const populatedBatchKeyRef = useRef<string | null>(null);
+  const invalidate = useThree((state) => state.invalidate);
+  const batch = useMemo(
+    () =>
+      createBondBatchBuild({
+        atomById,
+        bonds,
+        colorMode,
+        colorScheme,
+        radialSegments: meshDetail.bondRadialSegments,
+        radius: BOND_RADIUS * thicknessScale,
+      }),
+    [
+      atomById,
+      bonds,
+      colorMode,
+      colorScheme,
+      meshDetail.bondRadialSegments,
+      thicknessScale,
+    ],
+  );
+
+  useLayoutEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh || !batch) {
+      populatedBatchKeyRef.current = null;
+      return;
+    }
+
+    if (populatedBatchKeyRef.current === batch.key) {
+      return;
+    }
+
+    populateBatchedBondMesh(mesh, batch);
+    populatedBatchKeyRef.current = batch.key;
+    mesh.computeBoundingBox();
+    mesh.computeBoundingSphere();
+    invalidate();
+  }, [batch, invalidate]);
+
+  if (!batch) {
+    return null;
+  }
+
+  const isTransparent = opacity < 1;
+  const usesVertexColors = batch.mode === "by-atom";
+
+  return (
+    <batchedMesh
+      key={batch.key}
+      ref={meshRef}
+      args={[batch.itemCount, batch.maxVertexCount, batch.maxIndexCount]}
+    >
+      <StructureMaterial
+        color={usesVertexColors ? undefined : BOND_COLOR}
+        depthWrite={!isTransparent}
+        materialFamily={materialFamily}
+        opacity={opacity}
+        transparent={isTransparent}
+        vertexColors={usesVertexColors}
+      />
+    </batchedMesh>
+  );
+}
+
+function createBondBatchBuild({
+  atomById,
+  bonds,
+  colorMode,
+  colorScheme,
+  radialSegments,
+  radius,
+}: {
+  atomById: Map<string, AtomSpec>;
+  bonds: BondSpec[];
+  colorMode: BondColorMode;
+  colorScheme: StyleState["colorScheme"];
+  radialSegments: number;
+  radius: number;
+}): BondBatchBuild | null {
+  const segments = Math.max(3, Math.floor(radialSegments));
+  const items = bondBatchItems({
+    atomById,
+    bonds,
+    colorMode,
+    colorScheme,
+  });
+
+  if (items.length === 0 || radius <= 0) {
+    return null;
+  }
+
+  if (colorMode === "by-atom") {
+    const vertexCount = items.length * twoToneBondVertexCount(segments);
+    const indexCount = items.length * twoToneBondIndexCount(segments);
+    return {
+      itemCount: items.length,
+      items,
+      key: bondBatchKey({ colorMode, items, radialSegments: segments, radius }),
+      maxIndexCount: indexCount,
+      maxVertexCount: vertexCount,
+      mode: colorMode,
+      radialSegments: segments,
+      radius,
+    };
+  }
+
+  const geometry = neutralBondGeometry(radius, segments);
+  const maxVertexCount = geometry.getAttribute("position").count;
+  const maxIndexCount = geometry.getIndex()?.count ?? maxVertexCount;
+  geometry.dispose();
+
+  return {
+    itemCount: items.length,
+    items,
+    key: bondBatchKey({ colorMode, items, radialSegments: segments, radius }),
+    maxIndexCount,
+    maxVertexCount,
+    mode: colorMode,
+    radialSegments: segments,
+    radius,
+  };
+}
+
+function bondBatchItems({
+  atomById,
+  bonds,
+  colorMode,
+  colorScheme,
+}: {
+  atomById: Map<string, AtomSpec>;
+  bonds: BondSpec[];
+  colorMode: BondColorMode;
+  colorScheme: StyleState["colorScheme"];
+}): BondBatchItem[] {
+  const items: BondBatchItem[] = [];
+
+  for (const bond of bonds) {
+    const startAtom = atomById.get(bond.startAtomId);
+    const endAtom = atomById.get(bond.endAtomId);
+    if (!startAtom || !endAtom) {
+      continue;
+    }
+
+    const start = new Vector3(...startAtom.position);
+    const end = new Vector3(...endAtom.position);
+    const direction = end.clone().sub(start);
+    const length = direction.length();
+    if (length <= 0) {
+      continue;
+    }
+
+    items.push({
+      center: start.clone().add(end).multiplyScalar(0.5),
+      endColor:
+        colorMode === "by-atom" ? atomColorForScheme(endAtom, colorScheme) : BOND_COLOR,
+      id: bond.id,
+      length,
+      quaternion: new Quaternion().setFromUnitVectors(
+        new Vector3(0, 1, 0),
+        direction.clone().normalize(),
+      ),
+      startColor:
+        colorMode === "by-atom" ? atomColorForScheme(startAtom, colorScheme) : BOND_COLOR,
+    });
+  }
+
+  return items;
+}
+
+function populateBatchedBondMesh(mesh: BatchedMesh, batch: BondBatchBuild) {
+  const matrix = new Matrix4();
+  const neutralGeometry =
+    batch.mode === "neutral" ? neutralBondGeometry(batch.radius, batch.radialSegments) : null;
+  const neutralGeometryId = neutralGeometry
+    ? mesh.addGeometry(prepareBatchGeometry(neutralGeometry))
+    : null;
+
+  for (const item of batch.items) {
+    const geometryId = neutralGeometryId ?? addTwoToneBondGeometry(mesh, item, batch);
+    const instanceId = mesh.addInstance(geometryId);
+    const scale =
+      batch.mode === "neutral" ? new Vector3(1, item.length, 1) : new Vector3(1, 1, 1);
+    matrix.compose(item.center, item.quaternion, scale);
+    mesh.setMatrixAt(instanceId, matrix);
+  }
+
+  neutralGeometry?.dispose();
+}
+
+function addTwoToneBondGeometry(
+  mesh: BatchedMesh,
+  item: BondBatchItem,
+  batch: BondBatchBuild,
+): number {
+  const geometry = prepareBatchGeometry(
+    twoToneBondCylinderGeometry({
+      endColor: item.endColor,
+      length: item.length,
+      radialSegments: batch.radialSegments,
+      radius: batch.radius,
+      startColor: item.startColor,
+    }),
+  );
+  const geometryId = mesh.addGeometry(geometry);
+  geometry.dispose();
+  return geometryId;
+}
+
+function prepareBatchGeometry<TGeometry extends BufferGeometry>(geometry: TGeometry): TGeometry {
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
+function neutralBondGeometry(radius: number, radialSegments: number): CylinderGeometry {
+  return new CylinderGeometry(radius, radius, 1, radialSegments);
+}
+
+function twoToneBondVertexCount(radialSegments: number): number {
+  return 4 * (radialSegments + 1);
+}
+
+function twoToneBondIndexCount(radialSegments: number): number {
+  return 12 * radialSegments;
+}
+
+function bondBatchKey({
+  colorMode,
+  items,
+  radialSegments,
+  radius,
+}: {
+  colorMode: BondColorMode;
+  items: BondBatchItem[];
+  radialSegments: number;
+  radius: number;
+}): string {
+  let hash = hashString(`${colorMode}:${radialSegments}:${radius}`);
+  for (const item of items) {
+    hash = hashString(
+      [
+        hash,
+        item.id,
+        item.length,
+        item.center.toArray().join(","),
+        item.quaternion.toArray().join(","),
+        item.startColor,
+        item.endColor,
+      ].join(":"),
+    );
+  }
+  return `bonds:${items.length}:${hash.toString(36)}`;
+}
+
+function hashString(value: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
 function Bond({
