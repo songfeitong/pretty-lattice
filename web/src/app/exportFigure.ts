@@ -509,7 +509,7 @@ function legendExportStyle(
     horizontalGap: Math.round(fontSize * 1.05),
     paddingX: Math.round(fontSize * 0.15),
     paddingY: Math.round(fontSize * 0.15),
-    rowGap: Math.round(fontSize * 0.6),
+    rowGap: Math.round(fontSize * 0.85),
     swatchSize: Math.round(fontSize * 0.95),
     textGap: Math.round(fontSize * 0.45),
   };
