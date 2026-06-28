@@ -113,7 +113,7 @@ import {
 
 const LOCKED_INTERACTION_DRAG_THRESHOLD_PX = 4;
 const LOCKED_INTERACTION_WHEEL_IDLE_MS = 150;
-const MAX_STRUCTURE_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_STRUCTURE_UPLOAD_BYTES = 1 * 1024 * 1024;
 const STRUCTURE_FILE_TOO_LARGE_MESSAGE = "File is too large to preview.";
 const STRUCTURE_PARSE_ERROR_MESSAGE = "pymatgen could not parse this file.";
 const REDISPATCHED_CONTEXT_MENU_EVENT = "__prettyLatticeRedispatchedContextMenu";

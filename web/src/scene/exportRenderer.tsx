@@ -189,12 +189,13 @@ export async function renderStructureRasterImage({
           layout={layout}
           materialFamily={materialFamily}
           meshDetail={meshDetail}
+          polyhedronEdgeLineWidthScale={supersampling * 2}
           scene={scene}
           showAtoms={showAtoms}
           showUnitCell={showUnitCell}
           style={style}
           unitCellLineColor={unitCellLineColor}
-          unitCellLineWidthScale={supersampling}
+          unitCellLineWidthScale={supersampling * 2}
         />
         <RenderReady onReady={() => resolveMounted?.()} />
       </>,

@@ -339,23 +339,23 @@ describe("App", () => {
       name: "Preview 3D mesh",
     });
 
-    expect(atomRenderingSelect.textContent).toContain("Independent");
-    expect(bondRenderingSelect.textContent).toContain("Independent");
+    expect(atomRenderingSelect.textContent).toContain("Instanced");
+    expect(bondRenderingSelect.textContent).toContain("Batched");
     expect(previewMeshSelect.textContent).toContain("Medium");
 
     await user.click(atomRenderingSelect);
-    await user.click(await screen.findByRole("option", { name: "Instanced" }));
+    await user.click(await screen.findByRole("option", { name: "Independent" }));
     await user.click(bondRenderingSelect);
-    await user.click(await screen.findByRole("option", { name: "Batched" }));
+    await user.click(await screen.findByRole("option", { name: "Independent" }));
     await user.click(previewMeshSelect);
     await user.click(await screen.findByRole("option", { name: "XHigh" }));
 
     expect(
       within(sidebar).getByRole("combobox", { name: "Atom rendering mode" }).textContent,
-    ).toContain("Instanced");
+    ).toContain("Independent");
     expect(
       within(sidebar).getByRole("combobox", { name: "Bond rendering mode" }).textContent,
-    ).toContain("Batched");
+    ).toContain("Independent");
     expect(
       within(sidebar).getByRole("combobox", { name: "Preview 3D mesh" }).textContent,
     ).toContain("XHigh");
@@ -585,10 +585,10 @@ describe("App", () => {
     expect(within(inspector).queryByRole("combobox", { name: "Renderer" })).toBeNull();
     expect(
       within(inspector).getByRole("combobox", { name: "Atom rendering mode" }).textContent,
-    ).toContain("Independent");
+    ).toContain("Instanced");
     expect(
       within(inspector).getByRole("combobox", { name: "Bond rendering mode" }).textContent,
-    ).toContain("Independent");
+    ).toContain("Batched");
     expect(within(inspector).getByText("Atom Mesh").parentElement?.className).toContain(
       "text-sm",
     );
@@ -1958,7 +1958,7 @@ describe("App", () => {
     render(<App />);
 
     const largeFile = new File(
-      [new Uint8Array(10 * 1024 * 1024 + 1)],
+      [new Uint8Array(1 * 1024 * 1024 + 1)],
       "movie.mp4",
       { type: "video/mp4" },
     );

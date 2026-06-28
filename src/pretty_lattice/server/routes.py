@@ -12,7 +12,7 @@ from pretty_lattice.structures.schema import (
 )
 
 router = APIRouter()
-MAX_STRUCTURE_UPLOAD_BYTES = 10 * 1024 * 1024
+MAX_STRUCTURE_UPLOAD_BYTES = 1 * 1024 * 1024
 STRUCTURE_FILE_TOO_LARGE_MESSAGE = "File is too large to preview."
 
 

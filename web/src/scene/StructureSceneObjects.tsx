@@ -73,7 +73,7 @@ export const BOND_COLOR = "#c7cbd1";
 export const BOND_TUBE_RADIAL_SEGMENTS = 24;
 export const POLYHEDRON_SURFACE_OPACITY = 0.5;
 export const POLYHEDRON_EDGE_COLOR = "#f2f5f9";
-export const POLYHEDRON_EDGE_LINE_WIDTH_PIXELS = 1.5;
+export const POLYHEDRON_EDGE_LINE_WIDTH_PIXELS = 1;
 export const POLYHEDRON_EDGE_OPACITY = 0.8;
 const POLYHEDRON_EDGE_OPACITY_RATIO =
   POLYHEDRON_EDGE_OPACITY / POLYHEDRON_SURFACE_OPACITY;
@@ -121,6 +121,7 @@ export function PreviewSceneContent({
   onAtomInspect,
   onAtomPulse,
   onLockedInteractionAttempt,
+  polyhedronEdgeLineWidthScale = 1,
   pulseAtomId,
   pulseToken,
   showAtoms,
@@ -140,6 +141,7 @@ export function PreviewSceneContent({
   onAtomInspect?: (atomId: string | null) => void;
   onAtomPulse?: (atomId: string) => void;
   onLockedInteractionAttempt?: () => void;
+  polyhedronEdgeLineWidthScale?: number;
   pulseAtomId: string | null;
   pulseToken: number;
   showAtoms: boolean;
@@ -166,6 +168,7 @@ export function PreviewSceneContent({
         onAtomInspect={onAtomInspect}
         onAtomPulse={onAtomPulse}
         onLockedInteractionAttempt={onLockedInteractionAttempt}
+        polyhedronEdgeLineWidthScale={polyhedronEdgeLineWidthScale}
         pulseAtomId={pulseAtomId}
         pulseToken={pulseToken}
         showAtoms={showAtoms}
@@ -270,6 +273,7 @@ export function StructureSceneObjects({
   onAtomInspect,
   onAtomPulse,
   onLockedInteractionAttempt,
+  polyhedronEdgeLineWidthScale = 1,
   pulseAtomId = null,
   pulseToken = 0,
   showAtoms,
@@ -291,6 +295,7 @@ export function StructureSceneObjects({
   onAtomInspect?: (atomId: string | null) => void;
   onAtomPulse?: (atomId: string) => void;
   onLockedInteractionAttempt?: () => void;
+  polyhedronEdgeLineWidthScale?: number;
   pulseAtomId?: string | null;
   pulseToken?: number;
   showAtoms: boolean;
@@ -326,6 +331,7 @@ export function StructureSceneObjects({
             materialFamily={materialFamily}
             opacity={componentOpacity.polyhedra / 100}
             polyhedron={polyhedron}
+            lineWidthScale={polyhedronEdgeLineWidthScale}
           />
         ))}
         {bondRenderingMode === "batched" ? (
@@ -1230,12 +1236,14 @@ function BondCylinder({
 function Polyhedron({
   atomById,
   colorScheme,
+  lineWidthScale,
   materialFamily,
   opacity,
   polyhedron,
 }: {
   atomById: Map<string, AtomSpec>;
   colorScheme: StyleState["colorScheme"];
+  lineWidthScale: number;
   materialFamily: ResolvedStructureMaterialFamily;
   opacity: number;
   polyhedron: PolyhedronSpec;
@@ -1264,14 +1272,14 @@ function Polyhedron({
       color: POLYHEDRON_EDGE_COLOR,
       depthWrite: false,
       fog: false,
-      linewidth: POLYHEDRON_EDGE_LINE_WIDTH_PIXELS,
+      linewidth: POLYHEDRON_EDGE_LINE_WIDTH_PIXELS * lineWidthScale,
       opacity: Math.min(1, opacity * POLYHEDRON_EDGE_OPACITY_RATIO),
       transparent: true,
       worldUnits: false,
     });
 
     return new LineSegments2(lineGeometry, material);
-  }, [geometry, opacity]);
+  }, [geometry, lineWidthScale, opacity]);
 
   useEffect(() => {
     return () => {

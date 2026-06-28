@@ -200,7 +200,7 @@ async def test_structure_preview_upload_endpoint_rejects_oversized_payload() -> 
     ) as client:
         response = await client.post(
             "/api/structure-preview",
-            content=b"x" * (10 * 1024 * 1024 + 1),
+            content=b"x" * (1 * 1024 * 1024 + 1),
             headers={"x-pretty-lattice-filename": "movie.mp4"},
         )
 

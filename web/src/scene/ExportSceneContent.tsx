@@ -26,6 +26,7 @@ export function ExportSceneContent({
   layout,
   materialFamily,
   meshDetail,
+  polyhedronEdgeLineWidthScale = 1,
   scene,
   showAtoms,
   showUnitCell,
@@ -41,6 +42,7 @@ export function ExportSceneContent({
   layout: SceneLayout;
   materialFamily: ResolvedStructureMaterialFamily;
   meshDetail: SceneMeshDetail;
+  polyhedronEdgeLineWidthScale?: number;
   scene: SceneSpec;
   showAtoms: boolean;
   showUnitCell: boolean;
@@ -72,6 +74,7 @@ export function ExportSceneContent({
         groupPosition={layout.groupPosition}
         materialFamily={materialFamily}
         meshDetail={meshDetail}
+        polyhedronEdgeLineWidthScale={polyhedronEdgeLineWidthScale}
         scene={scene}
         showAtoms={showAtoms}
         showUnitCell={showUnitCell}

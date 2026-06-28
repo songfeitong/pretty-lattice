@@ -37,18 +37,18 @@ import {
 } from "../src/app/settings";
 
 describe("settings", () => {
-  test("uses one atom-count threshold for large preview defaults", () => {
+  test("defaults rendering modes to batched paths and keeps the large-scene mesh quality threshold", () => {
     const belowThreshold = PREVIEW_PERFORMANCE_ATOM_COUNT_THRESHOLD - 1;
     const atThreshold = PREVIEW_PERFORMANCE_ATOM_COUNT_THRESHOLD;
     const aboveThreshold = PREVIEW_PERFORMANCE_ATOM_COUNT_THRESHOLD + 1;
 
-    expect(defaultAtomRenderingModeForScene(null)).toBe("mesh");
-    expect(defaultAtomRenderingModeForScene(sceneWithAtomCount(belowThreshold))).toBe("mesh");
-    expect(defaultAtomRenderingModeForScene(sceneWithAtomCount(atThreshold))).toBe("mesh");
+    expect(defaultAtomRenderingModeForScene(null)).toBe("instanced");
+    expect(defaultAtomRenderingModeForScene(sceneWithAtomCount(belowThreshold))).toBe("instanced");
+    expect(defaultAtomRenderingModeForScene(sceneWithAtomCount(atThreshold))).toBe("instanced");
     expect(defaultAtomRenderingModeForScene(sceneWithAtomCount(aboveThreshold))).toBe("instanced");
-    expect(defaultBondRenderingModeForScene(null)).toBe("mesh");
-    expect(defaultBondRenderingModeForScene(sceneWithAtomCount(belowThreshold))).toBe("mesh");
-    expect(defaultBondRenderingModeForScene(sceneWithAtomCount(atThreshold))).toBe("mesh");
+    expect(defaultBondRenderingModeForScene(null)).toBe("batched");
+    expect(defaultBondRenderingModeForScene(sceneWithAtomCount(belowThreshold))).toBe("batched");
+    expect(defaultBondRenderingModeForScene(sceneWithAtomCount(atThreshold))).toBe("batched");
     expect(defaultBondRenderingModeForScene(sceneWithAtomCount(aboveThreshold))).toBe("batched");
 
     expect(defaultPreviewMeshQualityForScene(null)).toBe("medium");
