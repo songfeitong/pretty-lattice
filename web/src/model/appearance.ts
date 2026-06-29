@@ -23,7 +23,7 @@ export interface StyleState {
 }
 
 export const DEFAULT_STYLE: StyleState = {
-  atomRadius: 100,
+  atomRadius: 40,
   atomRadiusModel: "uniform",
   bondColorMode: "by-atom",
   bondThickness: 100,
@@ -40,7 +40,7 @@ export const STYLE_SCALE_MIN: Pick<StyleState, "atomRadius" | "bondThickness"> =
 };
 
 export const STYLE_SCALE_MAX: Pick<StyleState, "atomRadius" | "bondThickness"> = {
-  atomRadius: 200,
+  atomRadius: 100,
   bondThickness: 200,
 };
 

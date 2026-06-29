@@ -898,13 +898,14 @@ describe("App", () => {
     }) as HTMLButtonElement;
 
     expect(atomRadiusSlider.min).toBe("0");
-    expect(atomRadiusSlider.max).toBe("200");
-    expect(atomRadiusSlider.value).toBe("100");
-    expect(atomRadiusInput.value).toBe("100");
+    expect(atomRadiusSlider.max).toBe("100");
+    expect(atomRadiusSlider.value).toBe("40");
+    expect(atomRadiusInput.value).toBe("40");
     expect(atomRadiusInput.parentElement?.textContent).toContain("%");
+    expect(bondThicknessSlider.max).toBe("200");
     expect(bondThicknessSlider.value).toBe("100");
     expect(bondThicknessInput.value).toBe("100");
-    expect(commonControls.querySelectorAll(".opacity-slider-snap-marker")).toHaveLength(2);
+    expect(commonControls.querySelectorAll(".opacity-slider-snap-marker")).toHaveLength(0);
     expect(atomRadiusModelSelect.textContent).toContain("Uniform");
     expect(materialSelect.textContent).toContain("Classic Matte");
     expect(bondStyleSelect.textContent).toContain("By atom");
@@ -955,15 +956,15 @@ describe("App", () => {
     expect(fogStrengthInput.value).toBe("72");
     expect(fogStrengthSlider.value).toBe("72");
 
-    fireEvent.change(atomRadiusSlider, { target: { value: "200" } });
-
-    expect(atomRadiusInput.value).toBe("200");
-    expect(atomRadiusSlider.value).toBe("200");
-
-    fireEvent.change(atomRadiusSlider, { target: { value: "104" } });
+    fireEvent.change(atomRadiusSlider, { target: { value: "100" } });
 
     expect(atomRadiusInput.value).toBe("100");
     expect(atomRadiusSlider.value).toBe("100");
+
+    fireEvent.change(atomRadiusSlider, { target: { value: "44" } });
+
+    expect(atomRadiusInput.value).toBe("44");
+    expect(atomRadiusSlider.value).toBe("44");
 
     await user.clear(bondThicknessInput);
     await user.type(bondThicknessInput, "240{Enter}");
@@ -995,8 +996,8 @@ describe("App", () => {
     await user.click(resetScaleButton);
 
     expect(resetScaleButton.className).toContain("tool-icon-button-reset-feedback");
-    expect(atomRadiusInput.value).toBe("100");
-    expect(atomRadiusSlider.value).toBe("100");
+    expect(atomRadiusInput.value).toBe("40");
+    expect(atomRadiusSlider.value).toBe("40");
     expect(bondThicknessInput.value).toBe("100");
     expect(bondThicknessSlider.value).toBe("100");
     expect(atomRadiusModelSelect.textContent).toContain("vdW");

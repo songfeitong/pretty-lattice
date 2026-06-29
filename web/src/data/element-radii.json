@@ -1,583 +1,583 @@
 {
   "elements": {
     "H": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.46,
       "vdw": 1.2,
       "ionic": 0.2
     },
     "D": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.46,
       "vdw": 1.2,
       "ionic": 0.2
     },
     "He": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.22,
       "vdw": 1.4,
       "ionic": 1.22
     },
     "Li": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.57,
       "vdw": 1.4,
       "ionic": 0.59
     },
     "Be": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.12,
       "vdw": 1.4,
       "ionic": 0.27
     },
     "B": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.81,
       "vdw": 1.4,
       "ionic": 0.11
     },
     "C": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.77,
       "vdw": 1.7,
       "ionic": 0.15
     },
     "N": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.74,
       "vdw": 1.55,
       "ionic": 1.46
     },
     "O": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.74,
       "vdw": 1.52,
       "ionic": 1.4
     },
     "F": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.72,
       "vdw": 1.47,
       "ionic": 1.33
     },
     "Ne": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.6,
       "vdw": 1.54,
       "ionic": 1.6
     },
     "Na": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.91,
       "vdw": 1.54,
       "ionic": 1.02
     },
     "Mg": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.6,
       "vdw": 1.54,
       "ionic": 0.72
     },
     "Al": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.43,
       "vdw": 1.54,
       "ionic": 0.39
     },
     "Si": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.18,
       "vdw": 2.1,
       "ionic": 0.26
     },
     "P": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.1,
       "vdw": 1.8,
       "ionic": 0.17
     },
     "S": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.04,
       "vdw": 1.8,
       "ionic": 1.84
     },
     "Cl": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.99,
       "vdw": 1.75,
       "ionic": 1.81
     },
     "Ar": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.92,
       "vdw": 1.88,
       "ionic": 1.92
     },
     "K": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 2.35,
       "vdw": 1.88,
       "ionic": 1.51
     },
     "Ca": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.97,
       "vdw": 1.88,
       "ionic": 1.12
     },
     "Sc": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.64,
       "vdw": 1.88,
       "ionic": 0.745
     },
     "Ti": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.47,
       "vdw": 1.88,
       "ionic": 0.605
     },
     "V": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.35,
       "vdw": 1.88,
       "ionic": 0.58
     },
     "Cr": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.29,
       "vdw": 1.88,
       "ionic": 0.615
     },
     "Mn": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.37,
       "vdw": 1.88,
       "ionic": 0.83
     },
     "Fe": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.26,
       "vdw": 1.88,
       "ionic": 0.78
     },
     "Co": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.25,
       "vdw": 1.88,
       "ionic": 0.745
     },
     "Ni": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.25,
       "vdw": 1.88,
       "ionic": 0.69
     },
     "Cu": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.28,
       "vdw": 1.88,
       "ionic": 0.73
     },
     "Zn": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.37,
       "vdw": 1.88,
       "ionic": 0.74
     },
     "Ga": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.53,
       "vdw": 1.88,
       "ionic": 0.62
     },
     "Ge": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.22,
       "vdw": 1.88,
       "ionic": 0.53
     },
     "As": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.21,
       "vdw": 1.85,
       "ionic": 0.335
     },
     "Se": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.04,
       "vdw": 1.9,
       "ionic": 1.98
     },
     "Br": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.14,
       "vdw": 1.85,
       "ionic": 1.96
     },
     "Kr": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.98,
       "vdw": 2.02,
       "ionic": 1.98
     },
     "Rb": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 2.5,
       "vdw": 2.02,
       "ionic": 1.61
     },
     "Sr": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 2.15,
       "vdw": 2.02,
       "ionic": 1.26
     },
     "Y": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.82,
       "vdw": 2.02,
       "ionic": 1.019
     },
     "Zr": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.6,
       "vdw": 2.02,
       "ionic": 0.72
     },
     "Nb": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.47,
       "vdw": 2.02,
       "ionic": 0.64
     },
     "Mo": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.4,
       "vdw": 2.02,
       "ionic": 0.59
     },
     "Tc": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.35,
       "vdw": 2.02,
       "ionic": 0.56
     },
     "Ru": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.34,
       "vdw": 2.02,
       "ionic": 0.62
     },
     "Rh": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.34,
       "vdw": 2.02,
       "ionic": 0.665
     },
     "Pd": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.37,
       "vdw": 2.02,
       "ionic": 0.86
     },
     "Ag": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.44,
       "vdw": 2.02,
       "ionic": 1.15
     },
     "Cd": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.52,
       "vdw": 2.02,
       "ionic": 0.95
     },
     "In": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.67,
       "vdw": 2.02,
       "ionic": 0.8
     },
     "Sn": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.58,
       "vdw": 2.02,
       "ionic": 0.69
     },
     "Sb": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.41,
       "vdw": 2.0,
       "ionic": 0.76
     },
     "Te": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.37,
       "vdw": 2.06,
       "ionic": 2.21
     },
     "I": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.33,
       "vdw": 1.98,
       "ionic": 2.2
     },
     "Xe": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 2.18,
       "vdw": 2.16,
       "ionic": 0.48
     },
     "Cs": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 2.72,
       "vdw": 2.16,
       "ionic": 1.74
     },
     "Ba": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 2.24,
       "vdw": 2.16,
       "ionic": 1.42
     },
     "La": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.88,
       "vdw": 2.16,
       "ionic": 1.16
     },
     "Ce": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.82,
       "vdw": 2.16,
       "ionic": 0.97
     },
     "Pr": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.82,
       "vdw": 2.16,
       "ionic": 1.126
     },
     "Nd": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.82,
       "vdw": 2.16,
       "ionic": 1.109
     },
     "Pm": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.81,
       "vdw": 2.16,
       "ionic": 1.093
     },
     "Sm": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.81,
       "vdw": 2.16,
       "ionic": 1.27
     },
     "Eu": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 2.06,
       "vdw": 2.16,
       "ionic": 1.066
     },
     "Gd": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.79,
       "vdw": 2.16,
       "ionic": 1.053
     },
     "Tb": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.77,
       "vdw": 2.16,
       "ionic": 1.04
     },
     "Dy": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.77,
       "vdw": 2.16,
       "ionic": 1.027
     },
     "Ho": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.76,
       "vdw": 2.16,
       "ionic": 1.015
     },
     "Er": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.75,
       "vdw": 2.16,
       "ionic": 1.004
     },
     "Tm": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.0,
       "vdw": 2.16,
       "ionic": 0.994
     },
     "Yb": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.94,
       "vdw": 2.16,
       "ionic": 0.985
     },
     "Lu": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.72,
       "vdw": 2.16,
       "ionic": 0.977
     },
     "Hf": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.59,
       "vdw": 2.16,
       "ionic": 0.71
     },
     "Ta": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.47,
       "vdw": 2.16,
       "ionic": 0.64
     },
     "W": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.41,
       "vdw": 2.16,
       "ionic": 0.6
     },
     "Re": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.37,
       "vdw": 2.16,
       "ionic": 0.53
     },
     "Os": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.35,
       "vdw": 2.16,
       "ionic": 0.63
     },
     "Ir": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.36,
       "vdw": 2.16,
       "ionic": 0.625
     },
     "Pt": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.39,
       "vdw": 2.16,
       "ionic": 0.625
     },
     "Au": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.44,
       "vdw": 2.16,
       "ionic": 1.37
     },
     "Hg": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.55,
       "vdw": 2.16,
       "ionic": 1.02
     },
     "Tl": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.71,
       "vdw": 2.16,
       "ionic": 0.885
     },
     "Pb": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.75,
       "vdw": 2.16,
       "ionic": 1.19
     },
     "Bi": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.82,
       "vdw": 2.16,
       "ionic": 1.03
     },
     "Po": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.77,
       "vdw": 2.16,
       "ionic": 0.94
     },
     "At": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.62,
       "vdw": 2.16,
       "ionic": 0.62
     },
     "Rn": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.8,
       "vdw": 2.16,
       "ionic": 0.8
     },
     "Fr": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.0,
       "vdw": 2.16,
       "ionic": 1.8
     },
     "Ra": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 2.35,
       "vdw": 2.16,
       "ionic": 1.48
     },
     "Ac": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 2.03,
       "vdw": 2.16,
       "ionic": 1.12
     },
     "Th": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.8,
       "vdw": 2.16,
       "ionic": 1.05
     },
     "Pa": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.63,
       "vdw": 2.16,
       "ionic": 0.78
     },
     "U": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.56,
       "vdw": 2.16,
       "ionic": 0.73
     },
     "Np": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.56,
       "vdw": 2.16,
       "ionic": 0.75
     },
     "Pu": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.64,
       "vdw": 2.16,
       "ionic": 0.86
     },
     "Am": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 1.73,
       "vdw": 2.16,
       "ionic": 0.975
     },
     "XX": {
-      "uniform": 0.5,
+      "uniform": 1.0,
       "atomic": 0.8,
       "vdw": 1.0,
       "ionic": 0.8

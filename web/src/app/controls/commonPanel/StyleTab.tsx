@@ -316,7 +316,6 @@ export function StyleTabContent({
             label="Start"
             max={STYLE_FOG_START_MAX}
             min={STYLE_FOG_START_MIN}
-            showSnapMarker={false}
             value={style.fogStart}
             valueLabel="start"
             onValueChange={setFogStart}
@@ -328,7 +327,6 @@ export function StyleTabContent({
             label="Strength"
             max={STYLE_FOG_STRENGTH_MAX}
             min={STYLE_FOG_STRENGTH_MIN}
-            showSnapMarker={false}
             value={style.fogStrength}
             valueLabel="strength"
             onValueChange={setFogStrength}

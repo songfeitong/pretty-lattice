@@ -12,8 +12,6 @@ import { cn } from "@/lib/utils";
 
 import { COMMON_PANEL_BODY_TEXT_CLASS } from "./styles";
 
-const STYLE_SCALE_DEFAULT_VALUE = 100;
-const STYLE_SCALE_SLIDER_SNAP_DISTANCE = 4;
 const COMMON_SLIDER_BLUR_DELAY_MS = 500;
 const OPAQUE_OPACITY_VALUE = 100;
 const OPAQUE_SLIDER_SNAP_DISTANCE = 2;
@@ -26,7 +24,6 @@ export function PercentSliderRow({
   max,
   min,
   onValueChange,
-  showSnapMarker = true,
   value,
   valueLabel = "scale",
 }: {
@@ -37,7 +34,6 @@ export function PercentSliderRow({
   max: number;
   min: number;
   onValueChange: (value: number) => void;
-  showSnapMarker?: boolean;
   value: number;
   valueLabel?: string;
 }) {
@@ -110,11 +106,7 @@ export function PercentSliderRow({
           disabled={disabled}
           ref={sliderBlur.ref}
           onChange={(event) =>
-            onValueChange(
-              showSnapMarker
-                ? snapSliderPercentValue(Number(event.target.value), min, max)
-                : clampPercentValue(Number(event.target.value), min, max),
-            )
+            onValueChange(clampPercentValue(Number(event.target.value), min, max))
           }
           onMouseDown={sliderBlur.handlePointerDown}
           onMouseUp={sliderBlur.handlePointerEnd}
@@ -123,9 +115,6 @@ export function PercentSliderRow({
           onPointerUp={sliderBlur.handlePointerEnd}
         />
         <span aria-hidden="true" className="opacity-slider-track pointer-events-none" />
-        {showSnapMarker ? (
-          <span aria-hidden="true" className="opacity-slider-snap-marker pointer-events-none" />
-        ) : null}
         <span aria-hidden="true" className="opacity-slider-fill pointer-events-none" />
         <span aria-hidden="true" className="opacity-slider-thumb pointer-events-none" />
       </div>
@@ -241,19 +230,6 @@ export function clampPercentValue(value: number, min: number, max: number): numb
   }
 
   return Math.min(max, Math.max(min, Math.round(value)));
-}
-
-export function snapSliderPercentValue(value: number, min: number, max: number): number {
-  const clampedValue = clampPercentValue(value, min, max);
-  if (
-    min <= STYLE_SCALE_DEFAULT_VALUE &&
-    max >= STYLE_SCALE_DEFAULT_VALUE &&
-    Math.abs(clampedValue - STYLE_SCALE_DEFAULT_VALUE) <= STYLE_SCALE_SLIDER_SNAP_DISTANCE
-  ) {
-    return STYLE_SCALE_DEFAULT_VALUE;
-  }
-
-  return clampedValue;
 }
 
 export function percentValueToLinearSliderPosition(value: number, min: number, max: number): number {

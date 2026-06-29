@@ -8,7 +8,7 @@ import {
 
 describe("element radii", () => {
   test("resolves VESTA-compatible display radii in the frontend", () => {
-    expect(elementRadiusForModel("O", "uniform")).toBeCloseTo(0.5);
+    expect(elementRadiusForModel("O", "uniform")).toBeCloseTo(1);
     expect(elementRadiusForModel("O", "atomic")).toBeCloseTo(0.74);
     expect(elementRadiusForModel("O", "vdw")).toBeCloseTo(1.52);
     expect(elementRadiusForModel("O", "ionic")).toBeCloseTo(1.4);

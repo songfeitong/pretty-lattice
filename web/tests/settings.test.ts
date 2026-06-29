@@ -57,9 +57,9 @@ describe("settings", () => {
     expect(defaultPreviewMeshQualityForScene(sceneWithAtomCount(aboveThreshold))).toBe("low");
   });
 
-  test("defaults style controls to global 100 percent and by-atom bonds", () => {
+  test("defaults style controls to 40 percent atoms, 100 percent bonds, and by-atom bonds", () => {
     expect(createDefaultStyle()).toEqual({
-      atomRadius: 100,
+      atomRadius: 40,
       atomRadiusModel: "uniform",
       bondColorMode: "by-atom",
       bondThickness: 100,
@@ -74,6 +74,7 @@ describe("settings", () => {
     expect(STYLE_FOG_STRENGTH_MIN).toBe(0);
     expect(STYLE_FOG_STRENGTH_MAX).toBe(100);
     expect(STYLE_SCALE_MIN.atomRadius).toBe(0);
+    expect(STYLE_SCALE_MAX.atomRadius).toBe(100);
     expect(STYLE_SCALE_MAX.bondThickness).toBe(200);
   });
 

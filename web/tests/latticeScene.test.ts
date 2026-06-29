@@ -429,7 +429,7 @@ describe("computeSceneLayout", () => {
         showUnitCell: false,
         style,
       }),
-    ).toBeCloseTo(2);
+    ).toBeCloseTo(2.25);
     expect(
       computeStructureExportAspectRatio({
         cameraPose,
@@ -439,7 +439,7 @@ describe("computeSceneLayout", () => {
         showUnitCell: false,
         style,
       }),
-    ).toBeCloseTo(2 / 3);
+    ).toBeCloseTo(9 / 14);
   });
 
   test("builds polyhedron geometry from returned hull atoms and faces", () => {
