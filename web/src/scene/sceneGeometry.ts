@@ -3,7 +3,7 @@ import { Vector3 } from "three";
 export { atomRadiusForModel } from "../model/elementRadii";
 import { withDefaultCellVectors, type VectorTuple } from "./viewMath";
 
-export const BOND_RADIUS = 0.14;
+export const BOND_RADIUS = 0.125;
 export const CELL_FRAME_COLOR = "#444444";
 export const CELL_FRAME_LINE_WIDTH_PIXELS = 1;
 

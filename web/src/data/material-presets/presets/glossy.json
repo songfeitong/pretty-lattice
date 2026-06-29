@@ -5,7 +5,7 @@
   "material": {
     "kind": "standard",
     "metalness": 0.0,
-    "roughness": 0.25,
+    "roughness": 0.2,
     "flatShading": false
   },
   "lighting": {

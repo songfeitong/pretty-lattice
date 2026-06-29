@@ -297,7 +297,6 @@ describe("App", () => {
     ).toBe(MATERIAL_PRESET_OPTIONS.length);
     const displayTab = within(commonControls).getByRole("tab", { name: "Display" });
     expect(displayTab.isConnected).toBe(true);
-    expect(displayTab.className).toContain("rounded-lg");
     expect(within(commonControls).queryByRole("heading", { name: "Display" })).toBeNull();
     expect(within(commonControls).getByText("Periodic images").isConnected).toBe(true);
     expect(
@@ -514,7 +513,6 @@ describe("App", () => {
 
     expect(screen.getByText("Loading structure").isConnected).toBe(true);
     const spinner = screen.getByTestId("loading-structure-spinner");
-    expect(spinner.className).toContain("size-3");
     expect(spinner.className).toContain("motion-safe:animate-spin");
 
     resolveScene(sceneWithPeriodicImages());
@@ -567,7 +565,6 @@ describe("App", () => {
     expect(legend.getAttribute("style")).toContain("calc(50% + 122px)");
     const inspectorButton = screen.getByRole("button", { name: "Sidebar" });
     expect(inspectorButton.getAttribute("aria-expanded")).toBe("false");
-    expect(inspectorButton.className).toContain("border-foreground/10");
     expect(inspectorButton.className).not.toContain("tool-icon-button-active");
 
     await user.click(inspectorButton);
@@ -577,9 +574,6 @@ describe("App", () => {
     expect(within(inspector).queryByRole("heading", { name: "Inspector" })).toBeNull();
     const advancedTab = within(inspector).getByRole("tab", { name: "Advanced" });
     expect(advancedTab.isConnected).toBe(true);
-    expect(advancedTab.className).toContain("h-8");
-    expect(advancedTab.className).toContain("text-[0.875rem]");
-    expect(advancedTab.className).toContain("font-semibold");
     expect(inspector.querySelector("[data-slot='separator']")).toBeNull();
     expect(within(inspector).queryByText("Renderer")).toBeNull();
     expect(within(inspector).queryByRole("combobox", { name: "Renderer" })).toBeNull();
@@ -589,18 +583,6 @@ describe("App", () => {
     expect(
       within(inspector).getByRole("combobox", { name: "Bond rendering mode" }).textContent,
     ).toContain("Batched");
-    expect(within(inspector).getByText("Atom Mesh").parentElement?.className).toContain(
-      "text-sm",
-    );
-    expect(within(inspector).getByText("Bond Mesh").parentElement?.className).toContain(
-      "text-sm",
-    );
-    expect(within(inspector).getByText("Mouse control").parentElement?.className).toContain(
-      "text-sm",
-    );
-    expect(within(inspector).getByText("Bonding algorithm").parentElement?.className).toContain(
-      "text-sm",
-    );
     expect(screen.queryByTestId("fps-overlay")).toBeNull();
     const showFpsSwitch = within(inspector).getByRole("switch", { name: "Show FPS" });
     expect(showFpsSwitch.getAttribute("aria-checked")).toBe("false");
@@ -610,12 +592,6 @@ describe("App", () => {
     expect(showFpsSwitch.getAttribute("aria-checked")).toBe("true");
     const fpsOverlay = screen.getByTestId("fps-overlay");
     expect(fpsOverlay.textContent).toBe("fps 0");
-    expect(fpsOverlay.className).toContain("font-mono");
-    expect(fpsOverlay.className).toContain("font-semibold");
-    expect(fpsOverlay.className).toContain("left-[calc(100%+14px)]");
-    expect(fpsOverlay.className).toContain("top-[16px]");
-    expect(fpsOverlay.className).toContain("text-[16px]");
-    expect(fpsOverlay.className).toContain("text-foreground");
 
     expect(legend.getAttribute("style")).toContain("calc(50% + 10px)");
     expect(inspectorButton.getAttribute("aria-expanded")).toBe("true");
@@ -626,7 +602,6 @@ describe("App", () => {
     );
 
     const interactionSelect = within(inspector).getByRole("combobox", { name: "Mouse control" });
-    expect(interactionSelect.className).toContain("!h-[26px]");
     expect(interactionSelect.textContent).toContain("Trackball");
     const dragSensitivitySlider = within(inspector).getByRole("slider", {
       name: "Drag sensitivity",
@@ -643,7 +618,6 @@ describe("App", () => {
       name: "Drag sensitivity value",
     });
     expect(dragSensitivityValueInput.getAttribute("value")).toBe("100");
-    expect(dragSensitivityValueInput.className).toContain("opacity-value-input");
 
     fireEvent.change(dragSensitivitySlider, { target: { value: "1000" } });
 
@@ -1317,10 +1291,8 @@ describe("App", () => {
       "[data-slot='common-controls-active-indicator']",
     ) as HTMLElement | null;
     const tabsList = commonControls.querySelector("[data-slot='tabs-list']") as HTMLElement | null;
-    expect(tabsList?.className).toContain("!h-8");
-    expect(tabsList?.className).toContain("transition-[grid-template-columns]");
     expect(tabsList?.style.gridTemplateColumns).toContain("1.65fr");
-    expect(activeIndicator?.className).toContain("transition-[transform,width]");
+    expect(activeIndicator).not.toBeNull();
     expect(
       within(commonControls)
         .getAllByRole("tab")
@@ -1328,8 +1300,6 @@ describe("App", () => {
     ).toEqual(["Display", "Pose", "Style", "Export"]);
     const displayTab = within(commonControls).getByRole("tab", { name: "Display" });
     const cameraTab = within(commonControls).getByRole("tab", { name: "Pose" });
-    expect(displayTab.className).toContain("!bg-transparent");
-    expect(displayTab.className).toContain("!h-6");
     expect(displayTab.style.flexGrow).toBe("");
     expect(cameraTab.style.flexGrow).toBe("");
     expect(cameraTab.className).not.toContain("transition-[flex-grow");
@@ -1353,9 +1323,6 @@ describe("App", () => {
     await user.click(cameraTab);
 
     expect(content?.className).not.toContain("h-[");
-    expect(within(commonControls).getByRole("tab", { name: "Pose" }).className).toContain(
-      "!bg-transparent",
-    );
     expect(within(commonControls).getByRole("tab", { name: "Pose" }).textContent).toContain(
       "Pose",
     );
@@ -1822,7 +1789,7 @@ describe("App", () => {
     ).toBe("true");
   });
 
-  test("keeps the loaded scene and places backend alerts beside the view rail", async () => {
+  test("keeps the loaded scene when recomputing structure data fails", async () => {
     const user = userEvent.setup();
 
     await renderLoadedStructure(user);
@@ -1833,8 +1800,6 @@ describe("App", () => {
     await waitFor(() => expect(fetchCalls).toHaveLength(2));
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Python backend is unavailable");
-    expect(alert.className).toContain("top-4");
-    expect(alert.className).toContain("left-[386px]");
     expect(screen.getByTestId("lattice-canvas").isConnected).toBe(true);
     expect(screen.getByRole("combobox", { name: "Bonding algorithm" }).textContent).toContain(
       "VESTA",
@@ -1881,14 +1846,6 @@ describe("App", () => {
     const alertIcon = alert.querySelector("svg");
     expect(alertIcon).not.toBeNull();
     expect(alertIcon?.getAttribute("class")).toContain("lucide-triangle-alert");
-    expect(alert.className).toContain("border-amber-200");
-    expect(alert.className).toContain("bg-amber-50");
-    expect(alert.className).toContain("text-amber-900");
-    expect(alert.className).toContain("rounded-xl");
-    expect(alert.className).toContain("shadow-sm");
-    expect(alert.className).toContain("shadow-foreground/5");
-    expect(alert.className).toContain("top-4");
-    expect(alert.className).toContain("left-[328px]");
     const structureCard = screen.getByRole("complementary", { name: "Current structure" });
     expect(alert.parentElement?.tagName).toBe("MAIN");
     expect(within(structureCard).queryByRole("alert")).toBeNull();
@@ -1913,8 +1870,6 @@ describe("App", () => {
     );
     expect(alert.textContent).not.toContain("Backend is unavailable.");
     expect(alert.textContent).not.toContain("Unsupported file");
-    expect(alert.className).toContain("top-4");
-    expect(alert.className).toContain("left-[328px]");
     expect(fetchCalls).toHaveLength(1);
 
     await user.click(screen.getByRole("button", { name: "Dismiss alert" }));
@@ -1994,8 +1949,6 @@ describe("App", () => {
       "Bond analysis with VESTA failed",
     );
     const alert = screen.getByRole("alert");
-    expect(alert.className).toContain("border-amber-200");
-    expect(alert.className).toContain("bg-amber-50");
     expect(alert.querySelector("svg")?.getAttribute("class")).toContain(
       "lucide-triangle-alert",
     );

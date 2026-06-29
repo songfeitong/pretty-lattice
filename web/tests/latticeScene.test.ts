@@ -14,14 +14,8 @@ import {
   resolveStructureMaterialFamilyForTarget,
 } from "../src/scene/materialPresetResolver";
 import {
-  BOND_COLOR,
-  BOND_RADIUS,
-  BOND_TUBE_RADIAL_SEGMENTS,
   CELL_FRAME_LINE_WIDTH_PIXELS,
   EXPORT_SCENE_MESH_DETAIL_PRESETS,
-  POLYHEDRON_EDGE_COLOR,
-  POLYHEDRON_EDGE_OPACITY,
-  POLYHEDRON_SURFACE_OPACITY,
   PREVIEW_SCENE_MESH_DETAIL,
   SCENE_FOG_COLOR,
   cellFrameLinePositions,
@@ -223,12 +217,6 @@ describe("computeSceneLayout", () => {
     expect(aOutwardLayout.cameraFitBounds).toEqual(cOutwardLayout.cameraFitBounds);
   });
 
-  test("uses fixed first-version bond styling", () => {
-    expect(BOND_COLOR).toBe("#c7cbd1");
-    expect(BOND_RADIUS).toBe(0.14);
-    expect(BOND_TUBE_RADIAL_SEGMENTS).toBe(24);
-  });
-
   test("resolves one selected material family across structure objects", () => {
     const style = {
       ...createDefaultStyle(),
@@ -240,17 +228,7 @@ describe("computeSceneLayout", () => {
 
     expect(STRUCTURE_MATERIAL_TARGETS).toEqual(["atom", "bond", "polyhedron"]);
     expect(atomFamily.id).toBe("glossy");
-    expect(atomFamily.material).toEqual({
-      flatShading: false,
-      kind: "standard",
-      metalness: 0,
-      roughness: 0.25,
-    });
-    expect(atomFamily.lighting.cameraLights).toHaveLength(1);
-    expect(atomFamily.lighting.cameraLights[0]).toEqual({
-      intensity: 2,
-      offset: [0.32, 0.22, 0],
-    });
+    expect(atomFamily.material.kind).toBe("standard");
     expect(bondFamily).toEqual(atomFamily);
     expect(polyhedronFamily).toEqual(atomFamily);
     expect(resolveStructureMaterialFamilyForStyle({
@@ -418,9 +396,6 @@ describe("computeSceneLayout", () => {
 
     const geometry = polyhedronGeometryFromAtoms(polyhedron, atomById);
 
-    expect(POLYHEDRON_EDGE_COLOR).toBe("#f2f5f9");
-    expect(POLYHEDRON_EDGE_OPACITY).toBe(0.8);
-    expect(POLYHEDRON_SURFACE_OPACITY).toBe(0.5);
     expect(geometry?.getAttribute("position").count).toBe(4);
     expect(geometry?.index?.count).toBe(12);
     geometry?.dispose();

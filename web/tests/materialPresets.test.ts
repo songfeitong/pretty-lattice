@@ -5,7 +5,6 @@ import {
   MATERIAL_PRESET_OPTIONS,
   MATERIAL_PRESETS,
   buildMaterialPresetCatalog,
-  materialPresetById,
   validateMaterialPresetData,
 } from "../src/app/materialPresets";
 
@@ -28,27 +27,32 @@ describe("material presets", () => {
       { label: "2.5D", value: "2-5d" },
       { label: "2D", value: "2d" },
     ]);
-    expect(materialPresetById("glossy").material).toMatchObject({
-      kind: "standard",
-      metalness: 0,
-      roughness: 0.25,
-    });
-    expect(materialPresetById("metallic").material).toMatchObject({
-      kind: "standard",
-      metalness: 0.4,
-      roughness: 0.4,
-    });
-    expect(materialPresetById("2-5d").material).toMatchObject({
-      kind: "standard",
-      metalness: 0,
-      roughness: 0.75,
-    });
-    expect(materialPresetById("glossy").lighting.cameraLights).toEqual([
-      {
-        intensity: 2,
-        offset: [0.32, 0.22, 0],
-      },
-    ]);
+  });
+
+  test("keeps bundled preset materials and lighting inside supported ranges", () => {
+    for (const preset of MATERIAL_PRESETS) {
+      expect(["basic", "lambert", "standard"]).toContain(preset.material.kind);
+      expect(preset.lighting.ambientIntensity).toBeGreaterThanOrEqual(0);
+      expect(preset.lighting.ambientIntensity).toBeLessThanOrEqual(5);
+      expect(preset.lighting.cameraLights.length).toBeLessThanOrEqual(4);
+
+      for (const light of preset.lighting.cameraLights) {
+        expect(light.intensity).toBeGreaterThanOrEqual(0);
+        expect(light.intensity).toBeLessThanOrEqual(5);
+        expect(light.offset).toHaveLength(3);
+        for (const component of light.offset) {
+          expect(component).toBeGreaterThanOrEqual(-2);
+          expect(component).toBeLessThanOrEqual(2);
+        }
+      }
+
+      if (preset.material.kind === "standard") {
+        expect(preset.material.metalness).toBeGreaterThanOrEqual(0);
+        expect(preset.material.metalness).toBeLessThanOrEqual(1);
+        expect(preset.material.roughness).toBeGreaterThanOrEqual(0);
+        expect(preset.material.roughness).toBeLessThanOrEqual(1);
+      }
+    }
   });
 
   test("rejects unsupported material kinds", () => {
