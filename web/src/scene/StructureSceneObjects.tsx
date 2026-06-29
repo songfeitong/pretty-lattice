@@ -151,15 +151,12 @@ export function PreviewSceneContent({
   unitCellLineStyle?: UnitCellLineStyle;
   unitCellLineWidthScale?: number;
 }) {
-  const atomById = useMemo(() => new Map(scene.atoms.map((atom) => [atom.id, atom])), [scene]);
-
   return (
     <>
       <SceneFog layout={layout} style={style} />
       <MemoizedStructureSceneObjects
         atomRenderingMode={atomRenderingMode}
         bondRenderingMode={bondRenderingMode}
-        atomById={atomById}
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}
         materialFamily={materialFamily}
@@ -279,7 +276,6 @@ function lerp(start: number, end: number, amount: number): number {
 }
 
 export function StructureSceneObjects({
-  atomById,
   atomRenderingMode = "mesh",
   bondRenderingMode = "mesh",
   componentOpacity,
@@ -302,7 +298,6 @@ export function StructureSceneObjects({
   unitCellLineStyle = "solid",
   unitCellLineWidthScale = 1,
 }: {
-  atomById: Map<string, AtomSpec>;
   atomRenderingMode?: AtomRenderingMode;
   bondRenderingMode?: BondRenderingMode;
   componentOpacity: ComponentOpacityState;
@@ -346,10 +341,10 @@ export function StructureSceneObjects({
             vectors={scene.cell.vectors}
           />
         ) : null}
-        {scene.polyhedra.map((polyhedron) => (
+        {scene.polyhedra.map((polyhedron, polyhedronIndex) => (
           <MemoizedPolyhedron
-            key={polyhedron.id}
-            atomById={atomById}
+            key={polyhedronIndex}
+            atoms={scene.atoms}
             colorScheme={style.colorScheme}
             materialFamily={materialFamily}
             opacity={componentOpacity.polyhedra / 100}
@@ -359,7 +354,7 @@ export function StructureSceneObjects({
         ))}
         {bondRenderingMode === "batched" ? (
           <BatchedBonds
-            atomById={atomById}
+            atoms={scene.atoms}
             bonds={scene.bonds}
             colorMode={style.bondColorMode}
             colorScheme={style.colorScheme}
@@ -369,10 +364,10 @@ export function StructureSceneObjects({
             opacity={componentOpacity.bonds / 100}
           />
         ) : (
-          scene.bonds.map((bond) => (
+          scene.bonds.map((bond, bondIndex) => (
             <MemoizedBond
-              key={bond.id}
-              atomById={atomById}
+              key={bondIndex}
+              atoms={scene.atoms}
               bond={bond}
               colorMode={style.bondColorMode}
               colorScheme={style.colorScheme}
@@ -771,9 +766,10 @@ function AtomHighlightAnimator({
 interface BondBatchItem {
   center: Vector3;
   endColor: string;
-  id: string;
   length: number;
   quaternion: Quaternion;
+  startAtomIndex: number;
+  endAtomIndex: number;
   startColor: string;
 }
 
@@ -789,7 +785,7 @@ interface BondBatchBuild {
 }
 
 function BatchedBonds({
-  atomById,
+  atoms,
   bonds,
   colorMode,
   colorScheme,
@@ -798,7 +794,7 @@ function BatchedBonds({
   opacity,
   thicknessScale,
 }: {
-  atomById: Map<string, AtomSpec>;
+  atoms: AtomSpec[];
   bonds: BondSpec[];
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
@@ -814,7 +810,7 @@ function BatchedBonds({
   const batch = useMemo(
     () =>
       createBondBatchBuild({
-        atomById,
+        atoms,
         bonds,
         colorMode,
         colorScheme,
@@ -822,7 +818,7 @@ function BatchedBonds({
         radius: BOND_RADIUS * thicknessScale,
       }),
     [
-      atomById,
+      atoms,
       bonds,
       colorMode,
       colorScheme,
@@ -880,14 +876,14 @@ function BatchedBonds({
 }
 
 function createBondBatchBuild({
-  atomById,
+  atoms,
   bonds,
   colorMode,
   colorScheme,
   radialSegments,
   radius,
 }: {
-  atomById: Map<string, AtomSpec>;
+  atoms: AtomSpec[];
   bonds: BondSpec[];
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
@@ -896,7 +892,7 @@ function createBondBatchBuild({
 }): BondBatchBuild | null {
   const segments = Math.max(3, Math.floor(radialSegments));
   const items = bondBatchItems({
-    atomById,
+    atoms,
     bonds,
     colorMode,
     colorScheme,
@@ -939,12 +935,12 @@ function createBondBatchBuild({
 }
 
 function bondBatchItems({
-  atomById,
+  atoms,
   bonds,
   colorMode,
   colorScheme,
 }: {
-  atomById: Map<string, AtomSpec>;
+  atoms: AtomSpec[];
   bonds: BondSpec[];
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
@@ -952,8 +948,8 @@ function bondBatchItems({
   const items: BondBatchItem[] = [];
 
   for (const bond of bonds) {
-    const startAtom = atomById.get(bond.startAtomId);
-    const endAtom = atomById.get(bond.endAtomId);
+    const startAtom = atoms[bond.startAtomIndex];
+    const endAtom = atoms[bond.endAtomIndex];
     if (!startAtom || !endAtom) {
       continue;
     }
@@ -970,12 +966,13 @@ function bondBatchItems({
       center: start.clone().add(end).multiplyScalar(0.5),
       endColor:
         colorMode === "by-atom" ? atomColorForScheme(endAtom, colorScheme) : BOND_COLOR,
-      id: bond.id,
       length,
       quaternion: new Quaternion().setFromUnitVectors(
         new Vector3(0, 1, 0),
         direction.clone().normalize(),
       ),
+      startAtomIndex: bond.startAtomIndex,
+      endAtomIndex: bond.endAtomIndex,
       startColor:
         colorMode === "by-atom" ? atomColorForScheme(startAtom, colorScheme) : BOND_COLOR,
     });
@@ -1057,7 +1054,8 @@ function bondBatchKey({
     hash = hashString(
       [
         hash,
-        item.id,
+        item.startAtomIndex,
+        item.endAtomIndex,
         item.length,
         item.center.toArray().join(","),
         item.quaternion.toArray().join(","),
@@ -1079,7 +1077,7 @@ function hashString(value: string): number {
 }
 
 function Bond({
-  atomById,
+  atoms,
   bond,
   colorMode,
   colorScheme,
@@ -1088,7 +1086,7 @@ function Bond({
   opacity,
   thicknessScale,
 }: {
-  atomById: Map<string, AtomSpec>;
+  atoms: AtomSpec[];
   bond: BondSpec;
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
@@ -1098,8 +1096,8 @@ function Bond({
   thicknessScale: number;
 }) {
   const geometry = useMemo(() => {
-    const startAtom = atomById.get(bond.startAtomId);
-    const endAtom = atomById.get(bond.endAtomId);
+    const startAtom = atoms[bond.startAtomIndex];
+    const endAtom = atoms[bond.endAtomIndex];
     if (!startAtom || !endAtom) {
       return null;
     }
@@ -1125,7 +1123,7 @@ function Bond({
       quaternion,
       startColor: atomColorForScheme(startAtom, colorScheme),
     };
-  }, [atomById, bond.endAtomId, bond.startAtomId, colorScheme]);
+  }, [atoms, bond.endAtomIndex, bond.startAtomIndex, colorScheme]);
 
   if (!geometry) {
     return null;
@@ -1263,14 +1261,14 @@ function BondCylinder({
 }
 
 function Polyhedron({
-  atomById,
+  atoms,
   colorScheme,
   lineWidthScale,
   materialFamily,
   opacity,
   polyhedron,
 }: {
-  atomById: Map<string, AtomSpec>;
+  atoms: AtomSpec[];
   colorScheme: StyleState["colorScheme"];
   lineWidthScale: number;
   materialFamily: ResolvedStructureMaterialFamily;
@@ -1278,10 +1276,10 @@ function Polyhedron({
   polyhedron: PolyhedronSpec;
 }) {
   const geometry = useMemo(
-    () => polyhedronGeometryFromAtoms(polyhedron, atomById),
-    [atomById, polyhedron],
+    () => polyhedronGeometryFromAtoms(polyhedron, atoms),
+    [atoms, polyhedron],
   );
-  const centerAtom = atomById.get(polyhedron.centerAtomId);
+  const centerAtom = atoms[polyhedron.centerAtomIndex];
   const color = centerAtom
     ? atomColorForScheme(centerAtom, colorScheme)
     : POLYHEDRON_EDGE_COLOR;

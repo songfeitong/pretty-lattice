@@ -302,9 +302,9 @@ describe("settings", () => {
       "Na-0-image-1-0-0",
       "Cl-1",
     ]);
-    expect(visibleScene?.bonds.map((bond) => bond.id)).toEqual([
-      "bond-canonical",
-      "bond-boundary-canonical",
+    expect(bondAtomIds(visibleScene)).toEqual([
+      "Na-0--Cl-1",
+      "Na-0-image-1-0-0--Cl-1",
     ]);
     expect(visibleScene?.polyhedra).toEqual([]);
 
@@ -319,11 +319,11 @@ describe("settings", () => {
       "Cl-1-image-0--1-0",
       "Cl-1-image-1-1-0",
     ]);
-    expect(withOneHop?.bonds.map((bond) => bond.id)).toEqual([
-      "bond-canonical",
-      "bond-boundary-canonical",
-      "bond-one-hop",
-      "bond-boundary-source",
+    expect(bondAtomIds(withOneHop)).toEqual([
+      "Na-0--Cl-1",
+      "Na-0-image-1-0-0--Cl-1",
+      "Na-0--Cl-1-image-0--1-0",
+      "Na-0-image-1-0-0--Cl-1-image-1-1-0",
     ]);
 
     const withPolyhedra = visibleSceneForComponents(scene, {
@@ -331,11 +331,11 @@ describe("settings", () => {
       polyhedra: true,
       oneHopBondedAtoms: true,
     });
-    expect(withPolyhedra?.polyhedra.map((polyhedron) => polyhedron.id)).toEqual([
-      "polyhedron-canonical",
-      "polyhedron-boundary",
-      "polyhedron-one-hop",
-      "polyhedron-boundary-one-hop",
+    expect(polyhedronAtomIds(withPolyhedra)).toEqual([
+      "Na-0--Cl-1",
+      "Na-0--Na-0-image-1-0-0--Cl-1",
+      "Na-0--Cl-1-image-0--1-0--Cl-1",
+      "Na-0-image-1-0-0--Cl-1-image-1-1-0--Cl-1",
     ]);
 
     const withoutBoundary = visibleSceneForComponents(scene, {
@@ -349,13 +349,13 @@ describe("settings", () => {
       "Cl-1",
       "Cl-1-image-0--1-0",
     ]);
-    expect(withoutBoundary?.bonds.map((bond) => bond.id)).toEqual([
-      "bond-canonical",
-      "bond-one-hop",
+    expect(bondAtomIds(withoutBoundary)).toEqual([
+      "Na-0--Cl-1",
+      "Na-0--Cl-1-image-0--1-0",
     ]);
-    expect(withoutBoundary?.polyhedra.map((polyhedron) => polyhedron.id)).toEqual([
-      "polyhedron-canonical",
-      "polyhedron-one-hop",
+    expect(polyhedronAtomIds(withoutBoundary)).toEqual([
+      "Na-0--Cl-1",
+      "Na-0--Cl-1-image-0--1-0--Cl-1",
     ]);
 
     const withoutOneHop = visibleSceneForComponents(scene, {
@@ -368,13 +368,13 @@ describe("settings", () => {
       "Na-0-image-1-0-0",
       "Cl-1",
     ]);
-    expect(withoutOneHop?.bonds.map((bond) => bond.id)).toEqual([
-      "bond-canonical",
-      "bond-boundary-canonical",
+    expect(bondAtomIds(withoutOneHop)).toEqual([
+      "Na-0--Cl-1",
+      "Na-0-image-1-0-0--Cl-1",
     ]);
-    expect(withoutOneHop?.polyhedra.map((polyhedron) => polyhedron.id)).toEqual([
-      "polyhedron-canonical",
-      "polyhedron-boundary",
+    expect(polyhedronAtomIds(withoutOneHop)).toEqual([
+      "Na-0--Cl-1",
+      "Na-0--Na-0-image-1-0-0--Cl-1",
     ]);
 
     const withoutBonds = visibleSceneForComponents(scene, {
@@ -450,43 +450,35 @@ function sceneWithPeriodicImages(): SceneSpec {
     ],
     bonds: [
       {
-        id: "bond-canonical",
-        startAtomId: "Na-0",
-        endAtomId: "Cl-1",
+        startAtomIndex: 0,
+        endAtomIndex: 2,
         visibilityDependencies: [],
         visibilityDependencyGroups: [],
       },
       {
-        id: "bond-boundary-canonical",
-        startAtomId: "Na-0-image-1-0-0",
-        endAtomId: "Cl-1",
+        startAtomIndex: 1,
+        endAtomIndex: 2,
         visibilityDependencies: ["boundaryAtoms", "oneHopBondedAtoms"],
         visibilityDependencyGroups: [["boundaryAtoms", "oneHopBondedAtoms"]],
       },
       {
-        id: "bond-one-hop",
-        startAtomId: "Na-0",
-        endAtomId: "Cl-1-image-0--1-0",
+        startAtomIndex: 0,
+        endAtomIndex: 3,
         visibilityDependencies: ["oneHopBondedAtoms"],
         visibilityDependencyGroups: [["oneHopBondedAtoms"]],
       },
       {
-        id: "bond-boundary-source",
-        startAtomId: "Na-0-image-1-0-0",
-        endAtomId: "Cl-1-image-1-1-0",
+        startAtomIndex: 1,
+        endAtomIndex: 4,
         visibilityDependencies: ["boundaryAtoms", "oneHopBondedAtoms"],
         visibilityDependencyGroups: [["boundaryAtoms", "oneHopBondedAtoms"]],
       },
     ],
     polyhedra: [
-      polyhedron("polyhedron-canonical", ["Na-0", "Cl-1"]),
-      polyhedron("polyhedron-boundary", ["Na-0", "Na-0-image-1-0-0", "Cl-1"]),
-      polyhedron("polyhedron-one-hop", ["Na-0", "Cl-1-image-0--1-0", "Cl-1"]),
-      polyhedron("polyhedron-boundary-one-hop", [
-        "Na-0-image-1-0-0",
-        "Cl-1-image-1-1-0",
-        "Cl-1",
-      ]),
+      polyhedron([0, 2]),
+      polyhedron([0, 1, 2]),
+      polyhedron([0, 3, 2]),
+      polyhedron([1, 4, 2]),
     ],
     cell: {
       vectors: [
@@ -530,12 +522,31 @@ function sceneWithAtomCount(atomCount: number): SceneSpec {
   };
 }
 
-function polyhedron(id: string, hullAtomIds: string[]): SceneSpec["polyhedra"][number] {
+function bondAtomIds(scene: SceneSpec | null): string[] {
+  if (!scene) {
+    return [];
+  }
+
+  return scene.bonds.map(
+    (bond) => `${scene.atoms[bond.startAtomIndex]?.id}--${scene.atoms[bond.endAtomIndex]?.id}`,
+  );
+}
+
+function polyhedronAtomIds(scene: SceneSpec | null): string[] {
+  if (!scene) {
+    return [];
+  }
+
+  return scene.polyhedra.map((polyhedron) =>
+    polyhedron.hullAtomIndices.map((atomIndex) => scene.atoms[atomIndex]?.id).join("--"),
+  );
+}
+
+function polyhedron(hullAtomIndices: number[]): SceneSpec["polyhedra"][number] {
   return {
-    id,
-    centerAtomId: hullAtomIds[0]!,
-    hullAtomIds,
-    faces: hullAtomIds.length >= 3 ? [[0, 1, 2]] : [],
+    centerAtomIndex: hullAtomIndices[0]!,
+    hullAtomIndices,
+    faces: hullAtomIndices.length >= 3 ? [[0, 1, 2]] : [],
     visibilityDependencies: [],
     visibilityDependencyGroups: [],
   };

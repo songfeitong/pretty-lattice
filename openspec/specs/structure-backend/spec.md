@@ -194,14 +194,14 @@ The Python backend SHALL generate preview polyhedron records from the same selec
 
 ### Requirement: Backend returns renderable polyhedron geometry
 
-The backend SHALL return each polyhedron as renderable geometry data containing a stable ID, center atom ID, ordered hull atom IDs, triangular face indices, color, and visibility-dependency metadata. The ordered hull atom IDs SHALL include the center atom instance followed by the drawn connected atom instances used as the hull input, matching Crystal Toolkit's center-plus-neighbor position set. Face indices SHALL refer to positions in the ordered hull atom ID list.
+The backend SHALL return each polyhedron as renderable geometry data containing a center atom index, ordered hull atom indices, triangular face indices, color, and visibility-dependency metadata. The ordered hull atom indices SHALL include the center atom instance followed by the drawn connected atom instances used as the hull input, matching Crystal Toolkit's center-plus-neighbor position set. Face indices SHALL refer to positions in the ordered hull atom index list.
 
-#### Scenario: Return hull atom IDs and faces
+#### Scenario: Return hull atom indices and faces
 
 - **WHEN** a candidate coordination environment produces a valid convex hull
-- **THEN** the scene response includes a polyhedron record with the center atom ID
-- **AND** the record includes ordered hull atom IDs with the center atom first
-- **AND** the record includes triangular face indices into that ordered hull atom ID list
+- **THEN** the scene response includes a polyhedron record with the center atom index
+- **AND** the record includes ordered hull atom indices with the center atom first
+- **AND** the record includes triangular face indices into that ordered hull atom index list
 
 #### Scenario: Use center color
 

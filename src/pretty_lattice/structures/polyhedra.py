@@ -7,7 +7,6 @@ from pretty_lattice.structures.connectivity import ConnectedAtom, ConnectivityRe
 from pretty_lattice.structures.periodic_images import (
     AtomKey,
     AtomRecord,
-    atom_instance_id,
     atom_record_cartesian_position,
     site_specie,
 )
@@ -21,6 +20,7 @@ from pretty_lattice.structures.visibility import (
 
 def build_polyhedra(
     *,
+    atom_index_by_key: dict[AtomKey, int],
     atom_records: dict[AtomKey, AtomRecord],
     cell_vectors: list[list[float]],
     connectivity: ConnectivityResult,
@@ -47,9 +47,14 @@ def build_polyhedra(
             continue
 
         hull_atoms = [center_atom, *(atom for _, atom in drawn_connected_atoms)]
-        hull_atom_ids = [
-            atom_instance_id(atom.site.site_id, atom.image_offset) for atom in hull_atoms
+        hull_keys = [
+            source_key,
+            *(connected_atom.target_key for connected_atom, _ in drawn_connected_atoms),
         ]
+        try:
+            hull_atom_indices = [atom_index_by_key[key] for key in hull_keys]
+        except KeyError:
+            continue
         positions = [
             atom_record_cartesian_position(atom, cell_vectors) for atom in hull_atoms
         ]
@@ -69,12 +74,10 @@ def build_polyhedra(
             if visibility_dependency_groups
             else set()
         )
-        center_atom_id = hull_atom_ids[0]
         polyhedra.append(
             {
-                "id": f"polyhedron-{center_atom_id}",
-                "centerAtomId": center_atom_id,
-                "hullAtomIds": hull_atom_ids,
+                "centerAtomIndex": hull_atom_indices[0],
+                "hullAtomIndices": hull_atom_indices,
                 "faces": faces,
                 "visibilityDependencies": ordered_visibility_dependencies(
                     visibility_dependencies

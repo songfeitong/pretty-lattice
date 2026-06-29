@@ -35,8 +35,8 @@ from pretty_lattice.structures.visibility import (
 
 @dataclass
 class BondRecord:
-    start_atom_id: str
-    end_atom_id: str
+    start_atom_key: AtomKey
+    end_atom_key: AtomKey
     visibility_dependencies: set[VisibilityDependency] = field(default_factory=set)
     visibility_dependency_groups: list[frozenset[VisibilityDependency]] = field(
         default_factory=list
@@ -53,7 +53,7 @@ class ConnectedAtom:
 
 @dataclass(frozen=True)
 class ConnectivityResult:
-    bonds: list[BondSpec]
+    bonds: list[BondRecord]
     connections_by_source: dict[AtomKey, list[ConnectedAtom]]
 
 
@@ -128,8 +128,8 @@ def build_connectivity(
             bond_record = bond_records.get(endpoint_key)
             if bond_record is None:
                 bond_record = BondRecord(
-                    start_atom_id=source_atom_id,
-                    end_atom_id=target_atom_id,
+                    start_atom_key=source_key,
+                    end_atom_key=target_key,
                 )
                 bond_records[endpoint_key] = bond_record
 
@@ -142,11 +142,27 @@ def build_connectivity(
                 _merge_bond_visibility_dependency_group(bond_record, dependency_group)
 
     return ConnectivityResult(
-        bonds=[
+        bonds=list(bond_records.values()),
+        connections_by_source=connections_by_source,
+    )
+
+
+def build_bonds(
+    *,
+    atom_index_by_key: dict[AtomKey, int],
+    connectivity: ConnectivityResult,
+) -> list[BondSpec]:
+    bonds: list[BondSpec] = []
+    for bond in connectivity.bonds:
+        start_atom_index = atom_index_by_key.get(bond.start_atom_key)
+        end_atom_index = atom_index_by_key.get(bond.end_atom_key)
+        if start_atom_index is None or end_atom_index is None:
+            continue
+
+        bonds.append(
             {
-                "id": f"bond-{bond.start_atom_id}--{bond.end_atom_id}",
-                "startAtomId": bond.start_atom_id,
-                "endAtomId": bond.end_atom_id,
+                "startAtomIndex": start_atom_index,
+                "endAtomIndex": end_atom_index,
                 "visibilityDependencies": ordered_visibility_dependencies(
                     bond.visibility_dependencies
                 ),
@@ -154,14 +170,9 @@ def build_connectivity(
                     bond.visibility_dependency_groups
                 ),
             }
-            for bond in bond_records.values()
-        ],
-        connections_by_source=connections_by_source,
-    )
+        )
 
-
-def build_bonds(*, connectivity: ConnectivityResult) -> list[BondSpec]:
-    return connectivity.bonds
+    return bonds
 
 
 def _neighbor_info_by_site_for_connectivity(

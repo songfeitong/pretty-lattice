@@ -65,17 +65,15 @@ export type ImageReason = "boundary" | "bonded";
 export type VisibilityDependency = "boundaryAtoms" | "oneHopBondedAtoms";
 
 export interface BondSpec {
-  id: string;
-  startAtomId: string;
-  endAtomId: string;
+  startAtomIndex: number;
+  endAtomIndex: number;
   visibilityDependencies: VisibilityDependency[];
   visibilityDependencyGroups: VisibilityDependency[][];
 }
 
 export interface PolyhedronSpec {
-  id: string;
-  centerAtomId: string;
-  hullAtomIds: string[];
+  centerAtomIndex: number;
+  hullAtomIndices: number[];
   faces: [number, number, number][];
   visibilityDependencies: VisibilityDependency[];
   visibilityDependencyGroups: VisibilityDependency[][];

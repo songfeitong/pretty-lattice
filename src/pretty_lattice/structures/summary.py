@@ -8,6 +8,8 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pretty_lattice.structures.schema import StructureSummarySpec, SymmetrySummarySpec
 from pretty_lattice.structures.symmetry import point_group_schoenflies_symbol
 
+MAX_SYMMETRY_ANALYSIS_ATOMS = 1000
+
 
 def build_structure_summary(structure: Structure) -> StructureSummarySpec:
     a, b, c = (float(value) for value in structure.lattice.abc)
@@ -30,6 +32,8 @@ def build_structure_summary(structure: Structure) -> StructureSummarySpec:
 
 def build_symmetry_summary(structure: Structure) -> SymmetrySummarySpec:
     if not has_valid_3d_periodic_cell(structure):
+        return _unavailable_symmetry_summary()
+    if len(structure) > MAX_SYMMETRY_ANALYSIS_ATOMS:
         return _unavailable_symmetry_summary()
 
     try:

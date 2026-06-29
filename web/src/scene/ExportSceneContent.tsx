@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo } from "react";
+import { useLayoutEffect } from "react";
 import { OrthographicCamera } from "three";
 import { useThree } from "@react-three/fiber";
 
@@ -54,7 +54,6 @@ export function ExportSceneContent({
   unitCellLineWidthScale?: number;
 }) {
   const { camera } = useThree();
-  const atomById = useMemo(() => new Map(scene.atoms.map((atom) => [atom.id, atom])), [scene]);
 
   useLayoutEffect(() => {
     applyCameraPoseSnapshot(camera, cameraPose, layout.standardPose.distance, layout.span);
@@ -72,7 +71,6 @@ export function ExportSceneContent({
       <MemoizedStructureSceneObjects
         atomRenderingMode={atomRenderingMode}
         bondRenderingMode={bondRenderingMode}
-        atomById={atomById}
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}
         materialFamily={materialFamily}

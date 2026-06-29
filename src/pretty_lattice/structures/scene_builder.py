@@ -72,8 +72,14 @@ def build_scene_spec(
                 )
             )
         else:
+            atom_index_by_key = {
+                key: index for index, key in enumerate(atom_data.atom_records.keys())
+            }
             try:
-                bonds = connectivity_module.build_bonds(connectivity=connectivity)
+                bonds = connectivity_module.build_bonds(
+                    atom_index_by_key=atom_index_by_key,
+                    connectivity=connectivity,
+                )
             except Exception as exc:
                 warnings.append(
                     _analysis_warning(
@@ -86,6 +92,7 @@ def build_scene_spec(
 
             try:
                 polyhedra = polyhedra_module.build_polyhedra(
+                    atom_index_by_key=atom_index_by_key,
                     atom_records=atom_data.atom_records,
                     cell_vectors=cell_vectors,
                     connectivity=connectivity,

@@ -76,11 +76,11 @@ function addCylinderSideStrip(
 
 export function polyhedronGeometryFromAtoms(
   polyhedron: PolyhedronSpec,
-  atomById: Map<string, AtomSpec>,
+  atoms: AtomSpec[],
 ): BufferGeometry | null {
   const positions: number[] = [];
-  for (const atomId of polyhedron.hullAtomIds) {
-    const atom = atomById.get(atomId);
+  for (const atomIndex of polyhedron.hullAtomIndices) {
+    const atom = atoms[atomIndex];
     if (!atom) {
       return null;
     }
@@ -97,7 +97,7 @@ export function polyhedronGeometryFromAtoms(
         (vertexIndex) =>
           !Number.isInteger(vertexIndex) ||
           vertexIndex < 0 ||
-          vertexIndex >= polyhedron.hullAtomIds.length,
+          vertexIndex >= polyhedron.hullAtomIndices.length,
       )
     ) {
       return null;

@@ -7,6 +7,7 @@ from pymatgen.core import Lattice, Structure
 
 import pretty_lattice.structures.connectivity as connectivity_module
 import pretty_lattice.structures.polyhedra as polyhedra_module
+import pretty_lattice.structures.summary as summary_module
 from pretty_lattice.structures.readers import (
     StructureReadError,
     read_structure,
@@ -186,10 +187,8 @@ def test_scene_response_shape_excludes_renderer_visual_data() -> None:
     assert len(bonded_image_atoms) > 0
     assert scene["bonds"]
     assert scene["polyhedra"]
-    assert {
-        scene["bonds"][0]["startAtomId"],
-        scene["bonds"][0]["endAtomId"],
-    }.issubset({atom["id"] for atom in scene["atoms"]})
+    assert 0 <= scene["bonds"][0]["startAtomIndex"] < len(scene["atoms"])
+    assert 0 <= scene["bonds"][0]["endAtomIndex"] < len(scene["atoms"])
     assert scene["summary"] == {
         "formula": "SrTiO3",
         "atomCount": 5,
@@ -365,21 +364,21 @@ def test_scene_response_generates_polyhedra_for_complete_coordination_environmen
     structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
 
     scene = build_scene_response(structure)
-    atom_ids = {atom["id"] for atom in scene["atoms"]}
+    atoms = scene["atoms"]
     ti_polyhedron = next(
         polyhedron
         for polyhedron in scene["polyhedra"]
-        if polyhedron["centerAtomId"] == "Ti-1"
+        if atoms[polyhedron["centerAtomIndex"]]["id"] == "Ti-1"
     )
 
-    assert ti_polyhedron["hullAtomIds"][0] == "Ti-1"
-    assert len(ti_polyhedron["hullAtomIds"]) == 7
+    assert atoms[ti_polyhedron["hullAtomIndices"][0]]["id"] == "Ti-1"
+    assert len(ti_polyhedron["hullAtomIndices"]) == 7
     assert len(ti_polyhedron["faces"]) == 8
     assert "color" not in ti_polyhedron
-    assert set(ti_polyhedron["hullAtomIds"]).issubset(atom_ids)
+    assert set(ti_polyhedron["hullAtomIndices"]).issubset(range(len(atoms)))
     assert all(len(face) == 3 for face in ti_polyhedron["faces"])
     assert all(
-        0 <= vertex_index < len(ti_polyhedron["hullAtomIds"])
+        0 <= vertex_index < len(ti_polyhedron["hullAtomIndices"])
         for face in ti_polyhedron["faces"]
         for vertex_index in face
     )
@@ -389,7 +388,10 @@ def test_scene_response_suppresses_reverse_and_same_species_polyhedron_centers()
     sr_tio3_scene = build_scene_response(read_structure(FIXTURE_DIR / "SrTiO3.cif"))
     si_scene = build_scene_response(read_structure(FIXTURE_DIR / "Si.cif"))
 
-    sr_tio3_centers = {polyhedron["centerAtomId"] for polyhedron in sr_tio3_scene["polyhedra"]}
+    sr_tio3_centers = {
+        sr_tio3_scene["atoms"][polyhedron["centerAtomIndex"]]["id"]
+        for polyhedron in sr_tio3_scene["polyhedra"]
+    }
 
     assert "Ti-1" in sr_tio3_centers
     assert all(not center.startswith("O-") for center in sr_tio3_centers)
@@ -428,7 +430,6 @@ def test_scene_response_marks_one_hop_bonded_images_without_recursive_expansion(
     structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
 
     scene = build_scene_response(structure)
-    atom_by_id = {atom["id"]: atom for atom in scene["atoms"]}
     bonded_image_atoms = [
         atom
         for atom in scene["atoms"]
@@ -444,7 +445,7 @@ def test_scene_response_marks_one_hop_bonded_images_without_recursive_expansion(
     assert bonded_image_atoms
     assert boundary_source_bonds
     assert all(
-        atom_by_id[bond["startAtomId"]]["imageReasons"] != ["bonded"]
+        scene["atoms"][bond["startAtomIndex"]]["imageReasons"] != ["bonded"]
         for bond in boundary_source_bonds
     )
 
@@ -453,7 +454,6 @@ def test_scene_response_marks_boundary_bonds_independently_from_one_hop() -> Non
     structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
 
     scene = build_scene_response(structure)
-    atom_by_id = {atom["id"]: atom for atom in scene["atoms"]}
     boundary_only_bonds = [
         bond for bond in scene["bonds"] if bond["visibilityDependencyGroups"] == [["boundaryAtoms"]]
     ]
@@ -461,8 +461,8 @@ def test_scene_response_marks_boundary_bonds_independently_from_one_hop() -> Non
     assert boundary_only_bonds
     assert all(
         (
-            "boundary" in atom_by_id[bond["startAtomId"]]["imageReasons"]
-            or "boundary" in atom_by_id[bond["endAtomId"]]["imageReasons"]
+            "boundary" in scene["atoms"][bond["startAtomIndex"]]["imageReasons"]
+            or "boundary" in scene["atoms"][bond["endAtomIndex"]]["imageReasons"]
         )
         for bond in boundary_only_bonds
     )
@@ -551,6 +551,33 @@ def test_scene_summary_marks_non_periodic_symmetry_unavailable() -> None:
     scene = build_scene_response(structure)
 
     assert scene["summary"]["symmetry"] == {
+        "available": False,
+        "spaceGroup": None,
+        "spaceGroupNumber": None,
+        "pointGroup": None,
+        "pointGroupSchoenflies": None,
+        "crystalSystem": None,
+        "latticeSystem": None,
+    }
+
+
+def test_large_structure_summary_skips_symmetry_analysis(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail_spacegroup_analysis(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("Large structure summaries should skip SpacegroupAnalyzer.")
+
+    monkeypatch.setattr(summary_module, "SpacegroupAnalyzer", fail_spacegroup_analysis)
+    structure = _structure_from_fractional_positions(
+        ["Na"] * (summary_module.MAX_SYMMETRY_ANALYSIS_ATOMS + 1),
+        [
+            [index / (summary_module.MAX_SYMMETRY_ANALYSIS_ATOMS + 1), 0.25, 0.25]
+            for index in range(summary_module.MAX_SYMMETRY_ANALYSIS_ATOMS + 1)
+        ],
+    )
+
+    summary = summary_module.build_structure_summary(structure)
+
+    assert summary["atomCount"] == summary_module.MAX_SYMMETRY_ANALYSIS_ATOMS + 1
+    assert summary["symmetry"] == {
         "available": False,
         "spaceGroup": None,
         "spaceGroupNumber": None,

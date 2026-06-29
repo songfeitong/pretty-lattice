@@ -471,9 +471,8 @@ describe("computeSceneLayout", () => {
   test("builds polyhedron geometry from returned hull atoms and faces", () => {
     const scene = sceneWithOffCenterAtoms();
     const polyhedron = {
-      id: "polyhedron-Si-0",
-      centerAtomId: "Si-0",
-      hullAtomIds: ["Si-0", "Si-1", "Si-2", "Si-3"],
+      centerAtomIndex: 0,
+      hullAtomIndices: [0, 1, 2, 3],
       faces: [
         [0, 1, 2],
         [0, 1, 3],
@@ -483,9 +482,8 @@ describe("computeSceneLayout", () => {
       visibilityDependencies: [],
       visibilityDependencyGroups: [],
     } satisfies SceneSpec["polyhedra"][number];
-    const atomById = new Map(scene.atoms.map((atom) => [atom.id, atom]));
 
-    const geometry = polyhedronGeometryFromAtoms(polyhedron, atomById);
+    const geometry = polyhedronGeometryFromAtoms(polyhedron, scene.atoms);
 
     expect(geometry?.getAttribute("position").count).toBe(4);
     expect(geometry?.index?.count).toBe(12);
@@ -494,32 +492,29 @@ describe("computeSceneLayout", () => {
 
   test("skips polyhedron geometry when hull atoms or face indices are invalid", () => {
     const scene = sceneWithOffCenterAtoms();
-    const atomById = new Map(scene.atoms.map((atom) => [atom.id, atom]));
 
     expect(
       polyhedronGeometryFromAtoms(
         {
-          id: "polyhedron-missing",
-          centerAtomId: "Si-0",
-          hullAtomIds: ["Si-0", "missing", "Si-2"],
+          centerAtomIndex: 0,
+          hullAtomIndices: [0, 999, 2],
           faces: [[0, 1, 2]],
           visibilityDependencies: [],
           visibilityDependencyGroups: [],
         },
-        atomById,
+        scene.atoms,
       ),
     ).toBeNull();
     expect(
       polyhedronGeometryFromAtoms(
         {
-          id: "polyhedron-invalid-face",
-          centerAtomId: "Si-0",
-          hullAtomIds: ["Si-0", "Si-1", "Si-2"],
+          centerAtomIndex: 0,
+          hullAtomIndices: [0, 1, 2],
           faces: [[0, 1, 3]],
           visibilityDependencies: [],
           visibilityDependencyGroups: [],
         },
-        atomById,
+        scene.atoms,
       ),
     ).toBeNull();
   });

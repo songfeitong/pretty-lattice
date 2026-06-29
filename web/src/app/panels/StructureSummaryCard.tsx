@@ -240,7 +240,11 @@ export function StructureSummaryCard({
                       />
                     </dl>
                   ) : (
-                    <p className={cn("mt-1 text-muted-foreground", COMMON_PANEL_BODY_TEXT_CLASS)}>Symmetry unavailable</p>
+                    <dl className={cn("mt-1.5 flex flex-col gap-1", COMMON_PANEL_BODY_TEXT_CLASS)}>
+                      <SymmetryMetric label="Space group" value="N/A" />
+                      <SymmetryMetric label="Point group" value="N/A" />
+                      <SymmetryMetric label="Crystal system" value="N/A" />
+                    </dl>
                   )}
                 </div>
 

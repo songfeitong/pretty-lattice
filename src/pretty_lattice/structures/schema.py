@@ -63,17 +63,15 @@ class AtomSpec(TypedDict):
 
 
 class BondSpec(TypedDict):
-    id: str
-    startAtomId: str
-    endAtomId: str
+    startAtomIndex: int
+    endAtomIndex: int
     visibilityDependencies: list[VisibilityDependency]
     visibilityDependencyGroups: list[list[VisibilityDependency]]
 
 
 class PolyhedronSpec(TypedDict):
-    id: str
-    centerAtomId: str
-    hullAtomIds: list[str]
+    centerAtomIndex: int
+    hullAtomIndices: list[int]
     faces: list[list[int]]
     visibilityDependencies: list[VisibilityDependency]
     visibilityDependencyGroups: list[list[VisibilityDependency]]

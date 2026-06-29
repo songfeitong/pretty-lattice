@@ -150,7 +150,6 @@ export function computeStructureProjectedBounds({
     groupPosition ?? centeredCellGroupPosition(scene.cell.vectors),
   );
   const bounds = createBoundsAccumulator();
-  const atomById = new Map(scene.atoms.map((atom) => [atom.id, atom]));
 
   if (showUnitCell && componentOpacity.unitCell > 0) {
     for (const corner of cellCorners(scene.cell.vectors)) {
@@ -171,8 +170,8 @@ export function computeStructureProjectedBounds({
   if (componentOpacity.bonds > 0 && style.bondThickness > 0) {
     const radius = BOND_RADIUS * (style.bondThickness / 100);
     for (const bond of scene.bonds) {
-      const startAtom = atomById.get(bond.startAtomId);
-      const endAtom = atomById.get(bond.endAtomId);
+      const startAtom = scene.atoms[bond.startAtomIndex];
+      const endAtom = scene.atoms[bond.endAtomIndex];
       if (!startAtom || !endAtom) {
         continue;
       }
@@ -188,8 +187,8 @@ export function computeStructureProjectedBounds({
         continue;
       }
 
-      for (const atomId of polyhedron.hullAtomIds) {
-        const atom = atomById.get(atomId);
+      for (const atomIndex of polyhedron.hullAtomIndices) {
+        const atom = scene.atoms[atomIndex];
         if (atom) {
           bounds.includePoint(projector.projectPoint(atom.position));
         }

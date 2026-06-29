@@ -310,7 +310,10 @@ describe("App", () => {
     expect(within(structureCard).getByText("NaCl.cif").isConnected).toBe(true);
     expect(within(structureCard).getByText("NaCl").isConnected).toBe(true);
     expect(within(structureCard).getByText("2").isConnected).toBe(true);
-    expect(within(structureCard).getByText("Symmetry unavailable").isConnected).toBe(true);
+    expect(within(structureCard).getByText("Space group").isConnected).toBe(true);
+    expect(within(structureCard).getByText("Point group").isConnected).toBe(true);
+    expect(within(structureCard).getByText("Crystal system").isConnected).toBe(true);
+    expect(within(structureCard).getAllByText("N/A")).toHaveLength(3);
 
     const legend = screen.getByRole("navigation", { name: "Element legend" });
     expect(within(legend).getByText("Na").isConnected).toBe(true);
@@ -2128,24 +2131,22 @@ function sceneWithPeriodicImages({
     ],
     bonds: [
       {
-        id: "bond-canonical",
-        startAtomId: "Na-0",
-        endAtomId: "Cl-1",
+        startAtomIndex: 0,
+        endAtomIndex: 2,
         visibilityDependencies: [],
         visibilityDependencyGroups: [],
       },
       {
-        id: "bond-one-hop",
-        startAtomId: "Na-0",
-        endAtomId: "Cl-1-image-0--1-0",
+        startAtomIndex: 0,
+        endAtomIndex: 3,
         visibilityDependencies: ["oneHopBondedAtoms"],
         visibilityDependencyGroups: [["oneHopBondedAtoms"]],
       },
     ],
     polyhedra: polyhedra
       ? [
-          polyhedron("polyhedron-canonical", ["Na-0", "Cl-1"]),
-          polyhedron("polyhedron-one-hop", ["Na-0", "Cl-1-image-0--1-0", "Cl-1"]),
+          polyhedron([0, 2]),
+          polyhedron([0, 3, 2]),
         ]
       : [],
     cell: {
@@ -2179,12 +2180,11 @@ function sceneWithPeriodicImages({
   };
 }
 
-function polyhedron(id: string, hullAtomIds: string[]): SceneSpec["polyhedra"][number] {
+function polyhedron(hullAtomIndices: number[]): SceneSpec["polyhedra"][number] {
   return {
-    id,
-    centerAtomId: hullAtomIds[0]!,
-    hullAtomIds,
-    faces: hullAtomIds.length >= 3 ? [[0, 1, 2]] : [],
+    centerAtomIndex: hullAtomIndices[0]!,
+    hullAtomIndices,
+    faces: hullAtomIndices.length >= 3 ? [[0, 1, 2]] : [],
     visibilityDependencies: [],
     visibilityDependencyGroups: [],
   };
