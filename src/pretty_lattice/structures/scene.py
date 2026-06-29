@@ -4,6 +4,8 @@ from pretty_lattice.structures.scene_builder import build_scene_response, build_
 from pretty_lattice.structures.schema import (
     BOND_ALGORITHM_LABELS,
     DEFAULT_BOND_ALGORITHM,
+    LARGE_STRUCTURE_BOND_ALGORITHM,
+    STRUCTURE_ATOM_COUNT_THRESHOLD,
     AnalysisWarningSpec,
     AtomSpec,
     BondAlgorithm,
@@ -18,6 +20,7 @@ from pretty_lattice.structures.schema import (
     UnsupportedBondAlgorithmError,
     VisibilityDependency,
     bond_algorithm_label,
+    default_bond_algorithm_for_atom_count,
     normalize_bond_algorithm,
 )
 
@@ -30,15 +33,18 @@ __all__ = [
     "CellSpec",
     "CellSummarySpec",
     "DEFAULT_BOND_ALGORITHM",
+    "LARGE_STRUCTURE_BOND_ALGORITHM",
     "ImageReason",
     "PolyhedronSpec",
     "SceneSpec",
     "StructureSummarySpec",
+    "STRUCTURE_ATOM_COUNT_THRESHOLD",
     "SymmetrySummarySpec",
     "UnsupportedBondAlgorithmError",
     "VisibilityDependency",
     "bond_algorithm_label",
     "build_scene_response",
     "build_scene_spec",
+    "default_bond_algorithm_for_atom_count",
     "normalize_bond_algorithm",
 ]

@@ -17,7 +17,10 @@ from pretty_lattice.structures.readers import (
 from pretty_lattice.structures.scene import (
     build_scene_response,
 )
-from pretty_lattice.structures.schema import UnsupportedBondAlgorithmError
+from pretty_lattice.structures.schema import (
+    STRUCTURE_ATOM_COUNT_THRESHOLD,
+    UnsupportedBondAlgorithmError,
+)
 from pretty_lattice.structures.symmetry import (
     POINT_GROUP_SCHOENFLIES,
     point_group_schoenflies_symbol,
@@ -294,24 +297,28 @@ def test_scene_response_supports_selected_bond_algorithms() -> None:
     default_scene = build_scene_response(structure)
     crystal_scene = build_scene_response(structure, bond_algorithm="crystal-nn")
     minimum_distance_scene = build_scene_response(structure, bond_algorithm="minimum-distance")
-    vesta_scene = build_scene_response(structure, bond_algorithm="vesta")
+    cutoff_dict_scene = build_scene_response(structure, bond_algorithm="cut-off-dict")
 
     assert default_scene["bonds"]
     assert crystal_scene["bonds"]
     assert minimum_distance_scene["bonds"]
-    assert vesta_scene["bonds"]
-    assert default_scene["bonds"] == vesta_scene["bonds"]
+    assert cutoff_dict_scene["bonds"]
+    assert default_scene["bonds"] == crystal_scene["bonds"]
     assert "warnings" not in default_scene
     assert "warnings" not in crystal_scene
     assert "warnings" not in minimum_distance_scene
-    assert "warnings" not in vesta_scene
+    assert "warnings" not in cutoff_dict_scene
 
 
 @pytest.mark.parametrize(
     ("atom_count", "expected_algorithm"),
-    [(5, "vesta"), (199, "vesta"), (200, "vesta")],
+    [
+        (5, "crystal-nn"),
+        (STRUCTURE_ATOM_COUNT_THRESHOLD - 1, "crystal-nn"),
+        (STRUCTURE_ATOM_COUNT_THRESHOLD, "cut-off-dict"),
+    ],
 )
-def test_scene_response_defaults_to_vesta_bonding(
+def test_scene_response_defaults_bonding_by_structure_size(
     monkeypatch: pytest.MonkeyPatch,
     atom_count: int,
     expected_algorithm: str,
@@ -333,38 +340,40 @@ def test_scene_response_defaults_to_vesta_bonding(
     assert captured_algorithms == [expected_algorithm]
 
 
-def test_vesta_bonding_uses_batched_neighbor_table(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cutoff_dict_bonding_uses_batched_neighbor_table(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
     captured_atom_counts: list[int] = []
-    original_get_all_nn_info = connectivity_module._VestaCutOffDictNN.get_all_nn_info
+    original_get_all_nn_info = connectivity_module._PresetCutOffDictNN.get_all_nn_info
 
     def capture_get_all_nn_info(
-        self: connectivity_module._VestaCutOffDictNN,
+        self: connectivity_module._PresetCutOffDictNN,
         structure_arg: Structure,
     ) -> list[list[dict[str, object]]]:
         captured_atom_counts.append(len(structure_arg))
         return original_get_all_nn_info(self, structure_arg)
 
     def fail_get_nn_info(*_args: object, **_kwargs: object) -> None:
-        pytest.fail("VESTA connectivity should use the batched neighbor table.")
+        pytest.fail("CutOffDictNN connectivity should use the batched neighbor table.")
 
     monkeypatch.setattr(
-        connectivity_module._VestaCutOffDictNN,
+        connectivity_module._PresetCutOffDictNN,
         "get_all_nn_info",
         capture_get_all_nn_info,
     )
-    monkeypatch.setattr(connectivity_module._VestaCutOffDictNN, "get_nn_info", fail_get_nn_info)
+    monkeypatch.setattr(connectivity_module._PresetCutOffDictNN, "get_nn_info", fail_get_nn_info)
 
-    scene = build_scene_response(structure, bond_algorithm="vesta")
+    scene = build_scene_response(structure, bond_algorithm="cut-off-dict")
 
     assert captured_atom_counts == [len(structure)]
     assert scene["bonds"]
 
 
-def test_vesta_bonding_keeps_boundary_bonds_local_after_canonicalizing_sites() -> None:
+def test_cutoff_dict_bonding_keeps_boundary_bonds_local_after_canonicalizing_sites() -> None:
     structure = read_structure(FIXTURE_DIR / "SrTiO3.cif") * (2, 2, 2)
 
-    scene = build_scene_response(structure, bond_algorithm="vesta")
+    scene = build_scene_response(structure, bond_algorithm="cut-off-dict")
     atoms = scene["atoms"]
     bond_lengths = [
         dist(
@@ -423,16 +432,16 @@ def test_scene_response_polyhedra_follow_selected_bond_algorithm() -> None:
 
     crystal_scene = build_scene_response(structure, bond_algorithm="crystal-nn")
     minimum_distance_scene = build_scene_response(structure, bond_algorithm="minimum-distance")
-    vesta_scene = build_scene_response(structure, bond_algorithm="vesta")
+    cutoff_dict_scene = build_scene_response(structure, bond_algorithm="cut-off-dict")
 
     assert len(crystal_scene["polyhedra"]) == 24
     assert minimum_distance_scene["bonds"]
     assert minimum_distance_scene["polyhedra"]
-    assert vesta_scene["bonds"]
-    assert vesta_scene["polyhedra"]
+    assert cutoff_dict_scene["bonds"]
+    assert cutoff_dict_scene["polyhedra"]
     assert "warnings" not in crystal_scene
     assert "warnings" not in minimum_distance_scene
-    assert "warnings" not in vesta_scene
+    assert "warnings" not in cutoff_dict_scene
 
 
 def test_scene_response_rejects_unsupported_bond_algorithm() -> None:
@@ -501,7 +510,7 @@ def test_scene_response_returns_warning_when_bond_analysis_fails(monkeypatch) ->
     assert scene["warnings"] == [
         {
             "code": "bond-analysis-failed",
-            "message": "Bond analysis with VESTA failed: neighbor graph unavailable",
+            "message": "Bond analysis with CrystalNN failed: neighbor graph unavailable",
         }
     ]
 
@@ -521,7 +530,7 @@ def test_scene_response_returns_warning_when_polyhedra_analysis_fails(monkeypatc
     assert scene["warnings"] == [
         {
             "code": "polyhedra-analysis-failed",
-            "message": "Polyhedra analysis with VESTA failed: polyhedra hull unavailable",
+            "message": "Polyhedra analysis with CrystalNN failed: polyhedra hull unavailable",
         }
     ]
 
@@ -586,16 +595,16 @@ def test_large_structure_summary_skips_symmetry_analysis(monkeypatch: pytest.Mon
 
     monkeypatch.setattr(summary_module, "SpacegroupAnalyzer", fail_spacegroup_analysis)
     structure = _structure_from_fractional_positions(
-        ["Na"] * (summary_module.MAX_SYMMETRY_ANALYSIS_ATOMS + 1),
+        ["Na"] * STRUCTURE_ATOM_COUNT_THRESHOLD,
         [
-            [index / (summary_module.MAX_SYMMETRY_ANALYSIS_ATOMS + 1), 0.25, 0.25]
-            for index in range(summary_module.MAX_SYMMETRY_ANALYSIS_ATOMS + 1)
+            [index / STRUCTURE_ATOM_COUNT_THRESHOLD, 0.25, 0.25]
+            for index in range(STRUCTURE_ATOM_COUNT_THRESHOLD)
         ],
     )
 
     summary = summary_module.build_structure_summary(structure)
 
-    assert summary["atomCount"] == summary_module.MAX_SYMMETRY_ANALYSIS_ATOMS + 1
+    assert summary["atomCount"] == STRUCTURE_ATOM_COUNT_THRESHOLD
     assert summary["symmetry"] == {
         "available": False,
         "spaceGroup": None,

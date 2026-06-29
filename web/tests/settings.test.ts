@@ -18,7 +18,7 @@ import {
   createDefaultComponentVisibility,
   INSPECTOR_OPEN_SCENE_OFFSET_X_PX,
   INSPECTOR_PREVIEW_SAFE_AREA,
-  PREVIEW_PERFORMANCE_ATOM_COUNT_THRESHOLD,
+  STRUCTURE_ATOM_COUNT_THRESHOLD,
   parseExportDimensionInput,
   setExportAspectRatioLocked,
   setExportBackground,
@@ -40,9 +40,9 @@ import {
 
 describe("settings", () => {
   test("defaults rendering modes to batched paths and keeps the large-scene mesh quality threshold", () => {
-    const belowThreshold = PREVIEW_PERFORMANCE_ATOM_COUNT_THRESHOLD - 1;
-    const atThreshold = PREVIEW_PERFORMANCE_ATOM_COUNT_THRESHOLD;
-    const aboveThreshold = PREVIEW_PERFORMANCE_ATOM_COUNT_THRESHOLD + 1;
+    const belowThreshold = STRUCTURE_ATOM_COUNT_THRESHOLD - 1;
+    const atThreshold = STRUCTURE_ATOM_COUNT_THRESHOLD;
+    const aboveThreshold = STRUCTURE_ATOM_COUNT_THRESHOLD + 1;
 
     expect(defaultAtomRenderingModeForScene(null)).toBe("instanced");
     expect(defaultAtomRenderingModeForScene(sceneWithAtomCount(belowThreshold))).toBe("instanced");
@@ -55,7 +55,7 @@ describe("settings", () => {
 
     expect(defaultPreviewMeshQualityForScene(null)).toBe("medium");
     expect(defaultPreviewMeshQualityForScene(sceneWithAtomCount(belowThreshold))).toBe("medium");
-    expect(defaultPreviewMeshQualityForScene(sceneWithAtomCount(atThreshold))).toBe("medium");
+    expect(defaultPreviewMeshQualityForScene(sceneWithAtomCount(atThreshold))).toBe("low");
     expect(defaultPreviewMeshQualityForScene(sceneWithAtomCount(aboveThreshold))).toBe("low");
     expect(DEFAULT_SHOW_CRYSTAL_AXIS_LABELS).toBe(true);
     expect(DEFAULT_UNIT_CELL_LINE_STYLE).toBe("solid");

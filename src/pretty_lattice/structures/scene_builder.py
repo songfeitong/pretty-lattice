@@ -10,10 +10,10 @@ from pretty_lattice.structures.periodic_images import (
     vector3,
 )
 from pretty_lattice.structures.schema import (
-    DEFAULT_BOND_ALGORITHM,
     BondAlgorithm,
     SceneSpec,
     bond_algorithm_label,
+    default_bond_algorithm_for_atom_count,
     normalize_bond_algorithm,
 )
 from pretty_lattice.structures.summary import (
@@ -36,7 +36,9 @@ def build_scene_spec(
     bond_algorithm: str | None = None,
 ) -> SceneSpec:
     normalized_bond_algorithm = normalize_bond_algorithm(bond_algorithm)
-    selected_bond_algorithm = normalized_bond_algorithm or DEFAULT_BOND_ALGORITHM
+    selected_bond_algorithm = normalized_bond_algorithm or default_bond_algorithm_for_atom_count(
+        len(structure)
+    )
     cell_vectors = [vector3(vector) for vector in structure.lattice.matrix]
     can_generate_periodic_images = has_valid_3d_periodic_cell(structure)
     atom_data = build_atom_records(

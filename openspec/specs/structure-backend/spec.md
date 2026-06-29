@@ -93,13 +93,13 @@ network access to Materials Project or any other remote structure source.
 
 ### Requirement: Backend generates preview bonds with pymatgen
 
-The Python backend SHALL generate preview bond records from the parsed pymatgen `Structure` using a project-defined allowlist of pymatgen neighbor algorithms. The default algorithm SHALL be CrystalNN. The initial allowlist SHALL include CrystalNN and other pymatgen algorithms that can run without user-provided custom cutoff tables. The returned scene contract SHALL remain project-owned JSON and SHALL NOT expose pymatgen objects or library type names as frontend data structures.
+The Python backend SHALL generate preview bond records from the parsed pymatgen `Structure` using a project-defined allowlist of pymatgen neighbor algorithms. When no algorithm is specified, structures smaller than the shared atom-count threshold SHALL default to CrystalNN and structures at or above that threshold SHALL default to CutOffDictNN. The initial allowlist SHALL include CrystalNN and other pymatgen algorithms that can run without user-provided custom cutoff tables. The returned scene contract SHALL remain project-owned JSON and SHALL NOT expose pymatgen objects or library type names as frontend data structures.
 
-#### Scenario: Generate default CrystalNN bonds
+#### Scenario: Generate default bonds
 
 - **WHEN** the API builds a scene response for a periodic structure and no bond algorithm is specified
-- **THEN** the backend uses CrystalNN for preview bond analysis
-- **AND** the response includes bond records when CrystalNN finds renderable bonds
+- **THEN** the backend uses CrystalNN below the shared atom-count threshold and CutOffDictNN at or above it
+- **AND** the response includes bond records when the selected default algorithm finds renderable bonds
 
 #### Scenario: Generate bonds with a selected allowlisted algorithm
 
@@ -168,10 +168,10 @@ The backend SHALL treat structure parsing as required for a successful preview a
 
 The Python backend SHALL generate preview polyhedron records from the same selected pymatgen neighbor connectivity used for preview bonds. Polyhedra generation SHALL follow Crystal Toolkit-compatible center-selection semantics: a candidate center SHALL produce a polyhedron only when it has more than three drawn connected atom instances, has no missing connected atom instances required by the selected connectivity, and is lower than every drawn connected neighbor in pymatgen's species ordering. Equal-species connected environments SHALL NOT produce polyhedra. The returned polyhedron records SHALL remain project-owned JSON and SHALL NOT expose Crystal Toolkit scene primitives or pymatgen objects.
 
-#### Scenario: Generate default CrystalNN polyhedra
+#### Scenario: Generate default polyhedra
 
 - **WHEN** the API builds a scene response for a periodic structure and no bond algorithm is specified
-- **THEN** the backend uses CrystalNN connectivity for preview bond and polyhedra analysis
+- **THEN** the backend uses CrystalNN connectivity below the shared atom-count threshold and CutOffDictNN connectivity at or above it
 - **AND** the response includes polyhedron records for complete Crystal Toolkit-compatible coordination environments
 
 #### Scenario: Generate polyhedra with selected connectivity

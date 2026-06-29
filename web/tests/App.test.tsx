@@ -14,7 +14,7 @@ import {
   createZipBlob as actualCreateZipBlob,
 } from "../src/app/exportFigure";
 import {
-  PREVIEW_PERFORMANCE_ATOM_COUNT_THRESHOLD,
+  STRUCTURE_ATOM_COUNT_THRESHOLD,
   type ExportFormat,
 } from "../src/app/settings";
 import { MATERIAL_PRESET_OPTIONS } from "../src/model/materialPresets";
@@ -427,7 +427,7 @@ describe("App", () => {
     await renderLoadedStructure(
       user,
       sceneWithPeriodicImages({
-        atomCount: PREVIEW_PERFORMANCE_ATOM_COUNT_THRESHOLD + 1,
+        atomCount: STRUCTURE_ATOM_COUNT_THRESHOLD,
       }),
     );
 
@@ -446,7 +446,7 @@ describe("App", () => {
     ).toContain("Low");
   });
 
-  test("shows VESTA as the automatic default for uploaded structures", async () => {
+  test("shows CrystalNN as the automatic default for small uploaded structures", async () => {
     const user = userEvent.setup();
     queueFetchResponse(jsonResponse(sceneWithPeriodicImages({ atomCount: 5 })));
 
@@ -459,7 +459,7 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
     expect(screen.getByRole("combobox", { name: "Bonding algorithm" }).textContent).toContain(
-      "VESTA",
+      "CrystalNN",
     );
   });
 
@@ -1064,6 +1064,19 @@ describe("App", () => {
     fireEvent.change(bondColorInput, { target: { value: "#999999" } });
     expect(bondColorInput.value).toBe("#999999");
     expect(screen.queryByLabelText("Alpha transparency percentage")).toBeNull();
+    await user.click(bondStyleSelect);
+    await user.click(await screen.findByRole("option", { name: "Bicolor" }));
+    expect(bondStyleSelect.textContent).toContain("Bicolor");
+    expect(within(commonControls).queryByRole("button", { name: "Bond color" })).toBeNull();
+    await user.click(bondStyleSelect);
+    await user.click(await screen.findByRole("option", { name: "Unicolor" }));
+    expect(
+      (
+        within(
+          within(commonControls).getByText("Bond style").closest("div") ?? commonControls,
+        ).getByLabelText("Bond color value") as HTMLInputElement
+      ).value,
+    ).toBe("#d2d2d2");
     expect(fetchCalls).toHaveLength(1);
 
     await user.click(colorSchemeSelect);
@@ -1883,10 +1896,10 @@ describe("App", () => {
 
     queueFetchResponse(jsonResponse(sceneWithPeriodicImages()));
     await user.click(screen.getByRole("combobox", { name: "Bonding algorithm" }));
-    await user.click(await screen.findByRole("option", { name: "VESTA" }));
+    await user.click(await screen.findByRole("option", { name: "CrystalNN" }));
 
     await waitFor(() => expect(fetchCalls).toHaveLength(3));
-    expect(fetchCalls[2]?.input).toBe("/api/structure-preview");
+    expect(fetchCalls[2]?.input).toBe("/api/structure-preview?bondAlgorithm=crystal-nn");
     expect(fetchCalls[2]?.init?.body).toBeInstanceOf(File);
   });
 
@@ -1924,7 +1937,7 @@ describe("App", () => {
       "true",
     );
     expect(screen.getByRole("combobox", { name: "Bonding algorithm" }).textContent).toContain(
-      "VESTA",
+      "CrystalNN",
     );
     const resetCommonControls = screen.getByRole("complementary", {
       name: "Common controls",
@@ -1953,7 +1966,7 @@ describe("App", () => {
     expect(alert.textContent).toContain("Python backend is unavailable");
     expect(screen.getByTestId("lattice-canvas").isConnected).toBe(true);
     expect(screen.getByRole("combobox", { name: "Bonding algorithm" }).textContent).toContain(
-      "VESTA",
+      "CrystalNN",
     );
   });
 
@@ -2087,7 +2100,7 @@ describe("App", () => {
         warnings: [
           {
             code: "bond-analysis-failed",
-            message: "Bond analysis with VESTA failed: neighbor graph unavailable",
+            message: "Bond analysis with CrystalNN failed: neighbor graph unavailable",
           },
         ],
       }),
@@ -2097,7 +2110,7 @@ describe("App", () => {
     await user.upload(getFileInput(), structureFile());
 
     expect((await screen.findByRole("alert")).textContent).toContain(
-      "Bond analysis with VESTA failed",
+      "Bond analysis with CrystalNN failed",
     );
     const alert = screen.getByRole("alert");
     expect(alert.querySelector("svg")?.getAttribute("class")).toContain(

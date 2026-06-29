@@ -5,10 +5,12 @@ import math
 from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from pretty_lattice.structures.schema import StructureSummarySpec, SymmetrySummarySpec
+from pretty_lattice.structures.schema import (
+    STRUCTURE_ATOM_COUNT_THRESHOLD,
+    StructureSummarySpec,
+    SymmetrySummarySpec,
+)
 from pretty_lattice.structures.symmetry import point_group_schoenflies_symbol
-
-MAX_SYMMETRY_ANALYSIS_ATOMS = 1000
 
 
 def build_structure_summary(structure: Structure) -> StructureSummarySpec:
@@ -33,7 +35,7 @@ def build_structure_summary(structure: Structure) -> StructureSummarySpec:
 def build_symmetry_summary(structure: Structure) -> SymmetrySummarySpec:
     if not has_valid_3d_periodic_cell(structure):
         return _unavailable_symmetry_summary()
-    if len(structure) > MAX_SYMMETRY_ANALYSIS_ATOMS:
+    if len(structure) >= STRUCTURE_ATOM_COUNT_THRESHOLD:
         return _unavailable_symmetry_summary()
 
     try:

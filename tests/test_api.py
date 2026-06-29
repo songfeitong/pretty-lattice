@@ -99,14 +99,14 @@ async def test_structure_preview_upload_endpoint_accepts_supported_bond_algorith
 
 
 @pytest.mark.anyio
-async def test_structure_preview_upload_endpoint_accepts_vesta_bond_algorithm() -> None:
+async def test_structure_preview_upload_endpoint_accepts_cutoff_dict_bond_algorithm() -> None:
     payload = (FIXTURE_DIR / "SrTiO3.cif").read_bytes()
 
     async with AsyncClient(
         transport=ASGITransport(app=create_app()), base_url="http://testserver"
     ) as client:
         response = await client.post(
-            "/api/structure-preview?bondAlgorithm=vesta",
+            "/api/structure-preview?bondAlgorithm=cut-off-dict",
             content=payload,
             headers={"x-pretty-lattice-filename": "SrTiO3.cif"},
         )
@@ -159,7 +159,7 @@ async def test_structure_preview_upload_endpoint_returns_bond_warning(monkeypatc
     assert payload["warnings"] == [
         {
             "code": "bond-analysis-failed",
-            "message": "Bond analysis with VESTA failed: neighbor graph unavailable",
+            "message": "Bond analysis with CrystalNN failed: neighbor graph unavailable",
         }
     ]
 

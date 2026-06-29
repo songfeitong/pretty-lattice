@@ -28,6 +28,7 @@ import {
   BACKEND_UNAVAILABLE_TITLE,
   BACKEND_UNAVAILABLE_MESSAGE,
   STATIC_SCENE_PREVIEW_NAME,
+  defaultBondAlgorithmForScene,
   hasStaticScenePreview,
   isBackendUnavailablePreviewError,
   loadStaticScenePreview,
@@ -643,6 +644,7 @@ export function App() {
 
         setScene(nextScene);
         setSelectedFileName(STATIC_SCENE_PREVIEW_NAME);
+        setBondAlgorithm(defaultBondAlgorithmForScene(nextScene));
         resetLoadedPreviewState(nextScene);
         setPreviewStatus("ready");
       } catch {
@@ -702,6 +704,7 @@ export function App() {
     try {
       const nextScene = await uploadStructurePreview(file);
       setScene(nextScene);
+      setBondAlgorithm(defaultBondAlgorithmForScene(nextScene));
       resetLoadedPreviewState(nextScene);
       setPreviewStatus("ready");
     } catch (error) {
@@ -935,8 +938,10 @@ export function App() {
       return;
     }
 
-    if (bondAlgorithm === DEFAULT_BOND_ALGORITHM || !currentFile) {
-      setBondAlgorithm(DEFAULT_BOND_ALGORITHM);
+    const defaultBondAlgorithm = defaultBondAlgorithmForScene(scene);
+
+    if (bondAlgorithm === defaultBondAlgorithm || !currentFile) {
+      setBondAlgorithm(defaultBondAlgorithm);
       setPreviewStatus("ready");
       resetLoadedPreviewState(scene, {
         preserveActiveCommonPanelTab: true,
@@ -950,7 +955,7 @@ export function App() {
 
     try {
       const nextScene = await uploadStructurePreview(currentFile);
-      setBondAlgorithm(DEFAULT_BOND_ALGORITHM);
+      setBondAlgorithm(defaultBondAlgorithmForScene(nextScene));
       setScene(nextScene);
       resetLoadedPreviewState(nextScene, {
         preserveActiveCommonPanelTab: true,

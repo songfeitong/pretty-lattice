@@ -98,6 +98,10 @@ export function StyleTabContent({
   function setBondColorMode(bondColorMode: BondColorMode) {
     onStyleChange((currentStyle) => ({
       ...currentStyle,
+      bondColor:
+        bondColorMode === "bicolor"
+          ? DEFAULT_BOND_COLOR
+          : currentStyle.bondColor,
       bondColorMode,
     }));
   }

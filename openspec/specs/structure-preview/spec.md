@@ -648,7 +648,7 @@ The frontend SHALL keep the current file object available while a scene is loade
 #### Scenario: Load a new file resets defaults
 
 - **WHEN** the user loads a different structure file
-- **THEN** the bond algorithm resets to CrystalNN
+- **THEN** the bond algorithm resets to the automatic default for that structure size
 - **AND** component visibility resets to the default enabled states for atoms, unit cell, bonds, and cell-boundary atoms
 - **AND** one-hop bonded atoms and polyhedra reset to disabled
 

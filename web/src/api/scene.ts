@@ -1,3 +1,5 @@
+import { STRUCTURE_ATOM_COUNT_THRESHOLD } from "../model/structureLimits";
+
 export interface SceneSpec {
   cell: {
     vectors: [number, number, number][];
@@ -9,15 +11,16 @@ export interface SceneSpec {
   warnings?: AnalysisWarningSpec[];
 }
 
-export type BondAlgorithm = "crystal-nn" | "minimum-distance" | "vesta";
+export type BondAlgorithm = "crystal-nn" | "minimum-distance" | "cut-off-dict";
 export type AtomRadiusModel = "uniform" | "atomic" | "vdw" | "ionic";
 
-export const DEFAULT_BOND_ALGORITHM: BondAlgorithm = "vesta";
+export const DEFAULT_BOND_ALGORITHM: BondAlgorithm = "crystal-nn";
+export const LARGE_STRUCTURE_BOND_ALGORITHM: BondAlgorithm = "cut-off-dict";
 
 export const BOND_ALGORITHM_OPTIONS: { label: string; value: BondAlgorithm }[] = [
-  { label: "VESTA", value: "vesta" },
   { label: "CrystalNN", value: "crystal-nn" },
   { label: "Minimum distance", value: "minimum-distance" },
+  { label: "CutOffDictNN", value: "cut-off-dict" },
 ];
 
 export interface StructureSummary {
@@ -82,6 +85,16 @@ export interface PolyhedronSpec {
 export interface AnalysisWarningSpec {
   code: string;
   message: string;
+}
+
+export function defaultBondAlgorithmForScene(
+  scene: Pick<SceneSpec, "summary">,
+): BondAlgorithm {
+  if (scene.summary.atomCount < STRUCTURE_ATOM_COUNT_THRESHOLD) {
+    return DEFAULT_BOND_ALGORITHM;
+  }
+
+  return LARGE_STRUCTURE_BOND_ALGORITHM;
 }
 
 export class StructurePreviewError extends Error {
@@ -174,7 +187,7 @@ export async function uploadStructurePreview(
 
 function previewEndpointForOptions(options: { bondAlgorithm?: BondAlgorithm }): string {
   const params = new URLSearchParams();
-  if (options.bondAlgorithm && options.bondAlgorithm !== DEFAULT_BOND_ALGORITHM) {
+  if (options.bondAlgorithm) {
     params.set("bondAlgorithm", options.bondAlgorithm);
   }
 

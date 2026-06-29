@@ -188,7 +188,7 @@ def _neighbor_info_by_site_for_connectivity(
     neighbor_analyzer: object,
     structure: Structure,
 ) -> list[list[dict]] | None:
-    if bond_algorithm == "vesta":
+    if bond_algorithm == "cut-off-dict":
         return neighbor_analyzer.get_all_nn_info(structure)  # type: ignore[attr-defined]
 
     return None
@@ -199,13 +199,13 @@ def _neighbor_analyzer_for_bond_algorithm(bond_algorithm: BondAlgorithm):
         return CrystalNN()
     if bond_algorithm == "minimum-distance":
         return MinimumDistanceNN()
-    if bond_algorithm == "vesta":
-        return _VestaCutOffDictNN.from_preset("vesta_2019")
+    if bond_algorithm == "cut-off-dict":
+        return _PresetCutOffDictNN.from_preset("vesta_2019")
 
     raise UnsupportedBondAlgorithmError(f"Unsupported bond algorithm '{bond_algorithm}'.")
 
 
-class _VestaCutOffDictNN(CutOffDictNN):
+class _PresetCutOffDictNN(CutOffDictNN):
     def get_all_nn_info(self, structure: Structure) -> list[list[dict]]:
         return [
             self._neighbor_info_for_site_neighbors(
