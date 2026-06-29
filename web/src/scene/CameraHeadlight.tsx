@@ -11,10 +11,12 @@ const MIN_LIGHT_DISTANCE = 4;
 export function CameraHeadlight({
   color,
   intensity = PREVIEW_HEADLIGHT_INTENSITY,
+  intensityScale = 1,
   offset = DEFAULT_CAMERA_RELATIVE_LIGHT_OFFSET,
 }: {
   color?: string | number;
   intensity?: number;
+  intensityScale?: number;
   offset?: readonly [number, number, number];
 }) {
   const { camera } = useThree();
@@ -53,7 +55,7 @@ export function CameraHeadlight({
       <directionalLight
         ref={lightRef}
         color={color}
-        intensity={intensity}
+        intensity={intensity * intensityScale}
         target={targetObject}
       />
     </>

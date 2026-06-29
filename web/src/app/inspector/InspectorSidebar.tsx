@@ -32,14 +32,22 @@ import {
 } from "../surface";
 import {
   clampDragSensitivity,
+  clampLightStrength,
   dragSensitivityToSliderPosition,
   formatDragSensitivityPercent,
+  formatLightStrengthPercent,
   MAX_DRAG_SENSITIVITY,
+  MAX_LIGHT_STRENGTH,
   MIN_DRAG_SENSITIVITY,
+  MIN_LIGHT_STRENGTH,
   INTERACTION_MODE_OPTIONS,
+  lightStrengthToSliderPosition,
   parseDragSensitivityPercentInput,
+  parseLightStrengthPercentInput,
   sliderPositionToDragSensitivity,
+  sliderPositionToLightStrength,
   snapDragSensitivitySliderPosition,
+  snapLightStrengthSliderPosition,
   type InteractionMode,
 } from "../viewState";
 import { useAutoBlurSlider } from "../controls/commonPanel/sharedControls";
@@ -100,6 +108,7 @@ export function InspectorSidebar({
   bondAlgorithm,
   dragSensitivity,
   interactionMode,
+  lightStrength,
   isOpen,
   isSceneLoading,
   previewMeshQuality,
@@ -112,6 +121,7 @@ export function InspectorSidebar({
   onBondAlgorithmChange,
   onDragSensitivityChange,
   onInteractionModeChange,
+  onLightStrengthChange,
   onPreviewMeshQualityChange,
   onFogAffectsUnitCellChange,
   onShowFpsOverlayChange,
@@ -123,6 +133,7 @@ export function InspectorSidebar({
   bondAlgorithm: BondAlgorithm;
   dragSensitivity: number;
   interactionMode: InteractionMode;
+  lightStrength: number;
   isOpen: boolean;
   isSceneLoading: boolean;
   previewMeshQuality: MeshQuality;
@@ -135,6 +146,7 @@ export function InspectorSidebar({
   onBondAlgorithmChange: (bondAlgorithm: BondAlgorithm) => void;
   onDragSensitivityChange: (dragSensitivity: number) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
+  onLightStrengthChange: (lightStrength: number) => void;
   onPreviewMeshQualityChange: (meshQuality: MeshQuality) => void;
   onFogAffectsUnitCellChange: (fogAffectsUnitCell: boolean) => void;
   onShowFpsOverlayChange: (showFpsOverlay: boolean) => void;
@@ -182,6 +194,7 @@ export function InspectorSidebar({
               bondAlgorithm={bondAlgorithm}
               dragSensitivity={dragSensitivity}
               interactionMode={interactionMode}
+              lightStrength={lightStrength}
               isSceneLoading={isSceneLoading}
               previewMeshQuality={previewMeshQuality}
               fogAffectsUnitCell={fogAffectsUnitCell}
@@ -193,6 +206,7 @@ export function InspectorSidebar({
               onBondAlgorithmChange={onBondAlgorithmChange}
               onDragSensitivityChange={onDragSensitivityChange}
               onInteractionModeChange={onInteractionModeChange}
+              onLightStrengthChange={onLightStrengthChange}
               onPreviewMeshQualityChange={onPreviewMeshQualityChange}
               onFogAffectsUnitCellChange={onFogAffectsUnitCellChange}
               onShowFpsOverlayChange={onShowFpsOverlayChange}
@@ -212,6 +226,7 @@ function SettingsPanel({
   bondAlgorithm,
   dragSensitivity,
   interactionMode,
+  lightStrength,
   isSceneLoading,
   previewMeshQuality,
   fogAffectsUnitCell,
@@ -223,6 +238,7 @@ function SettingsPanel({
   onBondAlgorithmChange,
   onDragSensitivityChange,
   onInteractionModeChange,
+  onLightStrengthChange,
   onPreviewMeshQualityChange,
   onFogAffectsUnitCellChange,
   onShowFpsOverlayChange,
@@ -234,6 +250,7 @@ function SettingsPanel({
   bondAlgorithm: BondAlgorithm;
   dragSensitivity: number;
   interactionMode: InteractionMode;
+  lightStrength: number;
   isSceneLoading: boolean;
   previewMeshQuality: MeshQuality;
   fogAffectsUnitCell: boolean;
@@ -245,6 +262,7 @@ function SettingsPanel({
   onBondAlgorithmChange: (bondAlgorithm: BondAlgorithm) => void;
   onDragSensitivityChange: (dragSensitivity: number) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
+  onLightStrengthChange: (lightStrength: number) => void;
   onPreviewMeshQualityChange: (meshQuality: MeshQuality) => void;
   onFogAffectsUnitCellChange: (fogAffectsUnitCell: boolean) => void;
   onShowFpsOverlayChange: (showFpsOverlay: boolean) => void;
@@ -407,7 +425,27 @@ function SettingsPanel({
         value={dragSensitivity}
         min={MIN_DRAG_SENSITIVITY}
         max={MAX_DRAG_SENSITIVITY}
+        clampValue={clampDragSensitivity}
+        formatPercent={formatDragSensitivityPercent}
         onValueChange={onDragSensitivityChange}
+        parsePercentInput={parseDragSensitivityPercentInput}
+        sliderPositionToValue={sliderPositionToDragSensitivity}
+        snapSliderPosition={snapDragSensitivitySliderPosition}
+        valueToSliderPosition={dragSensitivityToSliderPosition}
+      />
+
+      <InspectorRangeRow
+        label="Light strength"
+        value={lightStrength}
+        min={MIN_LIGHT_STRENGTH}
+        max={MAX_LIGHT_STRENGTH}
+        clampValue={clampLightStrength}
+        formatPercent={formatLightStrengthPercent}
+        onValueChange={onLightStrengthChange}
+        parsePercentInput={parseLightStrengthPercentInput}
+        sliderPositionToValue={sliderPositionToLightStrength}
+        snapSliderPosition={snapLightStrengthSliderPosition}
+        valueToSliderPosition={lightStrengthToSliderPosition}
       />
 
       <InspectorSelectRow label="Bonding algorithm">
@@ -443,39 +481,51 @@ function SettingsPanel({
 }
 
 function InspectorRangeRow({
+  clampValue,
+  formatPercent,
   label,
   max,
   min,
   onValueChange,
+  parsePercentInput,
+  sliderPositionToValue,
+  snapSliderPosition,
   value,
+  valueToSliderPosition,
 }: {
+  clampValue: (value: number) => number;
+  formatPercent: (value: number) => string;
   label: string;
   max: number;
   min: number;
   onValueChange: (value: number) => void;
+  parsePercentInput: (value: string) => number | null;
+  sliderPositionToValue: (position: number) => number;
+  snapSliderPosition: (position: number) => number;
   value: number;
+  valueToSliderPosition: (value: number) => number;
 }) {
-  const [valueText, setValueText] = useState(formatDragSensitivityPercent(value));
+  const [valueText, setValueText] = useState(formatPercent(value));
   const sliderBlur = useAutoBlurSlider();
-  const sliderPosition = dragSensitivityToSliderPosition(value);
+  const sliderPosition = valueToSliderPosition(value);
   const sliderValue = Math.round(sliderPosition * 1000);
   const sliderStyle = {
     "--opacity-slider-position": `${Math.min(100, Math.max(0, sliderPosition * 100))}%`,
   } as CSSProperties;
 
   useEffect(() => {
-    setValueText(formatDragSensitivityPercent(value));
-  }, [value]);
+    setValueText(formatPercent(value));
+  }, [formatPercent, value]);
 
   function commitValueText() {
-    const nextValue = parseDragSensitivityPercentInput(valueText);
+    const nextValue = parsePercentInput(valueText);
     if (nextValue === null) {
-      setValueText(formatDragSensitivityPercent(value));
+      setValueText(formatPercent(value));
       return;
     }
 
-    const clampedValue = clampDragSensitivity(nextValue);
-    setValueText(formatDragSensitivityPercent(clampedValue));
+    const clampedValue = clampValue(nextValue);
+    setValueText(formatPercent(clampedValue));
     onValueChange(clampedValue);
   }
 
@@ -487,7 +537,7 @@ function InspectorRangeRow({
     }
 
     if (event.key === "Escape") {
-      setValueText(formatDragSensitivityPercent(value));
+      setValueText(formatPercent(value));
       event.currentTarget.blur();
       return;
     }
@@ -495,7 +545,7 @@ function InspectorRangeRow({
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       event.preventDefault();
       const direction = event.key === "ArrowUp" ? 0.01 : -0.01;
-      onValueChange(clampDragSensitivity(value + direction));
+      onValueChange(clampValue(value + direction));
     }
   }
 
@@ -518,14 +568,12 @@ function InspectorRangeRow({
           aria-valuemin={Math.round(min * 100)}
           aria-valuemax={Math.round(max * 100)}
           aria-valuenow={Math.round(value * 100)}
-          aria-valuetext={`${formatDragSensitivityPercent(value)}%`}
+          aria-valuetext={`${formatPercent(value)}%`}
           className="opacity-slider absolute inset-0 z-10 h-full w-full"
           ref={sliderBlur.ref}
           onChange={(event) => {
-            const nextPosition = snapDragSensitivitySliderPosition(
-              Number(event.currentTarget.value) / 1000,
-            );
-            onValueChange(sliderPositionToDragSensitivity(nextPosition));
+            const nextPosition = snapSliderPosition(Number(event.currentTarget.value) / 1000);
+            onValueChange(sliderPositionToValue(nextPosition));
           }}
           onMouseDown={sliderBlur.handlePointerDown}
           onMouseUp={sliderBlur.handlePointerEnd}

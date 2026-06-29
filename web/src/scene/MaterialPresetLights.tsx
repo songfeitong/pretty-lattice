@@ -2,8 +2,10 @@ import type { MaterialPresetLight, MaterialPresetProps } from "../model/material
 import { CameraHeadlight } from "./CameraHeadlight";
 
 export function MaterialPresetLights({
+  intensityScale = 1,
   lighting,
 }: {
+  intensityScale?: number;
   lighting: MaterialPresetLight[];
 }) {
   return (
@@ -11,6 +13,7 @@ export function MaterialPresetLights({
       {lighting.map((light, index) => (
         <MaterialPresetLightRenderer
           key={`${index}:${light.type}:${JSON.stringify(light.props)}`}
+          intensityScale={intensityScale}
           light={light}
         />
       ))}
@@ -19,14 +22,16 @@ export function MaterialPresetLights({
 }
 
 function MaterialPresetLightRenderer({
+  intensityScale,
   light,
 }: {
+  intensityScale: number;
   light: MaterialPresetLight;
 }) {
   const props = light.props;
 
   if (light.type === "AmbientLight") {
-    return <ambientLight {...resolveLightProps(props)} />;
+    return <ambientLight {...resolveLightPropsWithScaledIntensity(props, intensityScale)} />;
   }
 
   if (light.type === "HemisphereLight") {
@@ -36,7 +41,7 @@ function MaterialPresetLightRenderer({
         args={[
           expectColor(skyColor, `${light.type}.props.skyColor`),
           expectColor(groundColor, `${light.type}.props.groundColor`),
-          expectNumber(intensity, `${light.type}.props.intensity`),
+          expectNumber(intensity, `${light.type}.props.intensity`) * intensityScale,
         ]}
         {...resolveLightProps(rest)}
       />
@@ -48,6 +53,7 @@ function MaterialPresetLightRenderer({
     <CameraHeadlight
       color={expectOptionalColor(color, `${light.type}.props.color`)}
       intensity={expectOptionalNumber(intensity, `${light.type}.props.intensity`)}
+      intensityScale={intensityScale}
       offset={expectOptionalVectorTuple(offset, `${light.type}.props.offset`)}
     />
   );
@@ -59,6 +65,22 @@ function resolveLightProps(props: MaterialPresetProps): Record<string, unknown> 
       ([, value]) => value !== undefined && value !== null,
     ),
   );
+}
+
+function resolveLightPropsWithScaledIntensity(
+  props: MaterialPresetProps,
+  intensityScale: number,
+): Record<string, unknown> {
+  const resolvedProps = resolveLightProps(props);
+  const intensity =
+    props.intensity === undefined || props.intensity === null
+      ? 1
+      : expectNumber(props.intensity, "light.props.intensity");
+
+  return {
+    ...resolvedProps,
+    intensity: intensity * intensityScale,
+  };
 }
 
 function expectOptionalColor(data: unknown, path: string): string | number | undefined {

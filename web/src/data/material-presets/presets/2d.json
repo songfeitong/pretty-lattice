@@ -10,7 +10,7 @@
     {
       "type": "AmbientLight",
       "props": {
-        "intensity": 0.5
+        "intensity": 0.0
       }
     }
   ]

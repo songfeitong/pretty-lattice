@@ -674,11 +674,26 @@ describe("App", () => {
     expect(dragSensitivitySlider.getAttribute("aria-valuemax")).toBe("200");
     expect(dragSensitivitySlider.getAttribute("aria-valuenow")).toBe("100");
     expect(dragSensitivitySlider.getAttribute("aria-valuetext")).toBe("100%");
-    expect(inspector.querySelectorAll(".opacity-slider-snap-marker")).toHaveLength(1);
     const dragSensitivityValueInput = within(inspector).getByRole("textbox", {
       name: "Drag sensitivity value",
     });
     expect(dragSensitivityValueInput.getAttribute("value")).toBe("100");
+
+    const lightStrengthSlider = within(inspector).getByRole("slider", {
+      name: "Light strength",
+    });
+    expect(lightStrengthSlider.getAttribute("min")).toBe("0");
+    expect(lightStrengthSlider.getAttribute("max")).toBe("1000");
+    expect(lightStrengthSlider.getAttribute("value")).toBe("500");
+    expect(lightStrengthSlider.getAttribute("aria-valuemin")).toBe("50");
+    expect(lightStrengthSlider.getAttribute("aria-valuemax")).toBe("200");
+    expect(lightStrengthSlider.getAttribute("aria-valuenow")).toBe("100");
+    expect(lightStrengthSlider.getAttribute("aria-valuetext")).toBe("100%");
+    const lightStrengthValueInput = within(inspector).getByRole("textbox", {
+      name: "Light strength value",
+    });
+    expect(lightStrengthValueInput.getAttribute("value")).toBe("100");
+    expect(inspector.querySelectorAll(".opacity-slider-snap-marker")).toHaveLength(2);
 
     fireEvent.change(dragSensitivitySlider, { target: { value: "1000" } });
 
@@ -689,6 +704,19 @@ describe("App", () => {
     ).toBe("1000");
     expect(
       within(inspector).getByRole("textbox", { name: "Drag sensitivity value" }).getAttribute(
+        "value",
+      ),
+    ).toBe("200");
+
+    fireEvent.change(lightStrengthSlider, { target: { value: "1000" } });
+
+    expect(
+      within(inspector).getByRole("slider", { name: "Light strength" }).getAttribute(
+        "value",
+      ),
+    ).toBe("1000");
+    expect(
+      within(inspector).getByRole("textbox", { name: "Light strength value" }).getAttribute(
         "value",
       ),
     ).toBe("200");
@@ -1188,11 +1216,8 @@ describe("App", () => {
     const combineSwitch = within(commonControls).getByRole("switch", {
       name: "Combine selected components",
     });
-    const horizontalLegendLayout = within(commonControls).getByRole("tab", {
-      name: "Horizontal legend layout",
-    });
-    const verticalLegendLayout = within(commonControls).getByRole("tab", {
-      name: "Vertical legend layout",
+    const legendLayoutSelect = within(commonControls).getByRole("combobox", {
+      name: "Legend layout",
     });
 
     expect(widthInput.value).toBe("2000");
@@ -1201,8 +1226,8 @@ describe("App", () => {
     expect(crystalAxesCheckbox.getAttribute("aria-checked")).toBe("false");
     expect(legendCheckbox.getAttribute("aria-checked")).toBe("false");
     expect(combineSwitch.getAttribute("aria-checked")).toBe("true");
-    expect(horizontalLegendLayout.getAttribute("aria-selected")).toBe("true");
-    expect(verticalLegendLayout.getAttribute("disabled")).not.toBeNull();
+    expect(legendLayoutSelect.textContent).toContain("Horizontal");
+    expect(legendLayoutSelect.getAttribute("disabled")).not.toBeNull();
     expect(twoXSupersampling.getAttribute("aria-selected")).toBe("true");
     expect(highMeshQuality.getAttribute("aria-selected")).toBe("true");
     expect(formatSelect.textContent).toContain("PNG");
@@ -1213,7 +1238,9 @@ describe("App", () => {
 
     await user.click(crystalAxesCheckbox);
     await user.click(legendCheckbox);
-    await user.click(verticalLegendLayout);
+    expect(legendLayoutSelect.getAttribute("disabled")).toBeNull();
+    await user.click(legendLayoutSelect);
+    await user.click(await screen.findByRole("option", { name: "Vertical" }));
     await user.click(backgroundButton);
     expect(await screen.findByText("Background")).toBeTruthy();
     await user.click(await screen.findByRole("option", { name: "Black" }));

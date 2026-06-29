@@ -176,14 +176,14 @@ export function ExportTabContent({
           <div className="flex h-7 items-center gap-1.5 rounded-md px-1.5 transition-colors hover:bg-accent/60">
             <ExportComponentCheckbox
               checked={settings.components.legend}
-              className="h-full flex-1 px-0 hover:bg-transparent"
+              className="h-full flex-none px-0 hover:bg-transparent"
               component="legend"
               label="Legend"
               onSettingsChange={(component, checked) =>
                 onSettingsChange(setExportComponentSelected(settings, component, checked))
               }
             />
-            <div className="ml-auto w-[8.4rem]">
+            <div className="ml-2 w-26">
               <ExportLegendLayoutControl
                 disabled={!settings.components.legend}
                 value={settings.legendLayout}
@@ -538,28 +538,39 @@ function ExportLegendLayoutControl({
   value: ExportLegendLayout;
 }) {
   return (
-    <Tabs
+    <Select
+      disabled={disabled}
       value={value}
-      className={cn("w-full gap-0", disabled ? "opacity-45" : null)}
       onValueChange={(nextValue) => onCommit(nextValue as ExportLegendLayout)}
     >
-      <TabsList
+      <SelectTrigger
+        size="sm"
         aria-label="Legend layout"
-        className="!h-6 w-full rounded-md p-0.5"
+        className={cn(
+          "!h-6 w-full !px-2 !py-0",
+          COMMON_PANEL_BODY_TEXT_CLASS,
+        )}
       >
-        {EXPORT_LEGEND_LAYOUT_OPTIONS.map((option) => (
-          <TabsTrigger
-            key={option}
-            value={option}
-            aria-label={`${EXPORT_LEGEND_LAYOUT_LABELS[option]} legend layout`}
-            disabled={disabled}
-            className={EXPORT_SEGMENTED_TRIGGER_CLASS}
-          >
-            {EXPORT_LEGEND_LAYOUT_LABELS[option]}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    </Tabs>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent
+        position="popper"
+        className="!bg-background !text-foreground"
+      >
+        <SelectGroup>
+          {EXPORT_LEGEND_LAYOUT_OPTIONS.map((option) => (
+            <SelectItem
+              key={option}
+              value={option}
+              textValue={EXPORT_LEGEND_LAYOUT_LABELS[option]}
+              className={cn("min-h-6 py-0.5", COMMON_PANEL_BODY_TEXT_CLASS)}
+            >
+              {EXPORT_LEGEND_LAYOUT_LABELS[option]}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
   );
 }
 

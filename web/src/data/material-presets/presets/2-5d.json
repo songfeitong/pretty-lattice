@@ -12,16 +12,18 @@
   },
   "lighting": [
     {
-      "type": "AmbientLight",
+      "type": "HemisphereLight",
       "props": {
-        "intensity": 2.0
+        "skyColor": "#ffffff",
+        "groundColor": "#f0f0f0",
+        "intensity": 1.8
       }
     },
     {
       "type": "cameraDirectional",
       "props": {
-        "intensity": 1.0,
-        "offset": [0.32, 0.22, 0]
+        "intensity": 0.9,
+        "offset": [0.3, 0.2, 0]
       }
     }
   ]

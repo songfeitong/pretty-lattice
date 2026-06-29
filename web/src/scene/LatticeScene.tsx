@@ -91,6 +91,7 @@ export function LatticeScene({
   interactionLocked,
   interactionMode,
   layoutScene,
+  lightStrength = 1,
   onCameraCommandAnimationActiveChange,
   onCameraControlsInteractionActiveChange,
   onCameraOrientationFrame,
@@ -125,6 +126,7 @@ export function LatticeScene({
   interactionLocked: boolean;
   interactionMode: InteractionMode;
   layoutScene?: SceneSpec;
+  lightStrength?: number;
   onCameraCommandAnimationActiveChange?: (isActive: boolean) => void;
   onCameraControlsInteractionActiveChange?: (
     isActive: boolean,
@@ -193,7 +195,10 @@ export function LatticeScene({
       gl={DEFAULT_RENDERER_PARAMETERS}
       data-testid="lattice-canvas"
     >
-      <MaterialPresetLights lighting={materialFamily.lighting} />
+      <MaterialPresetLights
+        intensityScale={lightStrength}
+        lighting={materialFamily.lighting}
+      />
       <PreviewCameraController
         cameraAnimatedCommandVersion={cameraAnimatedCommandVersion}
         cameraCommandVersion={cameraCommandVersion}

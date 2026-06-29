@@ -5,7 +5,7 @@
   "material": {
     "type": "MeshStandardMaterial",
     "props": {
-      "metalness": 0.15,
+      "metalness": 0.10,
       "roughness": 0.6,
       "flatShading": false
     }
@@ -21,7 +21,7 @@
       "type": "cameraDirectional",
       "props": {
         "intensity": 2.0,
-        "offset": [0.32, 0.22, 0]
+        "offset": [0.3, 0.2, 0]
       }
     }
   ]

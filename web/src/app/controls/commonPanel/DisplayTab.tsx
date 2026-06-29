@@ -105,7 +105,7 @@ export function DisplayTabContent({
             id="display-components-label"
             className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "leading-tight text-muted-foreground")}
           >
-            Components
+            Objects
           </h2>
           <span className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "text-right leading-tight text-muted-foreground")}>
             Opacity

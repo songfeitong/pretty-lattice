@@ -110,6 +110,7 @@ import {
   setPreviewDragSensitivity,
   setPreviewInteractionLocked,
   setPreviewInteractionMode,
+  setPreviewLightStrength,
   setPreviewShowFpsOverlay,
   type InteractionMode,
 } from "./viewState";
@@ -365,6 +366,12 @@ export function App() {
   const handleDragSensitivityChange = useCallback((dragSensitivity: number) => {
     setViewState((currentViewState) =>
       setPreviewDragSensitivity(currentViewState, dragSensitivity),
+    );
+  }, []);
+
+  const handleLightStrengthChange = useCallback((lightStrength: number) => {
+    setViewState((currentViewState) =>
+      setPreviewLightStrength(currentViewState, lightStrength),
     );
   }, []);
 
@@ -873,6 +880,7 @@ export function App() {
         atomRenderingMode,
         bondRenderingMode,
         fileName: selectedFileName,
+        lightStrength: viewState.lightStrength,
         scene,
         settings: settingsForExport,
         showCrystalAxisLabels,
@@ -901,6 +909,7 @@ export function App() {
     showCrystalAxisLabels,
     style,
     unitCellLineStyle,
+    viewState.lightStrength,
   ]);
 
   const handleResetAllSettings = useCallback(async () => {
@@ -1108,6 +1117,7 @@ export function App() {
                 previewMeshQuality={previewMeshQuality}
                 componentOpacity={componentOpacity}
                 dragSensitivity={viewState.dragSensitivity}
+                lightStrength={viewState.lightStrength}
                 previewFpsStore={previewFpsStore}
                 style={style}
                 showAtoms={componentVisibility.atoms}
@@ -1295,6 +1305,7 @@ export function App() {
             bondAlgorithm={bondAlgorithm}
             dragSensitivity={viewState.dragSensitivity}
             interactionMode={viewState.interactionMode}
+            lightStrength={viewState.lightStrength}
             isOpen={isInspectorOpen}
             isSceneLoading={previewStatus === "loading"}
             previewMeshQuality={previewMeshQuality}
@@ -1309,6 +1320,7 @@ export function App() {
             }}
             onDragSensitivityChange={handleDragSensitivityChange}
             onInteractionModeChange={handleInteractionModeChange}
+            onLightStrengthChange={handleLightStrengthChange}
             onPreviewMeshQualityChange={handlePreviewMeshQualityChange}
             onFogAffectsUnitCellChange={handleFogAffectsUnitCellChange}
             onShowFpsOverlayChange={handleShowFpsOverlayChange}

@@ -35,6 +35,7 @@ export interface CreateFigureExportOptions {
   componentOpacity: ComponentOpacityState;
   componentVisibility: ComponentVisibilityState;
   fileName: string | null;
+  lightStrength: number;
   scene: SceneSpec;
   settings: ExportSettingsState;
   showCrystalAxisLabels: boolean;
@@ -85,6 +86,7 @@ interface CombinedExportRasterOptions {
   cameraPose: CameraPoseSnapshot;
   componentOpacity: ComponentOpacityState;
   componentVisibility: ComponentVisibilityState;
+  lightStrength: number;
   scene: SceneSpec;
   settings: ExportSettingsState;
   showCrystalAxisLabels: boolean;
@@ -107,6 +109,7 @@ export async function createFigureExportFiles({
   componentOpacity,
   componentVisibility,
   fileName,
+  lightStrength,
   scene,
   settings,
   showCrystalAxisLabels,
@@ -127,6 +130,7 @@ export async function createFigureExportFiles({
         componentOpacity,
         componentVisibility,
         fileName,
+        lightStrength,
         scene,
         settings,
         showCrystalAxisLabels,
@@ -148,6 +152,7 @@ export async function createFigureExportFiles({
         componentOpacity,
         componentVisibility,
         fileName,
+        lightStrength,
         scene,
         settings,
         showCrystalAxisLabels,
@@ -196,6 +201,7 @@ async function createCombinedExportFile({
   componentOpacity,
   componentVisibility,
   fileName,
+  lightStrength,
   scene,
   settings,
   showCrystalAxisLabels,
@@ -210,6 +216,7 @@ async function createCombinedExportFile({
     cameraPose,
     componentOpacity,
     componentVisibility,
+    lightStrength,
     scene,
     settings,
     showCrystalAxisLabels,
@@ -243,6 +250,7 @@ export async function createFigureExportFile({
   componentOpacity,
   componentVisibility,
   fileName,
+  lightStrength,
   scene,
   settings,
   showCrystalAxisLabels,
@@ -256,6 +264,7 @@ export async function createFigureExportFile({
     componentOpacity,
     componentVisibility,
     fileName,
+    lightStrength,
     scene,
     settings,
     showCrystalAxisLabels,
@@ -271,6 +280,7 @@ async function createStructureExportFile({
   componentOpacity,
   componentVisibility,
   fileName,
+  lightStrength,
   scene,
   settings,
   style,
@@ -293,6 +303,7 @@ async function createStructureExportFile({
     cameraPose,
     componentOpacity,
     componentVisibility,
+    lightStrength,
     settings,
     style,
     unitCellLineStyle,
@@ -965,6 +976,7 @@ async function renderExportRaster({
   cameraPose,
   componentOpacity,
   componentVisibility,
+  lightStrength,
   settings,
   style,
   unitCellLineStyle,
@@ -975,6 +987,7 @@ async function renderExportRaster({
   cameraPose: CameraPoseSnapshot;
   componentOpacity: ComponentOpacityState;
   componentVisibility: ComponentVisibilityState;
+  lightStrength: number;
   settings: ExportSettingsState;
   style: StyleState;
   unitCellLineStyle: UnitCellLineStyle;
@@ -990,6 +1003,7 @@ async function renderExportRaster({
     componentOpacity,
     height: settings.height,
     imageFormat: rasterFormatForExportFormat(settings.format),
+    lightStrength,
     meshQuality: settings.meshQuality,
     scene: visibleScene,
     showAtoms: componentVisibility.atoms,
@@ -1009,6 +1023,7 @@ async function renderCombinedExportRaster({
   cameraPose,
   componentOpacity,
   componentVisibility,
+  lightStrength,
   scene,
   settings,
   showCrystalAxisLabels,
@@ -1030,6 +1045,7 @@ async function renderCombinedExportRaster({
       cameraPose,
       componentOpacity,
       componentVisibility,
+      lightStrength,
       settings,
       style,
       unitCellLineStyle,

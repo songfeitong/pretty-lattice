@@ -74,6 +74,7 @@ export interface RenderStructureRasterOptions {
   componentOpacity: ComponentOpacityState;
   height: number;
   imageFormat: RasterExportImageFormat;
+  lightStrength: number;
   meshQuality: ExportMeshQuality;
   scene: SceneSpec;
   showAtoms: boolean;
@@ -108,6 +109,7 @@ export async function renderStructureRasterImage({
   componentOpacity,
   height,
   imageFormat,
+  lightStrength,
   meshQuality,
   scene,
   showAtoms,
@@ -182,7 +184,10 @@ export async function renderStructureRasterImage({
 
     const store = root.render(
       <>
-        <MaterialPresetLights lighting={materialFamily.lighting} />
+        <MaterialPresetLights
+          intensityScale={lightStrength}
+          lighting={materialFamily.lighting}
+        />
         <ExportSceneContent
           atomRenderingMode={atomRenderingMode}
           bondRenderingMode={bondRenderingMode}

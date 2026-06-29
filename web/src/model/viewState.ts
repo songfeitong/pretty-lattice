@@ -10,6 +10,11 @@ export const MAX_DRAG_SENSITIVITY = 2;
 export const DEFAULT_DRAG_SENSITIVITY = 1;
 export const DRAG_SENSITIVITY_SLIDER_SNAP_POSITION = 0.5;
 export const DRAG_SENSITIVITY_SLIDER_SNAP_THRESHOLD = 0.04;
+export const MIN_LIGHT_STRENGTH = 0.5;
+export const MAX_LIGHT_STRENGTH = 2;
+export const DEFAULT_LIGHT_STRENGTH = 1;
+export const LIGHT_STRENGTH_SLIDER_SNAP_POSITION = 0.5;
+export const LIGHT_STRENGTH_SLIDER_SNAP_THRESHOLD = 0.04;
 export const ZOOM_SLIDER_SNAP_POSITION = 0.5;
 export const ZOOM_SLIDER_SNAP_THRESHOLD = 0.03;
 
@@ -40,6 +45,14 @@ export function clampDragSensitivity(dragSensitivity: number): number {
   );
 }
 
+export function clampLightStrength(lightStrength: number): number {
+  if (!Number.isFinite(lightStrength)) {
+    return DEFAULT_LIGHT_STRENGTH;
+  }
+
+  return Math.min(MAX_LIGHT_STRENGTH, Math.max(MIN_LIGHT_STRENGTH, lightStrength));
+}
+
 export function viewScaleToSliderPosition(viewScale: number): number {
   const clampedScale = clampViewScale(viewScale);
   const range = MAX_VIEW_SCALE / MIN_VIEW_SCALE;
@@ -55,17 +68,31 @@ export function sliderPositionToViewScale(position: number): number {
 }
 
 export function dragSensitivityToSliderPosition(dragSensitivity: number): number {
-  const clampedSensitivity = clampDragSensitivity(dragSensitivity);
-  const range = MAX_DRAG_SENSITIVITY / MIN_DRAG_SENSITIVITY;
-
-  return Math.log(clampedSensitivity / MIN_DRAG_SENSITIVITY) / Math.log(range);
+  return logarithmicSliderPosition(
+    clampDragSensitivity(dragSensitivity),
+    MIN_DRAG_SENSITIVITY,
+    MAX_DRAG_SENSITIVITY,
+  );
 }
 
 export function sliderPositionToDragSensitivity(position: number): number {
-  const normalizedPosition = Math.min(1, Math.max(0, position));
-  const range = MAX_DRAG_SENSITIVITY / MIN_DRAG_SENSITIVITY;
+  return clampDragSensitivity(
+    logarithmicValueFromSliderPosition(position, MIN_DRAG_SENSITIVITY, MAX_DRAG_SENSITIVITY),
+  );
+}
 
-  return clampDragSensitivity(MIN_DRAG_SENSITIVITY * range ** normalizedPosition);
+export function lightStrengthToSliderPosition(lightStrength: number): number {
+  return logarithmicSliderPosition(
+    clampLightStrength(lightStrength),
+    MIN_LIGHT_STRENGTH,
+    MAX_LIGHT_STRENGTH,
+  );
+}
+
+export function sliderPositionToLightStrength(position: number): number {
+  return clampLightStrength(
+    logarithmicValueFromSliderPosition(position, MIN_LIGHT_STRENGTH, MAX_LIGHT_STRENGTH),
+  );
 }
 
 export function snapDragSensitivitySliderPosition(position: number): number {
@@ -74,6 +101,17 @@ export function snapDragSensitivitySliderPosition(position: number): number {
     DRAG_SENSITIVITY_SLIDER_SNAP_THRESHOLD
   ) {
     return DRAG_SENSITIVITY_SLIDER_SNAP_POSITION;
+  }
+
+  return position;
+}
+
+export function snapLightStrengthSliderPosition(position: number): number {
+  if (
+    Math.abs(position - LIGHT_STRENGTH_SLIDER_SNAP_POSITION) <=
+    LIGHT_STRENGTH_SLIDER_SNAP_THRESHOLD
+  ) {
+    return LIGHT_STRENGTH_SLIDER_SNAP_POSITION;
   }
 
   return position;
@@ -91,6 +129,10 @@ export function formatDragSensitivityPercent(dragSensitivity: number): string {
   return String(Math.round(clampDragSensitivity(dragSensitivity) * 100));
 }
 
+export function formatLightStrengthPercent(lightStrength: number): string {
+  return String(Math.round(clampLightStrength(lightStrength) * 100));
+}
+
 export function parseDragSensitivityPercentInput(value: string): number | null {
   const normalizedValue = value.trim().replace(/%$/, "");
   if (normalizedValue.length === 0) {
@@ -103,6 +145,20 @@ export function parseDragSensitivityPercentInput(value: string): number | null {
   }
 
   return clampDragSensitivity(percent / 100);
+}
+
+export function parseLightStrengthPercentInput(value: string): number | null {
+  const normalizedValue = value.trim().replace(/%$/, "");
+  if (normalizedValue.length === 0) {
+    return null;
+  }
+
+  const percent = Number(normalizedValue);
+  if (!Number.isFinite(percent) || percent <= 0) {
+    return null;
+  }
+
+  return clampLightStrength(percent / 100);
 }
 
 export function formatZoomPercent(viewScale: number): string {
@@ -121,4 +177,17 @@ export function parseZoomPercentInput(value: string): number | null {
   }
 
   return clampViewScale(percent / 100);
+}
+
+function logarithmicSliderPosition(value: number, min: number, max: number): number {
+  const range = max / min;
+
+  return Math.log(value / min) / Math.log(range);
+}
+
+function logarithmicValueFromSliderPosition(position: number, min: number, max: number): number {
+  const normalizedPosition = Math.min(1, Math.max(0, position));
+  const range = max / min;
+
+  return min * range ** normalizedPosition;
 }
