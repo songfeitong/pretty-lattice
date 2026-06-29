@@ -8,11 +8,14 @@ import {
   type MaterialPresetId,
 } from "./materialPresets";
 
-export type BondColorMode = "neutral" | "by-atom";
+export const DEFAULT_BOND_COLOR = "#d2d2d2";
+
+export type BondColorMode = "unicolor" | "bicolor";
 
 export interface StyleState {
   atomRadius: number;
   atomRadiusModel: AtomRadiusModel;
+  bondColor: string;
   bondColorMode: BondColorMode;
   bondThickness: number;
   colorScheme: ColorScheme;
@@ -27,7 +30,8 @@ export interface StyleState {
 export const DEFAULT_STYLE: StyleState = {
   atomRadius: 40,
   atomRadiusModel: "uniform",
-  bondColorMode: "by-atom",
+  bondColor: DEFAULT_BOND_COLOR,
+  bondColorMode: "bicolor",
   bondThickness: 100,
   colorScheme: DEFAULT_COLOR_SCHEME_ID,
   distinguishSimilarColors: true,

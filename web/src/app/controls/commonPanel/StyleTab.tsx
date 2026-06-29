@@ -41,6 +41,7 @@ import {
   STYLE_SCALE_MAX,
   STYLE_SCALE_MIN,
   createDefaultStyle,
+  DEFAULT_BOND_COLOR,
   type BondColorMode,
   type StyleState,
 } from "../../../model";
@@ -59,9 +60,10 @@ import {
 import { MaterialPresetToken3D } from "./MaterialPresetToken3D";
 
 const BOND_COLOR_OPTIONS: { label: string; value: BondColorMode }[] = [
-  { label: "By atom", value: "by-atom" },
-  { label: "Uniform", value: "neutral" },
+  { label: "Unicolor", value: "unicolor" },
+  { label: "Bicolor", value: "bicolor" },
 ];
+const NATIVE_COLOR_VALUE_PATTERN = /^#[\da-fA-F]{6}$/;
 const ATOM_RADIUS_MODEL_OPTIONS: {
   menuLabel: string;
   value: AtomRadiusModel;
@@ -71,7 +73,6 @@ const ATOM_RADIUS_MODEL_OPTIONS: {
   { menuLabel: "Van der Waals", value: "vdw" },
   { menuLabel: "Ionic", value: "ionic" },
 ];
-const UNICOLOR_TOKEN_STYLE = { background: "#aeb5c0" } as const;
 const BY_ATOM_TOKEN_STYLE = { background: "linear-gradient(90deg, #f58c9a 0 50%, #78a7ff 50% 100%)" } as const;
 
 export function StyleTabContent({
@@ -98,6 +99,13 @@ export function StyleTabContent({
     onStyleChange((currentStyle) => ({
       ...currentStyle,
       bondColorMode,
+    }));
+  }
+
+  function setBondColor(bondColor: string) {
+    onStyleChange((currentStyle) => ({
+      ...currentStyle,
+      bondColor,
     }));
   }
 
@@ -391,7 +399,15 @@ export function StyleTabContent({
             COMMON_PANEL_BODY_TEXT_CLASS,
           )}
         >
-          <span className="min-w-0 truncate leading-tight">Bond style</span>
+          <span className="flex min-w-0 items-center gap-1.5 leading-tight">
+            <span className="min-w-0 truncate">Bond style</span>
+            {style.bondColorMode === "unicolor" ? (
+              <BondColorPicker
+                value={style.bondColor}
+                onValueChange={setBondColor}
+              />
+            ) : null}
+          </span>
           <Select
             value={style.bondColorMode}
             onValueChange={(value) => setBondColorMode(value as BondColorMode)}
@@ -417,6 +433,7 @@ export function StyleTabContent({
                   >
                     <BondStyleOptionLabel
                       label={option.label}
+                      unicolorColor={style.bondColor}
                       value={option.value}
                     />
                   </SelectItem>
@@ -566,9 +583,11 @@ function MaterialPresetOptionLabel({
 
 function BondStyleOptionLabel({
   label,
+  unicolorColor,
   value,
 }: {
   label: string;
+  unicolorColor: string;
   value: BondColorMode;
 }) {
   return (
@@ -576,21 +595,87 @@ function BondStyleOptionLabel({
       <span
         aria-hidden="true"
         className="h-3 w-6 shrink-0 rounded-full border border-border"
-        style={bondStyleTokenStyle(value)}
+        style={bondStyleTokenStyle(value, unicolorColor)}
       />
       <span className="min-w-0 truncate">{label}</span>
     </span>
   );
 }
 
-function bondStyleTokenStyle(value: BondColorMode): CSSProperties | undefined {
-  if (value === "neutral") {
-    return UNICOLOR_TOKEN_STYLE;
+function bondStyleTokenStyle(
+  value: BondColorMode,
+  unicolorColor: string,
+): CSSProperties | undefined {
+  if (value === "unicolor") {
+    return { background: nativeColorValue(unicolorColor) };
   }
-  if (value === "by-atom") {
+  if (value === "bicolor") {
     return BY_ATOM_TOKEN_STYLE;
   }
   return undefined;
+}
+
+function BondColorPicker({
+  onValueChange,
+  value,
+}: {
+  onValueChange: (value: string) => void;
+  value: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const nativeValue = nativeColorValue(value);
+
+  function handleOpenPicker() {
+    const input = inputRef.current;
+
+    if (!input) {
+      return;
+    }
+
+    try {
+      if (typeof input.showPicker === "function") {
+        input.showPicker();
+        return;
+      }
+    } catch {
+      // Fall through to the click fallback for browsers that expose but reject showPicker.
+    }
+
+    input.click();
+  }
+
+  return (
+    <span className="relative inline-flex size-[18px] shrink-0">
+      <button
+        type="button"
+        aria-label="Bond color"
+        className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-md bg-transparent p-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        onClick={handleOpenPicker}
+      >
+        <span
+          aria-hidden="true"
+          className="size-[18px] rounded-md border border-foreground/5 shadow-[0_0_0_1px_rgba(40,40,40,0.015),0_1px_1px_rgba(40,40,40,0.03)]"
+          style={{ background: nativeValue }}
+        />
+      </button>
+      <input
+        ref={inputRef}
+        type="color"
+        aria-label="Bond color value"
+        tabIndex={-1}
+        value={nativeValue}
+        className="pointer-events-none absolute size-px opacity-0"
+        onChange={(event) => onValueChange(event.target.value)}
+      />
+    </span>
+  );
+}
+
+function nativeColorValue(value: string) {
+  if (NATIVE_COLOR_VALUE_PATTERN.test(value)) {
+    return value.toLowerCase();
+  }
+  return DEFAULT_BOND_COLOR;
 }
 
 function ColorSchemeOptionLabel({

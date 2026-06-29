@@ -39,6 +39,7 @@ import type {
   StyleState,
   UnitCellLineStyle,
 } from "../model";
+import { DEFAULT_BOND_COLOR } from "../model";
 import {
   BOND_RADIUS,
   CELL_FRAME_COLOR,
@@ -74,7 +75,7 @@ export interface SceneMeshDetail {
   sphereWidthSegments: number;
 }
 
-export const BOND_COLOR = "#c7cbd1";
+export const BOND_COLOR = DEFAULT_BOND_COLOR;
 export const BOND_TUBE_RADIAL_SEGMENTS = 24;
 export const POLYHEDRON_SURFACE_OPACITY = 0.5;
 export const POLYHEDRON_EDGE_COLOR = "#f2f5f9";
@@ -370,6 +371,7 @@ export function StructureSceneObjects({
           <BatchedBonds
             atoms={scene.atoms}
             bonds={scene.bonds}
+            bondColor={style.bondColor}
             colorMode={style.bondColorMode}
             colorScheme={style.colorScheme}
             colorOverrides={colorOverrides}
@@ -384,6 +386,7 @@ export function StructureSceneObjects({
               key={bondIndex}
               atoms={scene.atoms}
               bond={bond}
+              bondColor={style.bondColor}
               colorMode={style.bondColorMode}
               colorScheme={style.colorScheme}
               colorOverrides={colorOverrides}
@@ -806,6 +809,7 @@ interface BondBatchBuild {
 
 function BatchedBonds({
   atoms,
+  bondColor,
   bonds,
   colorMode,
   colorScheme,
@@ -816,6 +820,7 @@ function BatchedBonds({
   thicknessScale,
 }: {
   atoms: AtomSpec[];
+  bondColor: string;
   bonds: BondSpec[];
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
@@ -833,6 +838,7 @@ function BatchedBonds({
     () =>
       createBondBatchBuild({
         atoms,
+        bondColor,
         bonds,
         colorMode,
         colorScheme,
@@ -842,6 +848,7 @@ function BatchedBonds({
       }),
     [
       atoms,
+      bondColor,
       bonds,
       colorMode,
       colorOverrides,
@@ -879,7 +886,8 @@ function BatchedBonds({
   }
 
   const isTransparent = opacity < 1;
-  const usesVertexColors = batch.mode === "by-atom";
+  const usesVertexColors = batch.mode === "bicolor";
+  const unicolorBondColor = batch.items[0]?.startColor ?? BOND_COLOR;
 
   return (
     <batchedMesh
@@ -888,7 +896,7 @@ function BatchedBonds({
       args={[batch.itemCount, batch.maxVertexCount, batch.maxIndexCount]}
     >
       <StructureMaterial
-        color={usesVertexColors ? undefined : BOND_COLOR}
+        color={usesVertexColors ? undefined : unicolorBondColor}
         depthWrite={!isTransparent}
         materialFamily={materialFamily}
         opacity={opacity}
@@ -901,6 +909,7 @@ function BatchedBonds({
 
 function createBondBatchBuild({
   atoms,
+  bondColor,
   bonds,
   colorMode,
   colorScheme,
@@ -909,6 +918,7 @@ function createBondBatchBuild({
   radius,
 }: {
   atoms: AtomSpec[];
+  bondColor: string;
   bonds: BondSpec[];
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
@@ -919,6 +929,7 @@ function createBondBatchBuild({
   const segments = Math.max(3, Math.floor(radialSegments));
   const items = bondBatchItems({
     atoms,
+    bondColor,
     bonds,
     colorMode,
     colorScheme,
@@ -929,7 +940,7 @@ function createBondBatchBuild({
     return null;
   }
 
-  if (colorMode === "by-atom") {
+  if (colorMode === "bicolor") {
     const vertexCount = items.length * twoToneBondVertexCount(segments);
     const indexCount = items.length * twoToneBondIndexCount(segments);
     return {
@@ -944,7 +955,7 @@ function createBondBatchBuild({
     };
   }
 
-  const geometry = neutralBondGeometry(radius, segments);
+  const geometry = unicolorBondGeometry(radius, segments);
   const maxVertexCount = geometry.getAttribute("position").count;
   const maxIndexCount = geometry.getIndex()?.count ?? maxVertexCount;
   geometry.dispose();
@@ -963,12 +974,14 @@ function createBondBatchBuild({
 
 function bondBatchItems({
   atoms,
+  bondColor,
   bonds,
   colorMode,
   colorScheme,
   colorOverrides,
 }: {
   atoms: AtomSpec[];
+  bondColor: string;
   bonds: BondSpec[];
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
@@ -994,7 +1007,7 @@ function bondBatchItems({
     items.push({
       center: start.clone().add(end).multiplyScalar(0.5),
       endColor:
-        colorMode === "by-atom" ? atomColorForScheme(endAtom, colorScheme, colorOverrides) : BOND_COLOR,
+        colorMode === "bicolor" ? atomColorForScheme(endAtom, colorScheme, colorOverrides) : bondColor,
       length,
       quaternion: new Quaternion().setFromUnitVectors(
         new Vector3(0, 1, 0),
@@ -1003,9 +1016,9 @@ function bondBatchItems({
       startAtomIndex: bond.startAtomIndex,
       endAtomIndex: bond.endAtomIndex,
       startColor:
-        colorMode === "by-atom"
+        colorMode === "bicolor"
           ? atomColorForScheme(startAtom, colorScheme, colorOverrides)
-          : BOND_COLOR,
+          : bondColor,
     });
   }
 
@@ -1014,22 +1027,22 @@ function bondBatchItems({
 
 function populateBatchedBondMesh(mesh: BatchedMesh, batch: BondBatchBuild) {
   const matrix = new Matrix4();
-  const neutralGeometry =
-    batch.mode === "neutral" ? neutralBondGeometry(batch.radius, batch.radialSegments) : null;
-  const neutralGeometryId = neutralGeometry
-    ? mesh.addGeometry(prepareBatchGeometry(neutralGeometry))
+  const unicolorGeometry =
+    batch.mode === "unicolor" ? unicolorBondGeometry(batch.radius, batch.radialSegments) : null;
+  const unicolorGeometryId = unicolorGeometry
+    ? mesh.addGeometry(prepareBatchGeometry(unicolorGeometry))
     : null;
 
   for (const item of batch.items) {
-    const geometryId = neutralGeometryId ?? addTwoToneBondGeometry(mesh, item, batch);
+    const geometryId = unicolorGeometryId ?? addTwoToneBondGeometry(mesh, item, batch);
     const instanceId = mesh.addInstance(geometryId);
     const scale =
-      batch.mode === "neutral" ? new Vector3(1, item.length, 1) : new Vector3(1, 1, 1);
+      batch.mode === "unicolor" ? new Vector3(1, item.length, 1) : new Vector3(1, 1, 1);
     matrix.compose(item.center, item.quaternion, scale);
     mesh.setMatrixAt(instanceId, matrix);
   }
 
-  neutralGeometry?.dispose();
+  unicolorGeometry?.dispose();
 }
 
 function addTwoToneBondGeometry(
@@ -1057,7 +1070,7 @@ function prepareBatchGeometry<TGeometry extends BufferGeometry>(geometry: TGeome
   return geometry;
 }
 
-function neutralBondGeometry(radius: number, radialSegments: number): CylinderGeometry {
+function unicolorBondGeometry(radius: number, radialSegments: number): CylinderGeometry {
   return new CylinderGeometry(radius, radius, 1, radialSegments);
 }
 
@@ -1110,6 +1123,7 @@ function hashString(value: string): number {
 function Bond({
   atoms,
   bond,
+  bondColor,
   colorMode,
   colorScheme,
   colorOverrides,
@@ -1120,6 +1134,7 @@ function Bond({
 }: {
   atoms: AtomSpec[];
   bond: BondSpec;
+  bondColor: string;
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
   colorOverrides?: ElementColorOverrides;
@@ -1165,7 +1180,7 @@ function Bond({
   const isTransparent = opacity < 1;
   const radius = BOND_RADIUS * thicknessScale;
 
-  if (colorMode === "by-atom") {
+  if (colorMode === "bicolor") {
     return (
       <TwoToneBondCylinder
         endColor={geometry.endColor}
@@ -1184,7 +1199,7 @@ function Bond({
 
   return (
     <BondCylinder
-      color={BOND_COLOR}
+      color={bondColor}
       isTransparent={isTransparent}
       length={geometry.length}
       materialFamily={materialFamily}

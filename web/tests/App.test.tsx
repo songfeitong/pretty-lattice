@@ -1018,7 +1018,8 @@ describe("App", () => {
     expect(commonControls.querySelectorAll(".opacity-slider-snap-marker")).toHaveLength(0);
     expect(within(commonControls).getByText("Atom").isConnected).toBe(true);
     expect(materialSelect.textContent).toContain("Classic Matte");
-    expect(bondStyleSelect.textContent).toContain("By atom");
+    expect(bondStyleSelect.textContent).toContain("Bicolor");
+    expect(within(commonControls).queryByRole("button", { name: "Bond color" })).toBeNull();
     expect(colorSchemeSelect.textContent).toContain("VESTA Soft");
     expect(fogSwitch.getAttribute("aria-checked")).toBe("true");
     expect(fogStartSlider.value).toBe("50");
@@ -1040,11 +1041,29 @@ describe("App", () => {
     );
 
     await user.click(bondStyleSelect);
-    expect(await screen.findByRole("option", { name: "By atom" })).toBeTruthy();
+    expect(await screen.findByRole("option", { name: "Bicolor" })).toBeTruthy();
     expect(screen.queryByRole("option", { name: "Uniform (2D)" })).toBeNull();
-    await user.click(await screen.findByRole("option", { name: "Uniform" }));
+    await user.click(await screen.findByRole("option", { name: "Unicolor" }));
 
-    expect(bondStyleSelect.textContent).toContain("Uniform");
+    expect(bondStyleSelect.textContent).toContain("Unicolor");
+    expect(
+      within(within(commonControls).getByText("Material").closest("div") ?? commonControls)
+        .queryByRole("button", { name: "Bond color" }),
+    ).toBeNull();
+    const bondColorButton = within(
+      within(commonControls).getByText("Bond style").closest("div") ?? commonControls,
+    ).getByRole("button", {
+      name: "Bond color",
+    });
+    await user.click(bondColorButton);
+    const bondColorInput = within(
+      within(commonControls).getByText("Bond style").closest("div") ?? commonControls,
+    ).getByLabelText("Bond color value") as HTMLInputElement;
+    expect(bondColorInput.type).toBe("color");
+    expect(bondColorInput.value).toBe("#d2d2d2");
+    fireEvent.change(bondColorInput, { target: { value: "#999999" } });
+    expect(bondColorInput.value).toBe("#999999");
+    expect(screen.queryByLabelText("Alpha transparency percentage")).toBeNull();
     expect(fetchCalls).toHaveLength(1);
 
     await user.click(colorSchemeSelect);
@@ -1108,7 +1127,7 @@ describe("App", () => {
     expect(atomRadiusModelButton.getAttribute("aria-label")).toBe(
       "Atom radius model: Van der Waals",
     );
-    expect(bondStyleSelect.textContent).toContain("Uniform");
+    expect(bondStyleSelect.textContent).toContain("Unicolor");
     expect(colorSchemeSelect.textContent).toContain("Jmol");
     expect(fogSwitch.getAttribute("aria-checked")).toBe("true");
     expect(fogStartInput.value).toBe("18");
@@ -1143,7 +1162,7 @@ describe("App", () => {
     });
 
     await user.click(bondStyleSelect);
-    await user.click(await screen.findByRole("option", { name: "Uniform" }));
+    await user.click(await screen.findByRole("option", { name: "Unicolor" }));
     await user.click(colorSchemeSelect);
     await user.click(await screen.findByRole("option", { name: "Jmol" }));
 
@@ -1168,7 +1187,7 @@ describe("App", () => {
     await user.click(await screen.findByRole("option", { name: "Glossy" }));
 
     expect(nextMaterialSelect.textContent).toContain("Glossy");
-    expect(nextBondStyleSelect.textContent).toContain("Uniform");
+    expect(nextBondStyleSelect.textContent).toContain("Unicolor");
     expect(nextColorSchemeSelect.textContent).toContain("Jmol");
     expect(fetchCalls).toHaveLength(1);
 

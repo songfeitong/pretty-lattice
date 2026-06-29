@@ -61,11 +61,12 @@ describe("settings", () => {
     expect(DEFAULT_UNIT_CELL_LINE_STYLE).toBe("solid");
   });
 
-  test("defaults style controls to 40 percent atoms, 100 percent bonds, and by-atom bonds", () => {
+  test("defaults style controls to 40 percent atoms, 100 percent bonds, and bicolor bonds", () => {
     expect(createDefaultStyle()).toEqual({
       atomRadius: 40,
       atomRadiusModel: "uniform",
-      bondColorMode: "by-atom",
+      bondColor: "#d2d2d2",
+      bondColorMode: "bicolor",
       bondThickness: 100,
       colorScheme: "vesta-soft",
       distinguishSimilarColors: true,

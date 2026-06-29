@@ -338,7 +338,7 @@ describe("computeSceneLayout", () => {
     ).toBeCloseTo(5);
   });
 
-  test("builds by-atom bonds as one open cylinder side with a hard color boundary", () => {
+  test("builds bicolor bonds as one open cylinder side with a hard color boundary", () => {
     const geometry = twoToneBondCylinderGeometry({
       endColor: "#0000ff",
       length: 4,
