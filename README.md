@@ -1,5 +1,4 @@
-
-<h1 align="center"><img src="web/public/favicon.svg" alt="Pretty Lattice logo" width="36" height="42"> Pretty Lattice</h1>
+<h1 align="center"><img src="web/public/favicon.svg" alt="Pretty Lattice logo" width="30" height="30"> Pretty Lattice</h1>
 
 <p align="center">
   Pretty Lattice is a crystal visualization tool for creating beautiful, publication-ready figures.
