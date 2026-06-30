@@ -15,6 +15,7 @@ import {
 } from "./atomHighlight";
 
 let cachedSelectionRingTexture: CanvasTexture | null | undefined;
+const ATOM_SELECTION_RING_RENDER_ORDER = 30;
 
 export function AtomSelectionRing({
   materialRef,
@@ -42,7 +43,7 @@ export function AtomSelectionRing({
     <group ref={ringRef} position={position} scale={scale}>
       <sprite
         raycast={ignoreSelectionRingRaycast}
-        renderOrder={3}
+        renderOrder={ATOM_SELECTION_RING_RENDER_ORDER}
         scale={[spriteScale, spriteScale, 1]}
       >
         <spriteMaterial
