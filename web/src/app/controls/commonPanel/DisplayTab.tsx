@@ -141,6 +141,11 @@ export function DisplayTabContent({
             onCheckedChange={(checked) => setVisibility("atoms", checked)}
             onOpacityChange={(value) => setOpacity("atoms", value)}
           />
+          <ImageSwitchRow
+            checked={visibility.atomLabels}
+            label="Atom labels"
+            onCheckedChange={(checked) => setVisibility("atomLabels", checked)}
+          />
           <ComponentOpacityRow
             checked={visibility.bonds}
             label="Bonds"

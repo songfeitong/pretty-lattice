@@ -495,6 +495,7 @@ export function App() {
                 lightStrength={viewState.lightStrength}
                 previewFpsStore={previewFpsStore}
                 style={style}
+                showAtomLabels={componentVisibility.atomLabels}
                 showAtoms={componentVisibility.atoms}
                 showFpsOverlay={viewState.showFpsOverlay}
                 showUnitCell={componentVisibility.unitCell}

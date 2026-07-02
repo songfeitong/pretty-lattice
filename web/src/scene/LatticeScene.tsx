@@ -107,6 +107,7 @@ export function LatticeScene({
   pulseToken = 0,
   previewMeshQuality = DEFAULT_PREVIEW_MESH_QUALITY,
   previewFpsStore,
+  showAtomLabels = false,
   showAtoms = true,
   showFpsOverlay = false,
   showUnitCell = true,
@@ -143,6 +144,7 @@ export function LatticeScene({
   pulseToken?: number;
   previewMeshQuality?: MeshQuality;
   previewFpsStore?: PreviewFpsStore;
+  showAtomLabels?: boolean;
   showAtoms?: boolean;
   showFpsOverlay?: boolean;
   showUnitCell?: boolean;
@@ -229,6 +231,7 @@ export function LatticeScene({
         onLockedInteractionAttempt={onLockedInteractionAttempt}
         pulseAtomId={pulseAtomId}
         pulseToken={pulseToken}
+        showAtomLabels={showAtomLabels}
         showAtoms={showAtoms}
         showUnitCell={showUnitCell}
         style={style}

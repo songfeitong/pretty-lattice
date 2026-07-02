@@ -22,6 +22,7 @@ import { BatchedBonds } from "./BatchedBonds";
 import { createBondRenderItems } from "./BondRenderItems";
 import { CellFrame } from "./CellFrame";
 import { MemoizedBatchedPolyhedra } from "./BatchedPolyhedra";
+import { AtomLabels } from "./AtomLabels";
 export {
   POLYHEDRON_EDGE_COLOR,
   POLYHEDRON_EDGE_OPACITY,
@@ -78,6 +79,7 @@ export function PreviewSceneContent({
   polyhedronEdgeLineWidthScale = 1,
   pulseAtomId,
   pulseToken,
+  showAtomLabels,
   showAtoms,
   showUnitCell,
   style,
@@ -97,6 +99,7 @@ export function PreviewSceneContent({
   polyhedronEdgeLineWidthScale?: number;
   pulseAtomId: string | null;
   pulseToken: number;
+  showAtomLabels: boolean;
   showAtoms: boolean;
   showUnitCell: boolean;
   style: StyleState;
@@ -120,6 +123,7 @@ export function PreviewSceneContent({
         polyhedronEdgeLineWidthScale={polyhedronEdgeLineWidthScale}
         pulseAtomId={pulseAtomId}
         pulseToken={pulseToken}
+        showAtomLabels={showAtomLabels}
         showAtoms={showAtoms}
         showUnitCell={showUnitCell}
         style={style}
@@ -239,6 +243,7 @@ export function StructureSceneObjects({
   polyhedronEdgeLineWidthScale = 1,
   pulseAtomId = null,
   pulseToken = 0,
+  showAtomLabels,
   showAtoms,
   showUnitCell,
   style,
@@ -259,6 +264,7 @@ export function StructureSceneObjects({
   polyhedronEdgeLineWidthScale?: number;
   pulseAtomId?: string | null;
   pulseToken?: number;
+  showAtomLabels: boolean;
   showAtoms: boolean;
   showUnitCell: boolean;
   style: StyleState;
@@ -345,6 +351,13 @@ export function StructureSceneObjects({
             radiusModel={style.atomRadiusModel}
             radiusScale={style.atomRadius / 100}
             opacity={componentOpacity.atoms / 100}
+          />
+        ) : null}
+        {showAtomLabels ? (
+          <AtomLabels
+            atoms={scene.atoms}
+            radiusModel={style.atomRadiusModel}
+            radiusScale={style.atomRadius / 100}
           />
         ) : null}
       </group>

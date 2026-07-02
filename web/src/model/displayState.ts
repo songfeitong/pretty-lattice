@@ -8,6 +8,7 @@ import type {
 
 export interface ComponentVisibilityState {
   atoms: boolean;
+  atomLabels: boolean;
   unitCell: boolean;
   bonds: boolean;
   polyhedra: boolean;
@@ -17,6 +18,7 @@ export interface ComponentVisibilityState {
 
 export const DEFAULT_COMPONENT_VISIBILITY: ComponentVisibilityState = {
   atoms: true,
+  atomLabels: false,
   unitCell: true,
   bonds: true,
   polyhedra: false,

@@ -69,6 +69,7 @@ export function ExportSceneContent({
         meshDetail={meshDetail}
         polyhedronEdgeLineWidthScale={polyhedronEdgeLineWidthScale}
         scene={scene}
+        showAtomLabels={false}
         showAtoms={showAtoms}
         showUnitCell={showUnitCell}
         style={style}

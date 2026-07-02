@@ -37,6 +37,7 @@ import {
   createDefaultCrystalCameraState,
   stateWithDirectAxis,
 } from "../src/scene/crystalCamera";
+import { atomLabelsForAtoms } from "../src/scene/AtomLabels";
 import {
   computeStructureExportAspectRatio,
   type StructureExportFramePlan,
@@ -85,6 +86,22 @@ describe("computeSceneLayout", () => {
 
     expectVectorClose(pose.outward, standardCubicOutward());
     expectVectorClose(pose.cameraUp, standardCubicUp());
+  });
+
+  test("numbers atom labels by element and reuses canonical labels for periodic images", () => {
+    const atoms = [
+      labelAtom("Bi-1", "Bi", 1, [0, 0, 0]),
+      labelAtom("O-2", "O", 2, [1, 0, 0]),
+      labelAtom("Bi-0", "Bi", 0, [0, 1, 0]),
+      labelAtom("Bi-1-image-1-0-0", "Bi", 1, [2, 0, 0], {
+        imageOffset: [1, 0, 0],
+        siteId: "Bi-1",
+      }),
+    ];
+
+    expect(
+      atomLabelsForAtoms(atoms, "uniform", 1).map((label) => label.label),
+    ).toEqual(["Bi2", "O1", "Bi1", "Bi2"]);
   });
 
   test("uses the same basal viewing angle for hexagonal cells", () => {
@@ -918,5 +935,32 @@ function atom(id: string, position: [number, number, number]): AtomSpec {
     position,
     siteId: id,
     siteIndex,
+  };
+}
+
+function labelAtom(
+  id: string,
+  element: string,
+  siteIndex: number,
+  position: [number, number, number],
+  options: {
+    imageOffset?: [number, number, number];
+    siteId?: string;
+  } = {},
+): AtomSpec {
+  const imageOffset = options.imageOffset ?? [0, 0, 0];
+  const isPeriodicImage = imageOffset.some((value) => value !== 0);
+  return {
+    element,
+    fractionalPosition: [0, 0, 0],
+    id,
+    imageOffset,
+    imageReasons: isPeriodicImage ? ["boundary"] : [],
+    isPeriodicImage,
+    position,
+    siteId: options.siteId ?? id,
+    siteIndex,
+    visibilityDependencies: isPeriodicImage ? ["boundaryAtoms"] : [],
+    visibilityDependencyGroups: isPeriodicImage ? [["boundaryAtoms"]] : [],
   };
 }
