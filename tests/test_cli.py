@@ -12,12 +12,20 @@ from pretty_lattice.cli import _choose_port, _gui_url, _rewrite_file_open_args, 
 runner = CliRunner()
 
 
-def test_choose_requested_port() -> None:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
-        server.bind(("127.0.0.1", 0))
-        port = int(server.getsockname()[1])
+def test_choose_requested_port(monkeypatch) -> None:
+    class FakeSocket:
+        def __enter__(self):
+            return self
 
-    assert _choose_port("127.0.0.1", port) == port
+        def __exit__(self, *args) -> None:
+            pass
+
+        def getsockname(self) -> tuple[str, int]:
+            return ("127.0.0.1", 8765)
+
+    monkeypatch.setattr(cli, "_bind_server_socket", lambda host, port: FakeSocket())
+
+    assert _choose_port("127.0.0.1", 8765) == 8765
 
 
 def test_choose_requested_port_falls_back_when_busy() -> None:
@@ -66,6 +74,12 @@ def test_rewrite_file_open_args_handles_missing_structure_like_path() -> None:
         "missing.vasp",
         "--no-open",
     ]
+    assert _rewrite_file_open_args(["STRU", "--no-open"]) == [
+        "gui",
+        "--file",
+        "STRU",
+        "--no-open",
+    ]
 
 
 def test_multiple_file_open_args_are_detected() -> None:
@@ -75,17 +89,22 @@ def test_multiple_file_open_args_are_detected() -> None:
     assert not cli._is_multiple_file_open_args(["first.vasp", "--no-open"])
 
 
-def test_multi_file_child_command_uses_free_port(tmp_path: Path, monkeypatch) -> None:
+def test_multi_file_child_command_uses_ready_file(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(cli.sys, "argv", ["prl"])
     structure_file = tmp_path / "SrTiO3.vasp"
+    ready_file = tmp_path / "server.port"
 
-    assert cli._multi_file_child_command(structure_file) == [
+    assert cli._multi_file_child_command(structure_file, ready_file) == [
         "prl",
         "gui",
         "--file",
         str(structure_file),
         "--port",
         "0",
+        "--no-open",
+        "--external-open",
+        "--ready-file",
+        str(ready_file),
     ]
 
 
@@ -93,6 +112,63 @@ def test_multiple_file_open_rejects_missing_files(tmp_path: Path) -> None:
     missing_file = tmp_path / "missing.vasp"
 
     assert cli._run_multiple_file_open_args([str(missing_file), str(missing_file)]) == 2
+
+
+def test_write_ready_port(tmp_path: Path) -> None:
+    ready_file = tmp_path / "nested" / "server.port"
+
+    cli._write_ready_port(ready_file, 45678)
+
+    assert ready_file.read_text() == "45678\n"
+
+
+def test_multiple_file_open_opens_urls_in_argument_order(tmp_path: Path, monkeypatch) -> None:
+    structure_files = [
+        tmp_path / "first.vasp",
+        tmp_path / "second.vasp",
+        tmp_path / "third.vasp",
+    ]
+    for structure_file in structure_files:
+        structure_file.write_text("structure")
+
+    commands: list[list[str]] = []
+    opened_urls: list[tuple[str, bool]] = []
+
+    class FakeProcess:
+        def wait(self) -> int:
+            return 0
+
+        def poll(self) -> int | None:
+            return 0
+
+    def fake_popen(command: list[str]) -> FakeProcess:
+        commands.append(command)
+        ready_file = Path(command[command.index("--ready-file") + 1])
+        port = 41000 + len(commands)
+        ready_file.write_text(f"{port}\n")
+        return FakeProcess()
+
+    monkeypatch.setattr(cli.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(cli, "_wait_for_server", lambda host, port: True)
+    monkeypatch.setattr(
+        cli,
+        "_open_url",
+        lambda url, wait_for_opener=False: opened_urls.append((url, wait_for_opener)) or True,
+    )
+    monkeypatch.setattr(cli.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(cli.sys, "argv", ["prl"])
+
+    assert cli._run_multiple_file_open_args([str(path) for path in structure_files]) == 0
+
+    assert [
+        command[command.index("--file") + 1]
+        for command in commands
+    ] == [str(path.resolve()) for path in structure_files]
+    assert opened_urls == [
+        ("http://127.0.0.1:41001?startup=1", True),
+        ("http://127.0.0.1:41002?startup=1", True),
+        ("http://127.0.0.1:41003?startup=1", True),
+    ]
 
 
 def test_gui_url_marks_startup_structure() -> None:
@@ -105,10 +181,13 @@ def test_gui_url_marks_startup_structure() -> None:
 def test_help_accepts_short_option() -> None:
     root_result = runner.invoke(cli.app, ["-h"])
     gui_result = runner.invoke(cli.app, ["gui", "-h"])
+    normalized_root_output = " ".join(root_result.output.split())
 
     assert root_result.exit_code == 0
     assert gui_result.exit_code == 0
     assert "Pretty Lattice command line tools." in root_result.output
+    assert "prl STRUCTURE.vasp" in normalized_root_output
+    assert "prl STRUCTURE_1.vasp STRUCTURE_2.cif" in normalized_root_output
     assert "Start the local Pretty Lattice GUI server." in gui_result.output
 
 

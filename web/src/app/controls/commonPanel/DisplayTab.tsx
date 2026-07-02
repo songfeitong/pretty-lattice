@@ -12,14 +12,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import {
+  ATOM_LABEL_SIZE_MAX,
+  ATOM_LABEL_SIZE_MIN,
+  atomLabelElementsForAtoms,
+  atomLabelOptionsForAtoms,
   COMPONENT_OPACITY_MAX,
   createDefaultComponentOpacity,
+  selectedAtomLabelSettingsForScene,
+  type AtomLabelMode,
+  type AtomLabelSettings,
   type ComponentOpacityState,
   type ComponentVisibilityState,
 } from "../../../model";
@@ -32,6 +47,7 @@ import { TOOL_ICON_BUTTON_FEEDBACK_ANIMATION_MS } from "./controlFeedback";
 import {
   clampOpacityValue,
   formatOpacityValue,
+  PercentSliderRow,
   parseOpacityInput,
   snapSliderOpacityValue,
   useAutoBlurSlider,
@@ -47,12 +63,14 @@ export function DisplayTabContent({
   onOpacityChange,
   onVisibilityChange,
   opacity,
+  sceneAtoms,
   visibility,
 }: {
   hasPolyhedra: boolean;
   onOpacityChange: Dispatch<SetStateAction<ComponentOpacityState>>;
   onVisibilityChange: Dispatch<SetStateAction<ComponentVisibilityState>>;
   opacity: ComponentOpacityState;
+  sceneAtoms: ComponentVisibilitySceneAtom[];
   visibility: ComponentVisibilityState;
 }) {
   function setVisibility(key: keyof ComponentVisibilityState, value: boolean) {
@@ -66,6 +84,23 @@ export function DisplayTabContent({
     onOpacityChange((currentOpacity) => ({
       ...currentOpacity,
       [key]: clampOpacityValue(value, COMPONENT_OPACITY_MAX[key]),
+    }));
+  }
+
+  function setAtomLabels(nextSettings: AtomLabelSettings) {
+    onVisibilityChange((currentVisibility) => ({
+      ...currentVisibility,
+      atomLabels: selectedAtomLabelSettingsForScene(nextSettings, sceneAtoms),
+    }));
+  }
+
+  function updateAtomLabels(update: (settings: AtomLabelSettings) => AtomLabelSettings) {
+    onVisibilityChange((currentVisibility) => ({
+      ...currentVisibility,
+      atomLabels: selectedAtomLabelSettingsForScene(
+        update(currentVisibility.atomLabels),
+        sceneAtoms,
+      ),
     }));
   }
 
@@ -142,10 +177,34 @@ export function DisplayTabContent({
             onOpacityChange={(value) => setOpacity("atoms", value)}
           />
           <ImageSwitchRow
-            checked={visibility.atomLabels}
+            checked={visibility.atomLabels.enabled && visibility.atomLabels.kind === "element"}
             label="Atom labels"
-            onCheckedChange={(checked) => setVisibility("atomLabels", checked)}
+            onCheckedChange={(checked) =>
+              updateAtomLabels((settings) => ({
+                ...settings,
+                enabled: checked,
+                kind: "element",
+              }))
+            }
           />
+          <ImageSwitchRow
+            checked={visibility.atomLabels.enabled && visibility.atomLabels.kind === "number"}
+            label="Atom number"
+            onCheckedChange={(checked) =>
+              updateAtomLabels((settings) => ({
+                ...settings,
+                enabled: checked,
+                kind: "number",
+              }))
+            }
+          />
+          {visibility.atomLabels.enabled ? (
+            <AtomLabelControls
+              atoms={sceneAtoms}
+              settings={selectedAtomLabelSettingsForScene(visibility.atomLabels, sceneAtoms)}
+              onSettingsChange={setAtomLabels}
+            />
+          ) : null}
           <ComponentOpacityRow
             checked={visibility.bonds}
             label="Bonds"
@@ -196,6 +255,128 @@ export function DisplayTabContent({
           />
         </div>
       </section>
+    </div>
+  );
+}
+
+type ComponentVisibilitySceneAtom = Parameters<typeof atomLabelElementsForAtoms>[0][number];
+
+function AtomLabelControls({
+  atoms,
+  onSettingsChange,
+  settings,
+}: {
+  atoms: ComponentVisibilitySceneAtom[];
+  onSettingsChange: (settings: AtomLabelSettings) => void;
+  settings: AtomLabelSettings;
+}) {
+  const elements = atomLabelElementsForAtoms(atoms);
+  const atomOptions = atomLabelOptionsForAtoms(atoms);
+
+  function updateSettings(nextSettings: AtomLabelSettings) {
+    onSettingsChange(selectedAtomLabelSettingsForScene(nextSettings, atoms));
+  }
+
+  function setMode(mode: AtomLabelMode) {
+    updateSettings({ ...settings, mode });
+  }
+
+  return (
+    <div className="rounded-md bg-muted/35 px-1.5 py-1.5">
+      <PercentSliderRow
+        accessibleLabel={settings.kind === "number" ? "Atom number" : "Element label"}
+        allowZero={false}
+        label={settings.kind === "number" ? "Number size" : "Label size"}
+        min={ATOM_LABEL_SIZE_MIN}
+        max={ATOM_LABEL_SIZE_MAX}
+        value={settings.size}
+        valueLabel="size"
+        onValueChange={(size) => updateSettings({ ...settings, size })}
+      />
+
+      <div className={cn("grid h-7 grid-cols-[minmax(5.5rem,1fr)_9.1rem] items-center gap-2 px-1.5", COMMON_PANEL_BODY_TEXT_CLASS)}>
+        <span className="min-w-0 truncate leading-tight">
+          {settings.kind === "number" ? "Show numbers" : "Show labels"}
+        </span>
+        <Select value={settings.mode} onValueChange={(value) => setMode(value as AtomLabelMode)}>
+          <SelectTrigger
+            size="sm"
+            aria-label={settings.kind === "number" ? "Atom number visibility mode" : "Element label visibility mode"}
+            className="h-[24px] w-full bg-background px-2 py-0 text-xs"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper" className="!bg-background !text-foreground">
+            <SelectGroup>
+              <SelectItem value="all" className="text-xs">All atoms</SelectItem>
+              <SelectItem value="elements" className="text-xs">By element</SelectItem>
+              <SelectItem value="atoms" className="text-xs">By atom</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {settings.mode === "elements" ? (
+        <div className="mt-1 grid grid-cols-3 gap-1 px-1.5">
+          {elements.map((element) => (
+            <label
+              key={element}
+              className={cn(
+                "flex h-6 min-w-0 items-center gap-1.5 rounded-md px-1 transition-colors hover:bg-accent/60",
+                COMMON_PANEL_BODY_TEXT_CLASS,
+              )}
+            >
+              <Checkbox
+                checked={settings.elements[element] !== false}
+                aria-label={`Show ${element} labels`}
+                className="size-3.5 rounded-[3px]"
+                iconClassName="size-3"
+                onCheckedChange={(checked) =>
+                  updateSettings({
+                    ...settings,
+                    elements: {
+                      ...settings.elements,
+                      [element]: checked === true,
+                    },
+                  })
+                }
+              />
+              <span className="min-w-0 truncate leading-tight">{element}</span>
+            </label>
+          ))}
+        </div>
+      ) : null}
+
+      {settings.mode === "atoms" ? (
+        <div className="mt-1 grid max-h-28 grid-cols-3 gap-1 overflow-y-auto px-1.5">
+          {atomOptions.map((option) => (
+            <label
+              key={option.atomId}
+              className={cn(
+                "flex h-6 min-w-0 items-center gap-1.5 rounded-md px-1 transition-colors hover:bg-accent/60",
+                COMMON_PANEL_BODY_TEXT_CLASS,
+              )}
+            >
+              <Checkbox
+                checked={settings.atomIds.includes(option.atomId)}
+                aria-label={`Show ${option.label} label`}
+                className="size-3.5 rounded-[3px]"
+                iconClassName="size-3"
+                onCheckedChange={(checked) => {
+                  const nextAtomIds = checked === true
+                    ? Array.from(new Set([...settings.atomIds, option.atomId]))
+                    : settings.atomIds.filter((atomId) => atomId !== option.atomId);
+                  updateSettings({
+                    ...settings,
+                    atomIds: nextAtomIds,
+                  });
+                }}
+              />
+              <span className="min-w-0 truncate leading-tight">{option.label}</span>
+            </label>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

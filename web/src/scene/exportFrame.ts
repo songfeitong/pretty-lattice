@@ -2,6 +2,7 @@ import { OrthographicCamera, Quaternion, Vector3 } from "three";
 
 import type { SceneSpec } from "../api/scene";
 import type { StyleState } from "../model/appearance";
+import { atomLabelsForAtoms, type AtomLabelSettings } from "../model/atomLabels";
 import type { ComponentOpacityState } from "../model/displayState";
 import type { CameraPoseSnapshot } from "./cameraPose";
 import {
@@ -44,6 +45,7 @@ interface ExportFramePoint {
 }
 
 interface StructureExportGeometryOptions {
+  atomLabelSettings?: AtomLabelSettings | null;
   cameraPose: CameraPoseSnapshot;
   componentOpacity: ComponentOpacityState;
   groupPosition?: VectorTuple;
@@ -70,6 +72,9 @@ interface BoundsAccumulator {
 const EXPORT_FRAME_PADDING_RATIO = 1.04;
 const FALLBACK_EXPORT_ASPECT_RATIO = 4 / 3;
 const MIN_PROJECTED_SPAN = 1e-6;
+const LABEL_EXPORT_BASE_HEIGHT = 0.768;
+const LABEL_EXPORT_AVERAGE_CHARACTER_WIDTH = 0.34;
+const LABEL_EXPORT_SIZE_NORMALIZATION = 100;
 
 export function computeStructureExportAspectRatio(
   options: StructureExportGeometryOptions,
@@ -137,6 +142,7 @@ export function applyOrthographicExportFrame(
 }
 
 export function computeStructureProjectedBounds({
+  atomLabelSettings,
   cameraPose,
   componentOpacity,
   groupPosition,
@@ -193,6 +199,26 @@ export function computeStructureProjectedBounds({
           bounds.includePoint(projector.projectPoint(atom.position));
         }
       }
+    }
+  }
+
+  if (atomLabelSettings?.enabled) {
+    const radiusScale = style.atomRadius / 100;
+    const labelScale = atomLabelSettings.size / LABEL_EXPORT_SIZE_NORMALIZATION;
+    for (const label of atomLabelsForAtoms({
+      atoms: scene.atoms,
+      kind: atomLabelSettings.kind,
+      mode: atomLabelSettings.mode,
+      selectedAtomIds: atomLabelSettings.atomIds,
+      selectedElements: atomLabelSettings.elements,
+    })) {
+      const labelHeight = LABEL_EXPORT_BASE_HEIGHT * labelScale;
+      const labelWidth = Math.max(
+        labelHeight,
+        label.label.length * LABEL_EXPORT_AVERAGE_CHARACTER_WIDTH * labelScale,
+      );
+      const center = projector.projectPoint(label.atom.position);
+      bounds.includePoint(center, Math.max(labelWidth * 0.5, labelHeight * 0.5));
     }
   }
 

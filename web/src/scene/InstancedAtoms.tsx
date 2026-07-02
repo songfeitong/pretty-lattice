@@ -49,8 +49,10 @@ export function InstancedAtoms({
   inspectedAtomId,
   interactionLocked,
   materialFamily,
+  measuredAtomIds = [],
   meshDetail,
   onInspect,
+  onMeasure,
   onPulse,
   onLockedInteractionAttempt,
   opacity,
@@ -65,8 +67,10 @@ export function InstancedAtoms({
   inspectedAtomId: string | null;
   interactionLocked: boolean;
   materialFamily: ResolvedStructureMaterialFamily;
+  measuredAtomIds?: string[];
   meshDetail: SceneMeshDetail;
   onInspect?: (atomId: string | null) => void;
+  onMeasure?: (atomId: string) => void;
   onPulse?: (atomId: string) => void;
   onLockedInteractionAttempt?: () => void;
   opacity: number;
@@ -110,6 +114,10 @@ export function InstancedAtoms({
     atomIndexById,
     inspectedAtomId,
   );
+  const measuredInstances = measuredAtomIds.flatMap((atomId) => {
+    const instance = instanceForAtomId(atomInstances, atomIndexById, atomId);
+    return instance ? [instance] : [];
+  });
   const activePulse = pulseAtomId && pulseToken !== 0
     ? { atomId: pulseAtomId, token: pulseToken }
     : null;
@@ -184,6 +192,11 @@ export function InstancedAtoms({
         return;
       }
 
+      if (event.nativeEvent.ctrlKey) {
+        onMeasure?.(atom.id);
+        return;
+      }
+
       onPulse?.(atom.id);
     },
     [atomForEvent, interactionLocked, onPulse],
@@ -199,6 +212,10 @@ export function InstancedAtoms({
       event.stopPropagation();
       if (interactionLocked) {
         onLockedInteractionAttempt?.();
+        return;
+      }
+
+      if (event.nativeEvent.ctrlKey) {
         return;
       }
 
@@ -256,6 +273,13 @@ export function InstancedAtoms({
           radius={inspectedInstance.instance.radius}
         />
       ) : null}
+      {measuredInstances.map(({ instance }) => (
+        <InstancedAtomSelectionRing
+          key={`measure-${instance.atom.id}`}
+          position={instance.atom.position}
+          radius={instance.radius}
+        />
+      ))}
     </>
   );
 }

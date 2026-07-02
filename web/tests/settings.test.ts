@@ -318,7 +318,8 @@ describe("settings", () => {
     expect(hasPolyhedra({ ...scene, polyhedra: [] })).toBe(false);
     expect(hasPolyhedra(null)).toBe(false);
     expect(createDefaultComponentVisibility(scene).polyhedra).toBe(false);
-    expect(createDefaultComponentVisibility(scene).atomLabels).toBe(false);
+    expect(createDefaultComponentVisibility(scene).atomLabels.enabled).toBe(false);
+    expect(createDefaultComponentVisibility(scene).atomLabels.kind).toBe("element");
     expect(createDefaultComponentVisibility({ ...scene, polyhedra: [] }).polyhedra).toBe(false);
     expect(createDefaultComponentVisibility().polyhedra).toBe(false);
   });
@@ -334,7 +335,7 @@ describe("settings", () => {
     const visibleScene = visibleSceneForComponents(scene, defaultWithoutOneHopVisibility);
 
     expect(defaultVisibility.oneHopBondedAtoms).toBe(true);
-    expect(defaultVisibility.atomLabels).toBe(false);
+    expect(defaultVisibility.atomLabels.enabled).toBe(false);
     expect(visibleScene?.atoms.map((atom) => atom.id)).toEqual([
       "Na-0",
       "Na-0-image-1-0-0",
@@ -435,7 +436,10 @@ describe("settings", () => {
 
     const withAtomLabels = visibleSceneForComponents(scene, {
       ...defaultWithoutOneHopVisibility,
-      atomLabels: true,
+      atomLabels: {
+        ...defaultWithoutOneHopVisibility.atomLabels,
+        enabled: true,
+      },
     });
     expect(withAtomLabels).toEqual(visibleScene);
 

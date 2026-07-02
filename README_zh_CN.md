@@ -10,7 +10,6 @@
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green?style=flat-square">
 </p>
 
-
 <p align="center">
   <a href="README.md">English</a> | 简体中文
 </p>
@@ -24,7 +23,6 @@
 <p align="center">
   <img src="assets/demo.png" alt="Pretty Lattice interface preview" width="90%">
 </p>
-
 
 ## 为什么做 Pretty Lattice
 
@@ -51,6 +49,23 @@ uv tool install pretty-lattice
 - Python 3.12+
 - macOS、Linux 或 Windows
 - 任意现代浏览器
+
+### 从源码安装
+
+如果你从 GitHub 克隆源码安装，先构建前端，再安装 Python 包：
+
+```shell
+git clone https://github.com/songfeitong/pretty-lattice.git
+cd pretty-lattice
+
+cd web
+bun install
+bun run build
+
+cd ..
+python scripts/sync_web_static.py
+python -m pip install .
+```
 
 ## 快速开始
 

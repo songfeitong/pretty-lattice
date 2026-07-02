@@ -4,6 +4,7 @@ import { Fog } from "three";
 
 import type { SceneSpec } from "../api/scene";
 import type {
+  AtomLabelSettings,
   ComponentOpacityState,
   ExportMeshQuality,
   StyleState,
@@ -66,40 +67,44 @@ export const EXPORT_SCENE_MESH_DETAIL_PRESETS: Record<ExportMeshQuality, SceneMe
 };
 
 export function PreviewSceneContent({
+  atomLabelSettings,
   componentOpacity,
   layout,
   materialFamilies,
   meshDetail,
   scene,
   inspectedAtomId,
+  measuredAtomIds,
   interactionLocked,
   onAtomInspect,
+  onAtomMeasure,
   onAtomPulse,
   onLockedInteractionAttempt,
   polyhedronEdgeLineWidthScale = 1,
   pulseAtomId,
   pulseToken,
-  showAtomLabels,
   showAtoms,
   showUnitCell,
   style,
   unitCellLineStyle = "solid",
   unitCellLineWidthScale = 1,
 }: {
+  atomLabelSettings: AtomLabelSettings | null;
   componentOpacity: ComponentOpacityState;
   layout: SceneLayout;
   materialFamilies: ResolvedStructureMaterialFamilies;
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
   inspectedAtomId: string | null;
+  measuredAtomIds: string[];
   interactionLocked: boolean;
   onAtomInspect?: (atomId: string | null) => void;
+  onAtomMeasure?: (atomId: string) => void;
   onAtomPulse?: (atomId: string) => void;
   onLockedInteractionAttempt?: () => void;
   polyhedronEdgeLineWidthScale?: number;
   pulseAtomId: string | null;
   pulseToken: number;
-  showAtomLabels: boolean;
   showAtoms: boolean;
   showUnitCell: boolean;
   style: StyleState;
@@ -110,20 +115,22 @@ export function PreviewSceneContent({
     <>
       <SceneFog layout={layout} style={style} />
       <MemoizedStructureSceneObjects
+        atomLabelSettings={atomLabelSettings}
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}
         materialFamilies={materialFamilies}
         meshDetail={meshDetail}
         scene={scene}
         inspectedAtomId={inspectedAtomId}
+        measuredAtomIds={measuredAtomIds}
         interactionLocked={interactionLocked}
         onAtomInspect={onAtomInspect}
+        onAtomMeasure={onAtomMeasure}
         onAtomPulse={onAtomPulse}
         onLockedInteractionAttempt={onLockedInteractionAttempt}
         polyhedronEdgeLineWidthScale={polyhedronEdgeLineWidthScale}
         pulseAtomId={pulseAtomId}
         pulseToken={pulseToken}
-        showAtomLabels={showAtomLabels}
         showAtoms={showAtoms}
         showUnitCell={showUnitCell}
         style={style}
@@ -230,6 +237,7 @@ function lerp(start: number, end: number, amount: number): number {
 }
 
 export function StructureSceneObjects({
+  atomLabelSettings,
   componentOpacity,
   groupPosition,
   interactionLocked = false,
@@ -237,13 +245,14 @@ export function StructureSceneObjects({
   meshDetail,
   scene,
   inspectedAtomId = null,
+  measuredAtomIds = [],
   onAtomInspect,
+  onAtomMeasure,
   onAtomPulse,
   onLockedInteractionAttempt,
   polyhedronEdgeLineWidthScale = 1,
   pulseAtomId = null,
   pulseToken = 0,
-  showAtomLabels,
   showAtoms,
   showUnitCell,
   style,
@@ -251,6 +260,7 @@ export function StructureSceneObjects({
   unitCellLineStyle = "solid",
   unitCellLineWidthScale = 1,
 }: {
+  atomLabelSettings: AtomLabelSettings | null;
   componentOpacity: ComponentOpacityState;
   groupPosition: VectorTuple;
   interactionLocked?: boolean;
@@ -258,13 +268,14 @@ export function StructureSceneObjects({
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
   inspectedAtomId?: string | null;
+  measuredAtomIds?: string[];
   onAtomInspect?: (atomId: string | null) => void;
+  onAtomMeasure?: (atomId: string) => void;
   onAtomPulse?: (atomId: string) => void;
   onLockedInteractionAttempt?: () => void;
   polyhedronEdgeLineWidthScale?: number;
   pulseAtomId?: string | null;
   pulseToken?: number;
-  showAtomLabels: boolean;
   showAtoms: boolean;
   showUnitCell: boolean;
   style: StyleState;
@@ -342,8 +353,10 @@ export function StructureSceneObjects({
             inspectedAtomId={inspectedAtomId}
             interactionLocked={interactionLocked}
             materialFamily={materialFamilies.atom}
+            measuredAtomIds={measuredAtomIds}
             meshDetail={meshDetail}
             onInspect={onAtomInspect}
+            onMeasure={onAtomMeasure}
             onPulse={onAtomPulse}
             onLockedInteractionAttempt={onLockedInteractionAttempt}
             pulseAtomId={pulseAtomId}
@@ -353,9 +366,10 @@ export function StructureSceneObjects({
             opacity={componentOpacity.atoms / 100}
           />
         ) : null}
-        {showAtomLabels ? (
+        {atomLabelSettings ? (
           <AtomLabels
             atoms={scene.atoms}
+            settings={atomLabelSettings}
             radiusModel={style.atomRadiusModel}
             radiusScale={style.atomRadius / 100}
           />

@@ -2,8 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import type { AtomSpec, SceneSpec } from "../src/api/scene";
 import {
+  atomMeasurementInfoForIds,
   atomInspectorCopyText,
   atomSiteIndex,
+  formatAtomAngleForDisplay,
   formatAtomCoordinateForCopy,
   formatAtomCoordinateForDisplay,
   formatCellOffset,
@@ -30,6 +32,7 @@ describe("atom inspector formatting", () => {
     expect(info?.canonicalAtom.id).toBe("Al-1");
     expect(info?.canonicalAtom.siteIndex).toBe(1);
     expect(atomInspectorCopyText(info!)).toBe([
+      "Label: Al1",
       "Element: Al",
       "Index: 1",
       "Fractional: 0.250000, 0.500000, 0.147904",
@@ -46,7 +49,52 @@ describe("atom inspector formatting", () => {
     const info = inspectedAtomInfoForId(scene, "Al-1-image-1-0--1");
 
     expect(atomSiteIndex(info!.canonicalAtom)).toBe("1");
-    expect(atomInspectorCopyText(info!).split("\n")[1]).toBe("Index: 1");
+    expect(atomInspectorCopyText(info!).split("\n")[2]).toBe("Index: 1");
+  });
+
+  test("computes atom distance and angle measurements", () => {
+    const scene = sceneWithMeasurementAtoms();
+
+    const distanceInfo = atomMeasurementInfoForIds(scene, ["Al-1", "Al-2"]);
+
+    expect(distanceInfo?.atoms.map((atom) => atom.id)).toEqual(["Al-1", "Al-2"]);
+    expect(distanceInfo?.delta).toEqual([3, 0, 0]);
+    expect(distanceInfo?.distance).toBe(3);
+    expect(distanceInfo?.angleDegrees).toBeNull();
+
+    const angleInfo = atomMeasurementInfoForIds(scene, ["Al-1", "Al-2", "Al-3"]);
+
+    expect(angleInfo?.atoms.map((atom) => atom.id)).toEqual(["Al-1", "Al-2", "Al-3"]);
+    expect(formatAtomAngleForDisplay(angleInfo!.angleDegrees!)).toBe("90.000");
+
+    const reverseSelectedInfo = atomMeasurementInfoForIds(scene, ["Al-3", "Al-1", "Al-2"]);
+
+    expect(reverseSelectedInfo?.atoms.map((atom) => atom.id)).toEqual([
+      "Al-1",
+      "Al-2",
+      "Al-3",
+    ]);
+    expect(reverseSelectedInfo?.delta).toEqual([3, 0, 0]);
+    expect(formatAtomAngleForDisplay(reverseSelectedInfo!.angleDegrees!)).toBe("90.000");
+
+    const multiAtomInfo = atomMeasurementInfoForIds(scene, [
+      "Al-1",
+      "Al-2",
+      "Al-3",
+      "Al-4",
+    ]);
+
+    expect(multiAtomInfo?.atoms.map((atom) => atom.id)).toEqual([
+      "Al-1",
+      "Al-2",
+      "Al-3",
+      "Al-4",
+    ]);
+    expect(multiAtomInfo?.secondAtom).toBeNull();
+    expect(multiAtomInfo?.thirdAtom).toBeNull();
+    expect(multiAtomInfo?.delta).toBeNull();
+    expect(multiAtomInfo?.distance).toBeNull();
+    expect(multiAtomInfo?.angleDegrees).toBeNull();
   });
 });
 
@@ -94,6 +142,50 @@ function sceneWithImageAtom(): SceneSpec {
         spaceGroup: null,
         spaceGroupNumber: null,
       },
+    },
+  };
+}
+
+function sceneWithMeasurementAtoms(): SceneSpec {
+  return {
+    ...sceneWithImageAtom(),
+    atoms: [
+      atom({
+        id: "Al-1",
+        siteId: "Al-1",
+        siteIndex: 1,
+        position: [1, 2, 3],
+        fractionalPosition: [0.1, 0.2, 0.3],
+        imageOffset: [0, 0, 0],
+      }),
+      atom({
+        id: "Al-2",
+        siteId: "Al-2",
+        siteIndex: 2,
+        position: [4, 2, 3],
+        fractionalPosition: [0.4, 0.2, 0.3],
+        imageOffset: [0, 0, 0],
+      }),
+      atom({
+        id: "Al-3",
+        siteId: "Al-3",
+        siteIndex: 3,
+        position: [4, 6, 3],
+        fractionalPosition: [0.4, 0.6, 0.3],
+        imageOffset: [0, 0, 0],
+      }),
+      atom({
+        id: "Al-4",
+        siteId: "Al-4",
+        siteIndex: 4,
+        position: [8, 6, 3],
+        fractionalPosition: [0.8, 0.6, 0.3],
+        imageOffset: [0, 0, 0],
+      }),
+    ],
+    summary: {
+      ...sceneWithImageAtom().summary,
+      atomCount: 4,
     },
   };
 }

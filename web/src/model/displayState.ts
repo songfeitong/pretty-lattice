@@ -5,10 +5,14 @@ import type {
   SceneSpec,
   VisibilityDependency,
 } from "../api/scene";
+import {
+  createDefaultAtomLabelSettings,
+  type AtomLabelSettings,
+} from "./atomLabels";
 
 export interface ComponentVisibilityState {
   atoms: boolean;
-  atomLabels: boolean;
+  atomLabels: AtomLabelSettings;
   unitCell: boolean;
   bonds: boolean;
   polyhedra: boolean;
@@ -18,7 +22,7 @@ export interface ComponentVisibilityState {
 
 export const DEFAULT_COMPONENT_VISIBILITY: ComponentVisibilityState = {
   atoms: true,
-  atomLabels: false,
+  atomLabels: createDefaultAtomLabelSettings(),
   unitCell: true,
   bonds: true,
   polyhedra: false,
@@ -50,7 +54,10 @@ export const COMPONENT_OPACITY_MAX: ComponentOpacityState = {
 export function createDefaultComponentVisibility(
   _scene: SceneSpec | null = null,
 ): ComponentVisibilityState {
-  return { ...DEFAULT_COMPONENT_VISIBILITY };
+  return {
+    ...DEFAULT_COMPONENT_VISIBILITY,
+    atomLabels: createDefaultAtomLabelSettings(),
+  };
 }
 
 export function createDefaultComponentOpacity(): ComponentOpacityState {

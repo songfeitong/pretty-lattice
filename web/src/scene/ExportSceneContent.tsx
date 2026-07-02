@@ -4,6 +4,7 @@ import { useThree } from "@react-three/fiber";
 
 import type { SceneSpec } from "../api/scene";
 import type {
+  AtomLabelSettings,
   ComponentOpacityState,
   StyleState,
   UnitCellLineStyle,
@@ -17,6 +18,7 @@ import { MemoizedStructureSceneObjects, SceneFog } from "./StructureSceneObjects
 import { applyOrthographicExportFrame, type StructureExportFramePlan } from "./exportFrame";
 
 export function ExportSceneContent({
+  atomLabelSettings,
   cameraPose,
   componentOpacity,
   exportFramePlan,
@@ -32,6 +34,7 @@ export function ExportSceneContent({
   unitCellLineStyle = "solid",
   unitCellLineWidthScale = 1,
 }: {
+  atomLabelSettings: AtomLabelSettings | null;
   cameraPose: CameraPoseSnapshot;
   componentOpacity: ComponentOpacityState;
   exportFramePlan: StructureExportFramePlan;
@@ -69,7 +72,7 @@ export function ExportSceneContent({
         meshDetail={meshDetail}
         polyhedronEdgeLineWidthScale={polyhedronEdgeLineWidthScale}
         scene={scene}
-        showAtomLabels={false}
+        atomLabelSettings={atomLabelSettings}
         showAtoms={showAtoms}
         showUnitCell={showUnitCell}
         style={style}

@@ -7,13 +7,12 @@ import { cn } from "@/lib/utils";
 
 import {
   atomInspectorCopyText,
-  atomSiteIndex,
   formatAtomCoordinateForDisplay,
   formatCellOffset,
   type InspectedAtomInfo,
 } from "./atomInspector";
 import { atomColorForScheme, type ElementColorOverrides } from "./colorSchemes";
-import type { StyleState } from "../model";
+import { atomLabelForAtom, type StyleState } from "../model";
 import { GLASS_SURFACE_CLASS, TOOL_ICON_BUTTON_CLASS } from "./surface";
 
 export function AtomInspectorCard({
@@ -31,6 +30,7 @@ export function AtomInspectorCard({
 }) {
   const { atom, canonicalAtom } = info;
   const atomColor = atomColorForScheme(canonicalAtom, colorScheme, colorOverrides);
+  const atomLabel = atomLabelForAtom(canonicalAtom, info.sceneAtoms);
   const handleCopy = useCallback(() => {
     void navigator.clipboard?.writeText(atomInspectorCopyText(info));
   }, [info]);
@@ -71,7 +71,7 @@ export function AtomInspectorCard({
           style={{ backgroundColor: atomColor }}
         />
         <span className="min-w-0 whitespace-nowrap text-[0.78rem] font-semibold text-foreground">
-          {canonicalAtom.element}, idx: {atomSiteIndex(canonicalAtom)}
+          {atomLabel}
         </span>
 
         <TooltipProvider delayDuration={500}>

@@ -6,6 +6,7 @@ import {
   createDefaultComponentOpacity,
   createDefaultComponentVisibility,
   createDefaultStyle,
+  atomLabelsForAtoms,
   visibleSceneForComponents,
 } from "../src/model";
 import {
@@ -37,7 +38,6 @@ import {
   createDefaultCrystalCameraState,
   stateWithDirectAxis,
 } from "../src/scene/crystalCamera";
-import { atomLabelsForAtoms } from "../src/scene/AtomLabels";
 import {
   computeStructureExportAspectRatio,
   type StructureExportFramePlan,
@@ -100,8 +100,55 @@ describe("computeSceneLayout", () => {
     ];
 
     expect(
-      atomLabelsForAtoms(atoms, "uniform", 1).map((label) => label.label),
+      atomLabelsForAtoms({
+        atoms,
+        mode: "all",
+        selectedAtomIds: [],
+        selectedElements: {},
+      }).map((label) => label.label),
     ).toEqual(["Bi2", "O1", "Bi1", "Bi2"]);
+    expect(
+      atomLabelsForAtoms({
+        atoms,
+        mode: "elements",
+        selectedAtomIds: [],
+        selectedElements: { Bi: true, O: false },
+      }).map((label) => label.label),
+    ).toEqual(["Bi2", "Bi1", "Bi2"]);
+    expect(
+      atomLabelsForAtoms({
+        atoms,
+        kind: "number",
+        mode: "all",
+        selectedAtomIds: [],
+        selectedElements: {},
+      }).map((label) => label.label),
+    ).toEqual(["2", "3", "1", "2"]);
+    expect(
+      atomLabelsForAtoms({
+        atoms,
+        kind: "number",
+        mode: "atoms",
+        selectedAtomIds: ["Bi-1", "O-2"],
+        selectedElements: {},
+      }).map((label) => label.label),
+    ).toEqual(["2", "3"]);
+    expect(
+      atomLabelsForAtoms({
+        atoms,
+        mode: "atoms",
+        selectedAtomIds: ["Bi-1"],
+        selectedElements: {},
+      }).map((label) => label.label),
+    ).toEqual(["Bi2"]);
+    expect(
+      atomLabelsForAtoms({
+        atoms,
+        mode: "atoms",
+        selectedAtomIds: ["Bi-1", "O-2"],
+        selectedElements: {},
+      }).map((label) => label.label),
+    ).toEqual(["Bi2", "O1"]);
   });
 
   test("uses the same basal viewing angle for hexagonal cells", () => {

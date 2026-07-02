@@ -1,46 +1,55 @@
-import { useThree } from "@react-three/fiber";
-import { useLayoutEffect, useMemo } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import {
   CanvasTexture,
   LinearFilter,
-  SpriteMaterial,
+  Sprite,
+  Vector3,
   type Texture,
 } from "three";
 
 import type { AtomSpec } from "../api/scene";
-import type { StyleState } from "../model";
+import {
+  atomLabelsForAtoms,
+  type AtomLabelSettings,
+} from "../model";
 import { atomRadiusForModel } from "./sceneGeometry";
-
-export interface AtomLabelSpec {
-  atom: AtomSpec;
-  label: string;
-  radius: number;
-}
 
 const LABEL_FONT = "600 44px Geist, Arial, sans-serif";
 const LABEL_PADDING_X = 18;
 const LABEL_PADDING_Y = 10;
 const LABEL_TEXTURE_SCALE = 0.012;
-const LABEL_WORLD_OFFSET_RATIO = 1.25;
+const LABEL_SURFACE_OFFSET_RATIO = 1.04;
+const LABEL_SIZE_NORMALIZATION = 100;
 
 export function AtomLabels({
   atoms,
+  settings,
   radiusModel,
   radiusScale,
 }: {
   atoms: AtomSpec[];
-  radiusModel: StyleState["atomRadiusModel"];
+  settings: AtomLabelSettings;
+  radiusModel: Parameters<typeof atomRadiusForModel>[1];
   radiusScale: number;
 }) {
   const invalidate = useThree((state) => state.invalidate);
   const labels = useMemo(
-    () => atomLabelsForAtoms(atoms, radiusModel, radiusScale),
-    [atoms, radiusModel, radiusScale],
+    () =>
+      atomLabelsForAtoms({
+        atoms,
+        kind: settings.kind,
+        mode: settings.mode,
+        selectedAtomIds: settings.atomIds,
+        selectedElements: settings.elements,
+      }),
+    [atoms, settings.atomIds, settings.elements, settings.kind, settings.mode],
   );
   const textures = useMemo(
     () => labels.map((label) => createAtomLabelTexture(label.label)),
     [labels],
   );
+  const sizeScale = settings.size / LABEL_SIZE_NORMALIZATION;
 
   useLayoutEffect(() => {
     invalidate();
@@ -51,7 +60,7 @@ export function AtomLabels({
   }, [invalidate, textures]);
 
   return (
-    <group renderOrder={10}>
+    <group>
       {labels.map((label, index) => {
         const texture = textures[index];
         if (!texture) {
@@ -59,63 +68,71 @@ export function AtomLabels({
         }
 
         const position = label.atom.position;
-        const width = texture.image.width * LABEL_TEXTURE_SCALE;
-        const height = texture.image.height * LABEL_TEXTURE_SCALE;
-        const offset = Math.max(label.radius * LABEL_WORLD_OFFSET_RATIO, height * 0.45);
+        const width = texture.image.width * LABEL_TEXTURE_SCALE * sizeScale;
+        const height = texture.image.height * LABEL_TEXTURE_SCALE * sizeScale;
+        const radius = atomRadiusForModel(label.atom, radiusModel) * radiusScale;
 
         return (
-          <sprite
+          <AtomLabelSprite
             key={`${label.atom.id}-label`}
-            position={[position[0], position[1] + offset, position[2]]}
-            scale={[width, height, 1]}
-          >
-            <spriteMaterial
-              attach="material"
-              map={texture}
-              transparent
-              depthTest={false}
-              depthWrite={false}
-              toneMapped={false}
-            />
-          </sprite>
+            height={height}
+            position={position}
+            radius={radius}
+            texture={texture}
+            width={width}
+          />
         );
       })}
     </group>
   );
 }
 
-export function atomLabelsForAtoms(
-  atoms: readonly AtomSpec[],
-  radiusModel: StyleState["atomRadiusModel"],
-  radiusScale: number,
-): AtomLabelSpec[] {
-  const labelBySiteId = canonicalAtomLabelsBySiteId(atoms);
-  return atoms.map((atom) => ({
-    atom,
-    label: labelBySiteId.get(atom.siteId) ?? fallbackAtomLabel(atom),
-    radius: atomRadiusForModel(atom, radiusModel) * radiusScale,
-  }));
-}
+function AtomLabelSprite({
+  height,
+  position,
+  radius,
+  texture,
+  width,
+}: {
+  height: number;
+  position: AtomSpec["position"];
+  radius: number;
+  texture: Texture;
+  width: number;
+}) {
+  const spriteRef = useRef<Sprite | null>(null);
+  const camera = useThree((state) => state.camera);
+  const cameraDirection = useMemo(() => new Vector3(), []);
+  const updatePosition = useCallback(() => {
+    const sprite = spriteRef.current;
+    if (!sprite) {
+      return;
+    }
 
-function canonicalAtomLabelsBySiteId(atoms: readonly AtomSpec[]): Map<string, string> {
-  const canonicalAtoms = atoms
-    .filter((atom) => !atom.isPeriodicImage)
-    .slice()
-    .sort((firstAtom, secondAtom) => firstAtom.siteIndex - secondAtom.siteIndex);
-  const elementCounts = new Map<string, number>();
-  const labelBySiteId = new Map<string, string>();
+    camera.getWorldDirection(cameraDirection);
+    sprite.position
+      .set(position[0], position[1], position[2])
+      .addScaledVector(cameraDirection, -radius * LABEL_SURFACE_OFFSET_RATIO);
+  }, [camera, cameraDirection, position, radius]);
 
-  for (const atom of canonicalAtoms) {
-    const nextCount = (elementCounts.get(atom.element) ?? 0) + 1;
-    elementCounts.set(atom.element, nextCount);
-    labelBySiteId.set(atom.siteId, `${atom.element}${nextCount}`);
-  }
+  useLayoutEffect(() => {
+    updatePosition();
+  }, [updatePosition]);
+  useFrame(updatePosition);
 
-  return labelBySiteId;
-}
-
-function fallbackAtomLabel(atom: AtomSpec): string {
-  return `${atom.element}${atom.siteIndex + 1}`;
+  return (
+    <sprite ref={spriteRef} scale={[width, height, 1]}>
+      <spriteMaterial
+        attach="material"
+        map={texture}
+        transparent
+        alphaTest={0.05}
+        depthTest
+        depthWrite={false}
+        toneMapped={false}
+      />
+    </sprite>
+  );
 }
 
 function createAtomLabelTexture(label: string): Texture {

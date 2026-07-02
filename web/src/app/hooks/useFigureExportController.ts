@@ -66,6 +66,9 @@ export function useFigureExportController({
     }
 
     return computeStructureExportProjectedSize({
+      atomLabelSettings: componentVisibility.atomLabels.enabled
+        ? componentVisibility.atomLabels
+        : null,
       cameraPose: createCameraPoseSnapshot(cameraOrientationRef.current),
       componentOpacity,
       scene: visibleScene,
@@ -76,6 +79,7 @@ export function useFigureExportController({
   }, [
     cameraOrientationRef,
     componentOpacity,
+    componentVisibility.atomLabels,
     componentVisibility.atoms,
     componentVisibility.unitCell,
     style,

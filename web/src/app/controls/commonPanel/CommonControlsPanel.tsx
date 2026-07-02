@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import type { AtomRadiusModel } from "../../../api/scene";
+import type { AtomRadiusModel, AtomSpec } from "../../../api/scene";
 import type {
   ComponentOpacityState,
   ComponentVisibilityState,
@@ -66,6 +66,7 @@ export function CommonControlsPanel({
   exportSettings,
   hasPolyhedra,
   isExporting,
+  sceneAtoms,
   onComponentOpacityChange,
   onComponentVisibilityChange,
   onAtomRadiusModelChange,
@@ -91,6 +92,7 @@ export function CommonControlsPanel({
   exportSettings: ExportSettingsState;
   hasPolyhedra: boolean;
   isExporting: boolean;
+  sceneAtoms: AtomSpec[];
   onAtomRadiusModelChange: (atomRadiusModel: AtomRadiusModel) => void;
   onCameraPrimaryChange: (primary: CrystalCameraPrimaryDirection) => void;
   onCameraRollPreviewChange: (rollDegrees: number) => void;
@@ -330,6 +332,7 @@ export function CommonControlsPanel({
             <TabsContent value="display">
               <DisplayTabContent
                 hasPolyhedra={hasPolyhedra}
+                sceneAtoms={sceneAtoms}
                 opacity={componentOpacity}
                 onOpacityChange={onComponentOpacityChange}
                 visibility={componentVisibility}

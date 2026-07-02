@@ -1,5 +1,6 @@
 import { AlertTriangleIcon, FolderOpen, ImageDown, RefreshCw, RotateCcw } from "lucide-react";
 import {
+  type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -19,10 +20,15 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { AtomDistanceCard } from "./AtomDistanceCard";
 import { AtomInspectorCard } from "./AtomInspectorCard";
 import type { SceneSpec } from "../api/scene";
-import { inspectedAtomInfoForId } from "./atomInspector";
 import {
+  atomMeasurementInfoForIds,
+  inspectedAtomInfoForId,
+} from "./atomInspector";
+import {
+  type AtomBoxSelectionSnapshot,
   LatticeScene,
   previewSafeAreaForViewport,
 } from "../scene/LatticeScene";
@@ -74,12 +80,22 @@ interface ResetLoadedPreviewOptions {
   preserveInspectorOpen?: boolean;
 }
 
+interface AtomBoxSelectionDrag {
+  currentX: number;
+  currentY: number;
+  isDragging: boolean;
+  pointerId: number;
+  startX: number;
+  startY: number;
+}
+
 type ResetLoadedPreviewState = (
   nextScene: SceneSpec | null,
   options?: ResetLoadedPreviewOptions,
 ) => void;
 
 const SESSION_HEARTBEAT_INTERVAL_MS = 3000;
+const ATOM_BOX_SELECTION_DRAG_THRESHOLD_PX = 4;
 
 function sendSessionHeartbeat() {
   void fetch("/api/session-heartbeat", {
@@ -105,6 +121,8 @@ export function App() {
     DEFAULT_SHOW_CRYSTAL_AXIS_LABELS,
   );
   const [inspectedAtomId, setInspectedAtomId] = useState<string | null>(null);
+  const [measuredAtomIds, setMeasuredAtomIds] = useState<string[]>([]);
+  const [atomBoxSelection, setAtomBoxSelection] = useState<AtomBoxSelectionDrag | null>(null);
   const [pulseAtom, setPulseAtom] = useState<{ atomId: string; token: number } | null>(null);
   const [activeCommonPanelTab, setActiveCommonPanelTab] =
     useState<CommonPanelTab>("display");
@@ -113,6 +131,7 @@ export function App() {
   const [isStructureSummaryCollapsed, setIsStructureSummaryCollapsed] = useState(true);
   const viewportSize = useViewportSize();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const atomBoxSelectionSnapshotRef = useRef<AtomBoxSelectionSnapshot | null>(null);
   const inspectedAtomIdRef = useRef<string | null>(null);
   const resetLoadedPreviewStateRef = useRef<ResetLoadedPreviewState>(() => {});
   const resetLoadedPreviewStateForPreview = useCallback<ResetLoadedPreviewState>(
@@ -121,6 +140,13 @@ export function App() {
     },
     [],
   );
+  const clearAtomSelection = useCallback(() => {
+    inspectedAtomIdRef.current = null;
+    setInspectedAtomId(null);
+    setMeasuredAtomIds([]);
+    setAtomBoxSelection(null);
+    setPulseAtom(null);
+  }, []);
   useEffect(() => {
     sendSessionHeartbeat();
     const heartbeatInterval = window.setInterval(
@@ -132,19 +158,31 @@ export function App() {
       window.clearInterval(heartbeatInterval);
     };
   }, []);
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      clearAtomSelection();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [clearAtomSelection]);
   const handlePreviewCleared = useCallback(() => {
-    setInspectedAtomId(null);
-    setPulseAtom(null);
+    clearAtomSelection();
     setIsInspectorOpen(false);
     setIsStructureSummaryCollapsed(true);
-  }, []);
+  }, [clearAtomSelection]);
   const handleBondAlgorithmSceneLoaded = useCallback((nextScene: SceneSpec) => {
-    setInspectedAtomId(null);
-    setPulseAtom(null);
+    clearAtomSelection();
     setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
     setUnitCellLineStyle(DEFAULT_UNIT_CELL_LINE_STYLE);
     setShowCrystalAxisLabels(DEFAULT_SHOW_CRYSTAL_AXIS_LABELS);
-  }, []);
+  }, [clearAtomSelection]);
   const {
     bondAlgorithm,
     errorMessage,
@@ -168,6 +206,10 @@ export function App() {
   const inspectedAtomInfo = useMemo(
     () => inspectedAtomInfoForId(visibleScene, inspectedAtomId),
     [inspectedAtomId, visibleScene],
+  );
+  const atomMeasurementInfo = useMemo(
+    () => atomMeasurementInfoForIds(visibleScene, measuredAtomIds),
+    [measuredAtomIds, visibleScene],
   );
   const hasVisibleScene = visibleScene !== null;
   const {
@@ -268,8 +310,7 @@ export function App() {
     ) => {
       setErrorMessage(null);
       resetExportState();
-      setInspectedAtomId(null);
-      setPulseAtom(null);
+      clearAtomSelection();
       if (!options.preserveInspectorOpen) {
         setIsInspectorOpen(false);
       }
@@ -287,6 +328,7 @@ export function App() {
       resetCameraForScene(nextScene);
     },
     [
+      clearAtomSelection,
       resetCameraForScene,
       resetExportState,
       resetLockedInteractionFeedback,
@@ -330,7 +372,162 @@ export function App() {
   const handleAtomInspect = useCallback((atomId: string | null) => {
     inspectedAtomIdRef.current = atomId;
     setInspectedAtomId(atomId);
+    if (atomId) {
+      setMeasuredAtomIds([]);
+    }
   }, []);
+
+  const toggleMeasuredAtomIds = useCallback((atomIds: readonly string[]) => {
+    if (atomIds.length === 0) {
+      return;
+    }
+
+    inspectedAtomIdRef.current = null;
+    setInspectedAtomId(null);
+    setMeasuredAtomIds((currentAtomIds) => {
+      let nextAtomIds = [...currentAtomIds];
+      for (const atomId of atomIds) {
+        if (nextAtomIds.includes(atomId)) {
+          nextAtomIds = nextAtomIds.filter((currentAtomId) => currentAtomId !== atomId);
+          continue;
+        }
+
+        nextAtomIds.push(atomId);
+      }
+
+      return nextAtomIds;
+    });
+  }, []);
+
+  const handleAtomMeasure = useCallback((atomId: string) => {
+    toggleMeasuredAtomIds([atomId]);
+  }, [toggleMeasuredAtomIds]);
+
+  const handleAtomBoxSelectionSnapshotChange = useCallback(
+    (snapshot: AtomBoxSelectionSnapshot | null) => {
+      atomBoxSelectionSnapshotRef.current = snapshot;
+    },
+    [],
+  );
+
+  const handleAtomBoxSelectionPointerDownCapture = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      if (
+        !hasVisibleScene ||
+        viewState.interactionLocked ||
+        event.button !== 0 ||
+        !event.ctrlKey
+      ) {
+        handleScenePointerDownCapture(event);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setAtomBoxSelection({
+        currentX: event.clientX,
+        currentY: event.clientY,
+        isDragging: false,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+      });
+    },
+    [handleScenePointerDownCapture, hasVisibleScene, viewState.interactionLocked],
+  );
+
+  const handleAtomBoxSelectionPointerMoveCapture = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      const currentSelection = atomBoxSelection;
+      if (!currentSelection || currentSelection.pointerId !== event.pointerId) {
+        handleScenePointerMoveCapture(event);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      const dragDistance = Math.hypot(
+        event.clientX - currentSelection.startX,
+        event.clientY - currentSelection.startY,
+      );
+      setAtomBoxSelection({
+        ...currentSelection,
+        currentX: event.clientX,
+        currentY: event.clientY,
+        isDragging:
+          currentSelection.isDragging ||
+          dragDistance >= ATOM_BOX_SELECTION_DRAG_THRESHOLD_PX,
+      });
+    },
+    [atomBoxSelection, handleScenePointerMoveCapture],
+  );
+
+  const handleAtomBoxSelectionPointerEndCapture = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      const currentSelection = atomBoxSelection;
+      if (!currentSelection || currentSelection.pointerId !== event.pointerId) {
+        handleScenePointerEndCapture(event);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      setAtomBoxSelection(null);
+      const selectionSnapshot = atomBoxSelectionSnapshotRef.current;
+      if (!selectionSnapshot) {
+        return;
+      }
+
+      if (currentSelection.isDragging) {
+        const endX = event.clientX;
+        const endY = event.clientY;
+        toggleMeasuredAtomIds(
+          selectionSnapshot.atomIdsInClientRect({
+            bottom: Math.max(currentSelection.startY, endY),
+            left: Math.min(currentSelection.startX, endX),
+            right: Math.max(currentSelection.startX, endX),
+            top: Math.min(currentSelection.startY, endY),
+          }),
+        );
+        return;
+      }
+
+      const atomId = selectionSnapshot.atomIdAtClientPoint({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      if (atomId) {
+        toggleMeasuredAtomIds([atomId]);
+      }
+    },
+    [
+      atomBoxSelection,
+      handleScenePointerEndCapture,
+      toggleMeasuredAtomIds,
+    ],
+  );
+
+  const handleAtomBoxSelectionPointerCancelCapture = useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      const currentSelection = atomBoxSelection;
+      if (!currentSelection || currentSelection.pointerId !== event.pointerId) {
+        handleScenePointerEndCapture(event);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      setAtomBoxSelection(null);
+    },
+    [atomBoxSelection, handleScenePointerEndCapture],
+  );
 
   const elementColorOverrides = useMemo(
     () =>
@@ -428,6 +625,21 @@ export function App() {
   }, [componentVisibility.atoms, inspectedAtomId, inspectedAtomInfo, visibleScene]);
 
   useEffect(() => {
+    if (measuredAtomIds.length === 0) {
+      return;
+    }
+
+    const visibleAtomIds = new Set(visibleScene?.atoms.map((atom) => atom.id) ?? []);
+    if (
+      !visibleScene ||
+      !componentVisibility.atoms ||
+      measuredAtomIds.some((atomId) => !visibleAtomIds.has(atomId))
+    ) {
+      setMeasuredAtomIds([]);
+    }
+  }, [componentVisibility.atoms, measuredAtomIds, visibleScene]);
+
+  useEffect(() => {
     if (activeCommonPanelTab !== "export") {
       return;
     }
@@ -452,11 +664,11 @@ export function App() {
             className="scene-stage absolute inset-0 transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
             style={{ transform: `translateX(${sceneOffsetX}px)` }}
             aria-label="Crystal structure preview"
-            onPointerCancelCapture={handleScenePointerEndCapture}
+            onPointerCancelCapture={handleAtomBoxSelectionPointerCancelCapture}
             onContextMenuCapture={handleSceneContextMenuCapture}
-            onPointerDownCapture={handleScenePointerDownCapture}
-            onPointerMoveCapture={handleScenePointerMoveCapture}
-            onPointerUpCapture={handleScenePointerEndCapture}
+            onPointerDownCapture={handleAtomBoxSelectionPointerDownCapture}
+            onPointerMoveCapture={handleAtomBoxSelectionPointerMoveCapture}
+            onPointerUpCapture={handleAtomBoxSelectionPointerEndCapture}
             onWheelCapture={handleSceneWheelCapture}
           >
             {visibleScene ? (
@@ -472,6 +684,8 @@ export function App() {
                   handleCameraControlsInteractionActiveChange
                 }
                 onAtomInspect={handleAtomInspect}
+                onAtomBoxSelectionSnapshotChange={handleAtomBoxSelectionSnapshotChange}
+                onAtomMeasure={handleAtomMeasure}
                 onAtomPulse={handleAtomPulse}
                 onLockedInteractionAttempt={triggerLockedInteractionFeedback}
                 cameraInteractionStore={cameraInteractionStore}
@@ -487,6 +701,7 @@ export function App() {
                 safeArea={previewSafeArea}
                 scene={visibleScene}
                 inspectedAtomId={inspectedAtomId}
+                measuredAtomIds={measuredAtomIds}
                 pulseAtomId={pulseAtom?.atomId ?? null}
                 pulseToken={pulseAtom?.token ?? 0}
                 previewMeshQuality={previewMeshQuality}
@@ -495,7 +710,11 @@ export function App() {
                 lightStrength={viewState.lightStrength}
                 previewFpsStore={previewFpsStore}
                 style={style}
-                showAtomLabels={componentVisibility.atomLabels}
+                atomLabelSettings={
+                  componentVisibility.atomLabels.enabled
+                    ? componentVisibility.atomLabels
+                    : null
+                }
                 showAtoms={componentVisibility.atoms}
                 showFpsOverlay={viewState.showFpsOverlay}
                 showUnitCell={componentVisibility.unitCell}
@@ -525,6 +744,19 @@ export function App() {
         {renderPreviewContextMenuContent()}
       </ContextMenu>
 
+      {atomBoxSelection?.isDragging ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed z-40 rounded-[3px] border border-primary bg-primary/10 shadow-sm"
+          style={{
+            height: Math.abs(atomBoxSelection.currentY - atomBoxSelection.startY),
+            left: Math.min(atomBoxSelection.startX, atomBoxSelection.currentX),
+            top: Math.min(atomBoxSelection.startY, atomBoxSelection.currentY),
+            width: Math.abs(atomBoxSelection.currentX - atomBoxSelection.startX),
+          }}
+        />
+      ) : null}
+
       {visibleScene ? (
         <OrientationGizmo
           cameraOrientationRef={cameraOrientationRef}
@@ -547,7 +779,13 @@ export function App() {
         />
       ) : null}
 
-      {inspectedAtomInfo ? (
+      {atomMeasurementInfo ? (
+        <AtomDistanceCard
+          info={atomMeasurementInfo}
+          isInspectorOpen={isInspectorOpen}
+          onClose={() => setMeasuredAtomIds([])}
+        />
+      ) : inspectedAtomInfo ? (
         <AtomInspectorCard
           colorScheme={legendColorScheme}
           colorOverrides={elementColorOverrides}
@@ -586,6 +824,7 @@ export function App() {
               exportSettings={exportSettings}
               hasPolyhedra={hasPolyhedra(scene)}
               isExporting={isExporting}
+              sceneAtoms={scene.atoms}
               onActiveTabChange={setActiveCommonPanelTab}
               onAtomRadiusModelChange={(atomRadiusModel) => {
                 setStyle((currentStyle) => ({ ...currentStyle, atomRadiusModel }));

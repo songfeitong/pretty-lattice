@@ -1,0 +1,6524 @@
+{
+  "atoms": [
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "id": "Li-0",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "siteId": "Li-0",
+      "siteIndex": 0,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "id": "Li-0-image-0-0-1",
+      "imageOffset": [
+        0,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "boundary",
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        0.0,
+        0.0,
+        10.23619605
+      ],
+      "siteId": "Li-0",
+      "siteIndex": 0,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "id": "Li-0-image-0-1-0",
+      "imageOffset": [
+        0,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "boundary"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        0.0,
+        5.9707551,
+        0.0
+      ],
+      "siteId": "Li-0",
+      "siteIndex": 0,
+      "visibilityDependencies": [
+        "boundaryAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        0.0,
+        1.0,
+        1.0
+      ],
+      "id": "Li-0-image-0-1-1",
+      "imageOffset": [
+        0,
+        1,
+        1
+      ],
+      "imageReasons": [
+        "boundary",
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        0.0,
+        5.9707551,
+        10.23619605
+      ],
+      "siteId": "Li-0",
+      "siteIndex": 0,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "id": "Li-0-image-1-0-0",
+      "imageOffset": [
+        1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "boundary",
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        4.65491719,
+        0.0,
+        0.0
+      ],
+      "siteId": "Li-0",
+      "siteIndex": 0,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        1.0,
+        0.0,
+        1.0
+      ],
+      "id": "Li-0-image-1-0-1",
+      "imageOffset": [
+        1,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "boundary"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        4.65491719,
+        0.0,
+        10.23619605
+      ],
+      "siteId": "Li-0",
+      "siteIndex": 0,
+      "visibilityDependencies": [
+        "boundaryAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        1.0,
+        1.0,
+        0.0
+      ],
+      "id": "Li-0-image-1-1-0",
+      "imageOffset": [
+        1,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "boundary",
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        4.65491719,
+        5.9707551,
+        0.0
+      ],
+      "siteId": "Li-0",
+      "siteIndex": 0,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": "Li-0-image-1-1-1",
+      "imageOffset": [
+        1,
+        1,
+        1
+      ],
+      "imageReasons": [
+        "boundary",
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        4.65491719,
+        5.9707551,
+        10.23619605
+      ],
+      "siteId": "Li-0",
+      "siteIndex": 0,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "id": "Li-1",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        2.327458595,
+        2.98537755,
+        5.118098025
+      ],
+      "siteId": "Li-1",
+      "siteIndex": 1,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        0.5,
+        0.0,
+        0.5
+      ],
+      "id": "Li-2",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        2.327458595,
+        0.0,
+        5.118098025
+      ],
+      "siteId": "Li-2",
+      "siteIndex": 2,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        0.5,
+        1.0,
+        0.5
+      ],
+      "id": "Li-2-image-0-1-0",
+      "imageOffset": [
+        0,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "boundary",
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        2.327458595,
+        5.9707551,
+        5.118098025
+      ],
+      "siteId": "Li-2",
+      "siteIndex": 2,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        0.0,
+        0.5,
+        0.0
+      ],
+      "id": "Li-3",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        0.0,
+        2.98537755,
+        0.0
+      ],
+      "siteId": "Li-3",
+      "siteIndex": 3,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "id": "Li-3-image-0-0-1",
+      "imageOffset": [
+        0,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "boundary",
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        0.0,
+        2.98537755,
+        10.23619605
+      ],
+      "siteId": "Li-3",
+      "siteIndex": 3,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        1.0,
+        0.5,
+        0.0
+      ],
+      "id": "Li-3-image-1-0-0",
+      "imageOffset": [
+        1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "boundary",
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        4.65491719,
+        2.98537755,
+        0.0
+      ],
+      "siteId": "Li-3",
+      "siteIndex": 3,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Li",
+      "fractionalPosition": [
+        1.0,
+        0.5,
+        1.0
+      ],
+      "id": "Li-3-image-1-0-1",
+      "imageOffset": [
+        1,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "boundary",
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        4.65491719,
+        2.98537755,
+        10.23619605
+      ],
+      "siteId": "Li-3",
+      "siteIndex": 3,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Fe",
+      "fractionalPosition": [
+        0.52986573,
+        0.25,
+        0.78115127
+      ],
+      "id": "Fe-4",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        2.466481094968899,
+        1.492688775,
+        7.996017544426484
+      ],
+      "siteId": "Fe-4",
+      "siteIndex": 4,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "Fe",
+      "fractionalPosition": [
+        0.02986573,
+        0.75,
+        0.71884873
+      ],
+      "id": "Fe-5",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        0.1390224999688987,
+        4.478066325,
+        7.358276530573517
+      ],
+      "siteId": "Fe-5",
+      "siteIndex": 5,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "Fe",
+      "fractionalPosition": [
+        0.97013427,
+        0.25,
+        0.28115127
+      ],
+      "id": "Fe-6",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        4.515894690031101,
+        1.492688775,
+        2.8779195194264835
+      ],
+      "siteId": "Fe-6",
+      "siteIndex": 6,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "Fe",
+      "fractionalPosition": [
+        0.47013427,
+        0.75,
+        0.21884873
+      ],
+      "id": "Fe-7",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        2.1884360950311015,
+        4.478066325,
+        2.2401785055735166
+      ],
+      "siteId": "Fe-7",
+      "siteIndex": 7,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "P",
+      "fractionalPosition": [
+        0.41862257,
+        0.25,
+        0.0938663
+      ],
+      "id": "P-8",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        1.9486533972149784,
+        1.492688775,
+        0.960833849288115
+      ],
+      "siteId": "P-8",
+      "siteIndex": 8,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "P",
+      "fractionalPosition": [
+        0.91862257,
+        0.75,
+        0.4061337
+      ],
+      "id": "P-9",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        4.276111992214978,
+        4.478066325,
+        4.157264175711885
+      ],
+      "siteId": "P-9",
+      "siteIndex": 9,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "P",
+      "fractionalPosition": [
+        0.08137743,
+        0.25,
+        0.5938663
+      ],
+      "id": "P-10",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        0.3788051977850217,
+        1.492688775,
+        6.078931874288115
+      ],
+      "siteId": "P-10",
+      "siteIndex": 10,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "P",
+      "fractionalPosition": [
+        0.58137743,
+        0.75,
+        0.9061337
+      ],
+      "id": "P-11",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        2.7062637927850215,
+        4.478066325,
+        9.275362200711886
+      ],
+      "siteId": "P-11",
+      "siteIndex": 11,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.74478656,
+        0.25,
+        0.09423067
+      ],
+      "id": "O-12",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        3.4669197610249665,
+        1.492688775,
+        0.9645636120428536
+      ],
+      "siteId": "O-12",
+      "siteIndex": 12,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.71373534,
+        0.54555803,
+        0.83415452
+      ],
+      "id": "O-13",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        3.322378903276495,
+        3.257393389968453,
+        8.538569202713646
+      ],
+      "siteId": "O-13",
+      "siteIndex": 13,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.71373534,
+        0.95444197,
+        0.83415452
+      ],
+      "id": "O-14",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        3.322378903276495,
+        5.698739260031546,
+        8.538569202713646
+      ],
+      "siteId": "O-14",
+      "siteIndex": 14,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.25521344,
+        0.75,
+        0.90576933
+      ],
+      "id": "O-15",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        1.1879974289750337,
+        4.478066325,
+        9.271632437957146
+      ],
+      "siteId": "O-15",
+      "siteIndex": 15,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.70986445,
+        0.75,
+        0.04430856
+      ],
+      "id": "O-16",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        3.304360230874895,
+        4.478066325,
+        0.453551106853188
+      ],
+      "siteId": "O-16",
+      "siteIndex": 16,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.24478656,
+        0.75,
+        0.40576933
+      ],
+      "id": "O-17",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        1.1394611660249663,
+        4.478066325,
+        4.153534412957146
+      ],
+      "siteId": "O-17",
+      "siteIndex": 17,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.28626466,
+        0.04555803,
+        0.16584548
+      ],
+      "id": "O-18",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        1.3325382867235054,
+        0.27201583996845297,
+        1.6976268472863538
+      ],
+      "siteId": "O-18",
+      "siteIndex": 18,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.21373534,
+        0.45444197,
+        0.66584548
+      ],
+      "id": "O-19",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        0.9949203082764946,
+        2.713361710031547,
+        6.815724872286354
+      ],
+      "siteId": "O-19",
+      "siteIndex": 19,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.78626466,
+        0.54555803,
+        0.33415452
+      ],
+      "id": "O-20",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        3.659996881723505,
+        3.257393389968453,
+        3.420471177713646
+      ],
+      "siteId": "O-20",
+      "siteIndex": 20,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.78626466,
+        0.95444197,
+        0.33415452
+      ],
+      "id": "O-21",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        3.659996881723505,
+        5.698739260031546,
+        3.420471177713646
+      ],
+      "siteId": "O-21",
+      "siteIndex": 21,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.29013555,
+        0.25,
+        0.95569144
+      ],
+      "id": "O-22",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        1.3505569591251045,
+        1.492688775,
+        9.782644943146812
+      ],
+      "siteId": "O-22",
+      "siteIndex": 22,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.20986445,
+        0.25,
+        0.45569144
+      ],
+      "id": "O-23",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        0.9769016358748955,
+        1.492688775,
+        4.664546918146812
+      ],
+      "siteId": "O-23",
+      "siteIndex": 23,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.79013555,
+        0.75,
+        0.54430856
+      ],
+      "id": "O-24",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        3.6780155541251047,
+        4.478066325,
+        5.571649131853189
+      ],
+      "siteId": "O-24",
+      "siteIndex": 24,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.75521344,
+        0.25,
+        0.59423067
+      ],
+      "id": "O-25",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        3.5154560239750334,
+        1.492688775,
+        6.082661637042853
+      ],
+      "siteId": "O-25",
+      "siteIndex": 25,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.21373534,
+        0.04555803,
+        0.66584548
+      ],
+      "id": "O-26",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        0.9949203082764946,
+        0.27201583996845297,
+        6.815724872286354
+      ],
+      "siteId": "O-26",
+      "siteIndex": 26,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.28626466,
+        0.45444197,
+        0.16584548
+      ],
+      "id": "O-27",
+      "imageOffset": [
+        0,
+        0,
+        0
+      ],
+      "imageReasons": [],
+      "isPeriodicImage": false,
+      "position": [
+        1.3325382867235054,
+        2.713361710031547,
+        1.6976268472863538
+      ],
+      "siteId": "O-27",
+      "siteIndex": 27,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.29013555,
+        -0.25,
+        0.04430856
+      ],
+      "id": "O-16-image--1--1-0",
+      "imageOffset": [
+        -1,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.3505569591251045,
+        -1.492688775,
+        0.453551106853188
+      ],
+      "siteId": "O-16",
+      "siteIndex": 16,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.29013555,
+        0.25,
+        -0.04430856000000005
+      ],
+      "id": "O-22-image-0-0--1",
+      "imageOffset": [
+        0,
+        0,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.3505569591251045,
+        1.492688775,
+        -0.45355110685318856
+      ],
+      "siteId": "O-22",
+      "siteIndex": 22,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.25521344,
+        -0.25,
+        -0.09423066999999996
+      ],
+      "id": "O-15-image-0--1--1",
+      "imageOffset": [
+        0,
+        -1,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.1879974289750337,
+        -1.492688775,
+        -0.9645636120428531
+      ],
+      "siteId": "O-15",
+      "siteIndex": 15,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.25521344,
+        0.25,
+        0.09423067
+      ],
+      "id": "O-12-image--1-0-0",
+      "imageOffset": [
+        -1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.1879974289750337,
+        1.492688775,
+        0.9645636120428536
+      ],
+      "siteId": "O-12",
+      "siteIndex": 12,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.28626465999999995,
+        -0.04555803000000003,
+        -0.16584548
+      ],
+      "id": "O-14-image--1--1--1",
+      "imageOffset": [
+        -1,
+        -1,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.3325382867235052,
+        -0.27201583996845313,
+        -1.6976268472863538
+      ],
+      "siteId": "O-14",
+      "siteIndex": 14,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.79013555,
+        -0.25,
+        0.54430856
+      ],
+      "id": "O-24-image-0--1-0",
+      "imageOffset": [
+        0,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.6780155541251047,
+        -1.492688775,
+        5.571649131853189
+      ],
+      "siteId": "O-24",
+      "siteIndex": 24,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.24478656,
+        -0.25,
+        0.40576933
+      ],
+      "id": "O-17-image-0--1-0",
+      "imageOffset": [
+        0,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.1394611660249663,
+        -1.492688775,
+        4.153534412957146
+      ],
+      "siteId": "O-17",
+      "siteIndex": 17,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.78626466,
+        -0.04555803000000003,
+        0.33415452
+      ],
+      "id": "O-21-image-0--1-0",
+      "imageOffset": [
+        0,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.659996881723505,
+        -0.27201583996845313,
+        3.420471177713646
+      ],
+      "siteId": "O-21",
+      "siteIndex": 21,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.29013555,
+        0.75,
+        0.04430856
+      ],
+      "id": "O-16-image--1-0-0",
+      "imageOffset": [
+        -1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.3505569591251045,
+        4.478066325,
+        0.453551106853188
+      ],
+      "siteId": "O-16",
+      "siteIndex": 16,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ],
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.25521344,
+        0.75,
+        -0.09423066999999996
+      ],
+      "id": "O-15-image-0-0--1",
+      "imageOffset": [
+        0,
+        0,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.1879974289750337,
+        4.478066325,
+        -0.9645636120428531
+      ],
+      "siteId": "O-15",
+      "siteIndex": 15,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ],
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.28626465999999995,
+        0.54555803,
+        -0.16584548
+      ],
+      "id": "O-13-image--1-0--1",
+      "imageOffset": [
+        -1,
+        0,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.3325382867235052,
+        3.257393389968453,
+        -1.6976268472863538
+      ],
+      "siteId": "O-13",
+      "siteIndex": 13,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.71373534,
+        -0.04555803000000003,
+        0.83415452
+      ],
+      "id": "O-14-image-0--1-0",
+      "imageOffset": [
+        0,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.322378903276495,
+        -0.27201583996845313,
+        8.538569202713646
+      ],
+      "siteId": "O-14",
+      "siteIndex": 14,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ],
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.21373534,
+        1.04555803,
+        0.66584548
+      ],
+      "id": "O-26-image-0-1-0",
+      "imageOffset": [
+        0,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        0.9949203082764946,
+        6.2427709399684534,
+        6.815724872286354
+      ],
+      "siteId": "O-26",
+      "siteIndex": 26,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ],
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.20986444999999998,
+        0.75,
+        0.54430856
+      ],
+      "id": "O-24-image--1-0-0",
+      "imageOffset": [
+        -1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -0.9769016358748954,
+        4.478066325,
+        5.571649131853189
+      ],
+      "siteId": "O-24",
+      "siteIndex": 24,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.28626465999999995,
+        0.95444197,
+        0.83415452
+      ],
+      "id": "O-14-image--1-0-0",
+      "imageOffset": [
+        -1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.3325382867235052,
+        5.698739260031546,
+        8.538569202713646
+      ],
+      "siteId": "O-14",
+      "siteIndex": 14,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ],
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.28626465999999995,
+        0.54555803,
+        0.83415452
+      ],
+      "id": "O-13-image--1-0-0",
+      "imageOffset": [
+        -1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.3325382867235052,
+        3.257393389968453,
+        8.538569202713646
+      ],
+      "siteId": "O-13",
+      "siteIndex": 13,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ],
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.20986445,
+        0.25,
+        0.45569144
+      ],
+      "id": "O-23-image-1-0-0",
+      "imageOffset": [
+        1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.631818825874896,
+        1.492688775,
+        4.664546918146812
+      ],
+      "siteId": "O-23",
+      "siteIndex": 23,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.28626466,
+        0.04555803,
+        0.16584548
+      ],
+      "id": "O-18-image-1-0-0",
+      "imageOffset": [
+        1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.987455476723506,
+        0.27201583996845297,
+        1.6976268472863538
+      ],
+      "siteId": "O-18",
+      "siteIndex": 18,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ],
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.28626466,
+        0.45444197,
+        0.16584548
+      ],
+      "id": "O-27-image-1-0-0",
+      "imageOffset": [
+        1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.987455476723506,
+        2.713361710031547,
+        1.6976268472863538
+      ],
+      "siteId": "O-27",
+      "siteIndex": 27,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ],
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.28626466,
+        1.04555803,
+        0.16584548
+      ],
+      "id": "O-18-image-0-1-0",
+      "imageOffset": [
+        0,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.3325382867235054,
+        6.2427709399684534,
+        1.6976268472863538
+      ],
+      "siteId": "O-18",
+      "siteIndex": 18,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ],
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.24478656,
+        0.75,
+        0.40576933
+      ],
+      "id": "O-17-image-1-0-0",
+      "imageOffset": [
+        1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.794378356024967,
+        4.478066325,
+        4.153534412957146
+      ],
+      "siteId": "O-17",
+      "siteIndex": 17,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.24478656,
+        0.25,
+        0.59423067
+      ],
+      "id": "O-25-image--1-0-0",
+      "imageOffset": [
+        -1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.1394611660249663,
+        1.492688775,
+        6.082661637042853
+      ],
+      "siteId": "O-25",
+      "siteIndex": 25,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.70986445,
+        0.75,
+        1.04430856
+      ],
+      "id": "O-16-image-0-0-1",
+      "imageOffset": [
+        0,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.304360230874895,
+        4.478066325,
+        10.689747156853187
+      ],
+      "siteId": "O-16",
+      "siteIndex": 16,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ],
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Fe",
+      "fractionalPosition": [
+        1.02986573,
+        0.75,
+        0.71884873
+      ],
+      "id": "Fe-5-image-1-0-0",
+      "imageOffset": [
+        1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        4.793939689968899,
+        4.478066325,
+        7.358276530573517
+      ],
+      "siteId": "Fe-5",
+      "siteIndex": 5,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Fe",
+      "fractionalPosition": [
+        0.52986573,
+        1.25,
+        0.78115127
+      ],
+      "id": "Fe-4-image-0-1-0",
+      "imageOffset": [
+        0,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        2.466481094968899,
+        7.463443874999999,
+        7.996017544426484
+      ],
+      "siteId": "Fe-4",
+      "siteIndex": 4,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "P",
+      "fractionalPosition": [
+        0.58137743,
+        0.75,
+        -0.09386629999999996
+      ],
+      "id": "P-11-image-0-0--1",
+      "imageOffset": [
+        0,
+        0,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        2.7062637927850215,
+        4.478066325,
+        -0.9608338492881145
+      ],
+      "siteId": "P-11",
+      "siteIndex": 11,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "P",
+      "fractionalPosition": [
+        -0.08137742999999997,
+        0.75,
+        0.4061337
+      ],
+      "id": "P-9-image--1-0-0",
+      "imageOffset": [
+        -1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -0.3788051977850216,
+        4.478066325,
+        4.157264175711885
+      ],
+      "siteId": "P-9",
+      "siteIndex": 9,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Fe",
+      "fractionalPosition": [
+        0.47013427,
+        -0.25,
+        0.21884873
+      ],
+      "id": "Fe-7-image-0--1-0",
+      "imageOffset": [
+        0,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        2.1884360950311015,
+        -1.492688775,
+        2.2401785055735166
+      ],
+      "siteId": "Fe-7",
+      "siteIndex": 7,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Fe",
+      "fractionalPosition": [
+        -0.029865730000000035,
+        0.25,
+        0.28115127
+      ],
+      "id": "Fe-6-image--1-0-0",
+      "imageOffset": [
+        -1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -0.13902249996889887,
+        1.492688775,
+        2.8779195194264835
+      ],
+      "siteId": "Fe-6",
+      "siteIndex": 6,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Fe",
+      "fractionalPosition": [
+        0.97013427,
+        1.25,
+        0.28115127
+      ],
+      "id": "Fe-6-image-0-1-0",
+      "imageOffset": [
+        0,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        4.515894690031101,
+        7.463443874999999,
+        2.8779195194264835
+      ],
+      "siteId": "Fe-6",
+      "siteIndex": 6,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "P",
+      "fractionalPosition": [
+        0.41862257,
+        0.25,
+        1.0938663
+      ],
+      "id": "P-8-image-0-0-1",
+      "imageOffset": [
+        0,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.9486533972149784,
+        1.492688775,
+        11.197029899288115
+      ],
+      "siteId": "P-8",
+      "siteIndex": 8,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "P",
+      "fractionalPosition": [
+        1.08137743,
+        0.25,
+        0.5938663
+      ],
+      "id": "P-10-image-1-0-0",
+      "imageOffset": [
+        1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.033722387785022,
+        1.492688775,
+        6.078931874288115
+      ],
+      "siteId": "P-10",
+      "siteIndex": 10,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "Fe",
+      "fractionalPosition": [
+        0.02986573,
+        -0.25,
+        0.71884873
+      ],
+      "id": "Fe-5-image-0--1-0",
+      "imageOffset": [
+        0,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        0.1390224999688987,
+        -1.492688775,
+        7.358276530573517
+      ],
+      "siteId": "Fe-5",
+      "siteIndex": 5,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.29013555,
+        -0.25,
+        1.04430856
+      ],
+      "id": "O-16-image--1--1-1",
+      "imageOffset": [
+        -1,
+        -1,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.3505569591251045,
+        -1.492688775,
+        10.689747156853187
+      ],
+      "siteId": "O-16",
+      "siteIndex": 16,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.25521344,
+        -0.25,
+        0.90576933
+      ],
+      "id": "O-15-image-0--1-0",
+      "imageOffset": [
+        0,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.1879974289750337,
+        -1.492688775,
+        9.271632437957146
+      ],
+      "siteId": "O-15",
+      "siteIndex": 15,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.25521344,
+        0.25,
+        1.09423067
+      ],
+      "id": "O-12-image--1-0-1",
+      "imageOffset": [
+        -1,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.1879974289750337,
+        1.492688775,
+        11.200759662042854
+      ],
+      "siteId": "O-12",
+      "siteIndex": 12,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.28626465999999995,
+        -0.04555803000000003,
+        0.83415452
+      ],
+      "id": "O-14-image--1--1-0",
+      "imageOffset": [
+        -1,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.3325382867235052,
+        -0.27201583996845313,
+        8.538569202713646
+      ],
+      "siteId": "O-14",
+      "siteIndex": 14,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.28626466,
+        0.04555803,
+        1.16584548
+      ],
+      "id": "O-18-image-0-0-1",
+      "imageOffset": [
+        0,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.3325382867235054,
+        0.27201583996845297,
+        11.933822897286355
+      ],
+      "siteId": "O-18",
+      "siteIndex": 18,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.29013555,
+        1.25,
+        -0.04430856000000005
+      ],
+      "id": "O-22-image-0-1--1",
+      "imageOffset": [
+        0,
+        1,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.3505569591251045,
+        7.463443874999999,
+        -0.45355110685318856
+      ],
+      "siteId": "O-22",
+      "siteIndex": 22,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.25521344,
+        1.25,
+        0.09423067
+      ],
+      "id": "O-12-image--1-1-0",
+      "imageOffset": [
+        -1,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.1879974289750337,
+        7.463443874999999,
+        0.9645636120428536
+      ],
+      "siteId": "O-12",
+      "siteIndex": 12,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.28626465999999995,
+        0.95444197,
+        -0.16584548
+      ],
+      "id": "O-14-image--1-0--1",
+      "imageOffset": [
+        -1,
+        0,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.3325382867235052,
+        5.698739260031546,
+        -1.6976268472863538
+      ],
+      "siteId": "O-14",
+      "siteIndex": 14,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.29013555,
+        0.75,
+        1.04430856
+      ],
+      "id": "O-16-image--1-0-1",
+      "imageOffset": [
+        -1,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.3505569591251045,
+        4.478066325,
+        10.689747156853187
+      ],
+      "siteId": "O-16",
+      "siteIndex": 16,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.29013555,
+        1.25,
+        0.95569144
+      ],
+      "id": "O-22-image-0-1-0",
+      "imageOffset": [
+        0,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.3505569591251045,
+        7.463443874999999,
+        9.782644943146812
+      ],
+      "siteId": "O-22",
+      "siteIndex": 22,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        -0.25521344,
+        1.25,
+        1.09423067
+      ],
+      "id": "O-12-image--1-1-1",
+      "imageOffset": [
+        -1,
+        1,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        -1.1879974289750337,
+        7.463443874999999,
+        11.200759662042854
+      ],
+      "siteId": "O-12",
+      "siteIndex": 12,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.28626466,
+        1.04555803,
+        1.16584548
+      ],
+      "id": "O-18-image-0-1-1",
+      "imageOffset": [
+        0,
+        1,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.3325382867235054,
+        6.2427709399684534,
+        11.933822897286355
+      ],
+      "siteId": "O-18",
+      "siteIndex": 18,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.70986445,
+        -0.25,
+        0.04430856
+      ],
+      "id": "O-16-image-0--1-0",
+      "imageOffset": [
+        0,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.304360230874895,
+        -1.492688775,
+        0.453551106853188
+      ],
+      "siteId": "O-16",
+      "siteIndex": 16,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.29013555,
+        0.25,
+        -0.04430856000000005
+      ],
+      "id": "O-22-image-1-0--1",
+      "imageOffset": [
+        1,
+        0,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        6.005474149125105,
+        1.492688775,
+        -0.45355110685318856
+      ],
+      "siteId": "O-22",
+      "siteIndex": 22,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.25521344,
+        -0.25,
+        -0.09423066999999996
+      ],
+      "id": "O-15-image-1--1--1",
+      "imageOffset": [
+        1,
+        -1,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.842914618975033,
+        -1.492688775,
+        -0.9645636120428531
+      ],
+      "siteId": "O-15",
+      "siteIndex": 15,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.71373534,
+        -0.04555803000000003,
+        -0.16584548
+      ],
+      "id": "O-14-image-0--1--1",
+      "imageOffset": [
+        0,
+        -1,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.322378903276495,
+        -0.27201583996845313,
+        -1.6976268472863538
+      ],
+      "siteId": "O-14",
+      "siteIndex": 14,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.70986445,
+        -0.25,
+        1.04430856
+      ],
+      "id": "O-16-image-0--1-1",
+      "imageOffset": [
+        0,
+        -1,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.304360230874895,
+        -1.492688775,
+        10.689747156853187
+      ],
+      "siteId": "O-16",
+      "siteIndex": 16,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.29013555,
+        0.25,
+        0.95569144
+      ],
+      "id": "O-22-image-1-0-0",
+      "imageOffset": [
+        1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        6.005474149125105,
+        1.492688775,
+        9.782644943146812
+      ],
+      "siteId": "O-22",
+      "siteIndex": 22,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.25521344,
+        -0.25,
+        0.90576933
+      ],
+      "id": "O-15-image-1--1-0",
+      "imageOffset": [
+        1,
+        -1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.842914618975033,
+        -1.492688775,
+        9.271632437957146
+      ],
+      "siteId": "O-15",
+      "siteIndex": 15,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.74478656,
+        0.25,
+        1.09423067
+      ],
+      "id": "O-12-image-0-0-1",
+      "imageOffset": [
+        0,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.4669197610249665,
+        1.492688775,
+        11.200759662042854
+      ],
+      "siteId": "O-12",
+      "siteIndex": 12,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.28626466,
+        0.04555803,
+        1.16584548
+      ],
+      "id": "O-18-image-1-0-1",
+      "imageOffset": [
+        1,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.987455476723506,
+        0.27201583996845297,
+        11.933822897286355
+      ],
+      "siteId": "O-18",
+      "siteIndex": 18,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.29013555,
+        1.25,
+        -0.04430856000000005
+      ],
+      "id": "O-22-image-1-1--1",
+      "imageOffset": [
+        1,
+        1,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        6.005474149125105,
+        7.463443874999999,
+        -0.45355110685318856
+      ],
+      "siteId": "O-22",
+      "siteIndex": 22,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.25521344,
+        0.75,
+        -0.09423066999999996
+      ],
+      "id": "O-15-image-1-0--1",
+      "imageOffset": [
+        1,
+        0,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.842914618975033,
+        4.478066325,
+        -0.9645636120428531
+      ],
+      "siteId": "O-15",
+      "siteIndex": 15,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.74478656,
+        1.25,
+        0.09423067
+      ],
+      "id": "O-12-image-0-1-0",
+      "imageOffset": [
+        0,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.4669197610249665,
+        7.463443874999999,
+        0.9645636120428536
+      ],
+      "siteId": "O-12",
+      "siteIndex": 12,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.71373534,
+        0.95444197,
+        -0.16584548
+      ],
+      "id": "O-14-image-0-0--1",
+      "imageOffset": [
+        0,
+        0,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.322378903276495,
+        5.698739260031546,
+        -1.6976268472863538
+      ],
+      "siteId": "O-14",
+      "siteIndex": 14,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.28626466,
+        1.04555803,
+        0.16584548
+      ],
+      "id": "O-18-image-1-1-0",
+      "imageOffset": [
+        1,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.987455476723506,
+        6.2427709399684534,
+        1.6976268472863538
+      ],
+      "siteId": "O-18",
+      "siteIndex": 18,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.29013555,
+        1.25,
+        0.95569144
+      ],
+      "id": "O-22-image-1-1-0",
+      "imageOffset": [
+        1,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        6.005474149125105,
+        7.463443874999999,
+        9.782644943146812
+      ],
+      "siteId": "O-22",
+      "siteIndex": 22,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.25521344,
+        0.75,
+        0.90576933
+      ],
+      "id": "O-15-image-1-0-0",
+      "imageOffset": [
+        1,
+        0,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.842914618975033,
+        4.478066325,
+        9.271632437957146
+      ],
+      "siteId": "O-15",
+      "siteIndex": 15,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.74478656,
+        1.25,
+        1.09423067
+      ],
+      "id": "O-12-image-0-1-1",
+      "imageOffset": [
+        0,
+        1,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.4669197610249665,
+        7.463443874999999,
+        11.200759662042854
+      ],
+      "siteId": "O-12",
+      "siteIndex": 12,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.28626466,
+        1.04555803,
+        1.16584548
+      ],
+      "id": "O-18-image-1-1-1",
+      "imageOffset": [
+        1,
+        1,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.987455476723506,
+        6.2427709399684534,
+        11.933822897286355
+      ],
+      "siteId": "O-18",
+      "siteIndex": 18,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.20986445,
+        1.25,
+        0.45569144
+      ],
+      "id": "O-23-image-0-1-0",
+      "imageOffset": [
+        0,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        0.9769016358748955,
+        7.463443874999999,
+        4.664546918146812
+      ],
+      "siteId": "O-23",
+      "siteIndex": 23,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.75521344,
+        1.25,
+        0.59423067
+      ],
+      "id": "O-25-image-0-1-0",
+      "imageOffset": [
+        0,
+        1,
+        0
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.5154560239750334,
+        7.463443874999999,
+        6.082661637042853
+      ],
+      "siteId": "O-25",
+      "siteIndex": 25,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.28626466,
+        0.45444197,
+        1.16584548
+      ],
+      "id": "O-27-image-0-0-1",
+      "imageOffset": [
+        0,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        1.3325382867235054,
+        2.713361710031547,
+        11.933822897286355
+      ],
+      "siteId": "O-27",
+      "siteIndex": 27,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        0.71373534,
+        0.54555803,
+        -0.16584548
+      ],
+      "id": "O-13-image-0-0--1",
+      "imageOffset": [
+        0,
+        0,
+        -1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        3.322378903276495,
+        3.257393389968453,
+        -1.6976268472863538
+      ],
+      "siteId": "O-13",
+      "siteIndex": 13,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "element": "O",
+      "fractionalPosition": [
+        1.28626466,
+        0.45444197,
+        1.16584548
+      ],
+      "id": "O-27-image-1-0-1",
+      "imageOffset": [
+        1,
+        0,
+        1
+      ],
+      "imageReasons": [
+        "bonded"
+      ],
+      "isPeriodicImage": true,
+      "position": [
+        5.987455476723506,
+        2.713361710031547,
+        11.933822897286355
+      ],
+      "siteId": "O-27",
+      "siteIndex": 27,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    }
+  ],
+  "bonds": [
+    {
+      "endAtomIndex": 39,
+      "startAtomIndex": 0,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 40,
+      "startAtomIndex": 0,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 41,
+      "startAtomIndex": 0,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 42,
+      "startAtomIndex": 0,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 43,
+      "startAtomIndex": 0,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 29,
+      "startAtomIndex": 0,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 35,
+      "startAtomIndex": 8,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 34,
+      "startAtomIndex": 8,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 28,
+      "startAtomIndex": 8,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 36,
+      "startAtomIndex": 8,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 31,
+      "startAtomIndex": 8,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 30,
+      "startAtomIndex": 8,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 34,
+      "startAtomIndex": 9,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 44,
+      "startAtomIndex": 9,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 45,
+      "startAtomIndex": 9,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 36,
+      "startAtomIndex": 9,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 37,
+      "startAtomIndex": 9,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 46,
+      "startAtomIndex": 9,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 40,
+      "startAtomIndex": 11,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 47,
+      "startAtomIndex": 11,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 42,
+      "startAtomIndex": 11,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 48,
+      "startAtomIndex": 11,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 49,
+      "startAtomIndex": 11,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 38,
+      "startAtomIndex": 11,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 50,
+      "startAtomIndex": 15,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 24,
+      "startAtomIndex": 15,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 33,
+      "startAtomIndex": 15,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 36,
+      "startAtomIndex": 15,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 30,
+      "startAtomIndex": 15,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 37,
+      "startAtomIndex": 15,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 30,
+      "startAtomIndex": 16,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 51,
+      "startAtomIndex": 16,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 52,
+      "startAtomIndex": 16,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 26,
+      "startAtomIndex": 16,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 53,
+      "startAtomIndex": 16,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 54,
+      "startAtomIndex": 16,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 31,
+      "startAtomIndex": 17,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 46,
+      "startAtomIndex": 17,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 55,
+      "startAtomIndex": 17,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 23,
+      "startAtomIndex": 17,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 56,
+      "startAtomIndex": 17,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 57,
+      "startAtomIndex": 17,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 58,
+      "startAtomIndex": 18,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 38,
+      "startAtomIndex": 18,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 27,
+      "startAtomIndex": 18,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 28,
+      "startAtomIndex": 18,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 32,
+      "startAtomIndex": 18,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 31,
+      "startAtomIndex": 18,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 23,
+      "startAtomIndex": 19,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 40,
+      "startAtomIndex": 19,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 38,
+      "startAtomIndex": 19,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 29,
+      "startAtomIndex": 19,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 59,
+      "startAtomIndex": 20,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 35,
+      "startAtomIndex": 20,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 32,
+      "startAtomIndex": 20,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 31,
+      "startAtomIndex": 20,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 60,
+      "startAtomIndex": 21,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 34,
+      "startAtomIndex": 21,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 30,
+      "startAtomIndex": 21,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 37,
+      "startAtomIndex": 21,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 26,
+      "startAtomIndex": 22,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 61,
+      "startAtomIndex": 22,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 25,
+      "startAtomIndex": 22,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 24,
+      "startAtomIndex": 22,
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "endAtomIndex": 13,
+      "startAtomIndex": 23,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 4,
+      "startAtomIndex": 23,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 14,
+      "startAtomIndex": 24,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 62,
+      "startAtomIndex": 24,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 63,
+      "startAtomIndex": 25,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 7,
+      "startAtomIndex": 25,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 62,
+      "startAtomIndex": 25,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 12,
+      "startAtomIndex": 26,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 3,
+      "startAtomIndex": 26,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 64,
+      "startAtomIndex": 27,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 13,
+      "startAtomIndex": 27,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 6,
+      "startAtomIndex": 27,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 65,
+      "startAtomIndex": 28,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 10,
+      "startAtomIndex": 28,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 66,
+      "startAtomIndex": 29,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 67,
+      "startAtomIndex": 29,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 68,
+      "startAtomIndex": 32,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 10,
+      "startAtomIndex": 32,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 69,
+      "startAtomIndex": 33,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 1,
+      "startAtomIndex": 33,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 12,
+      "startAtomIndex": 33,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 67,
+      "startAtomIndex": 34,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 10,
+      "startAtomIndex": 35,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms"
+        ],
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 62,
+      "startAtomIndex": 35,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 70,
+      "startAtomIndex": 36,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 71,
+      "startAtomIndex": 37,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 67,
+      "startAtomIndex": 38,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 72,
+      "startAtomIndex": 1,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 73,
+      "startAtomIndex": 1,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 74,
+      "startAtomIndex": 1,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 75,
+      "startAtomIndex": 1,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 76,
+      "startAtomIndex": 1,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 47,
+      "startAtomIndex": 2,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 77,
+      "startAtomIndex": 2,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 48,
+      "startAtomIndex": 2,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 78,
+      "startAtomIndex": 2,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 79,
+      "startAtomIndex": 2,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 58,
+      "startAtomIndex": 2,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 80,
+      "startAtomIndex": 3,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 81,
+      "startAtomIndex": 3,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 82,
+      "startAtomIndex": 3,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 53,
+      "startAtomIndex": 3,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 83,
+      "startAtomIndex": 3,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 84,
+      "startAtomIndex": 4,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 85,
+      "startAtomIndex": 4,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 86,
+      "startAtomIndex": 4,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 87,
+      "startAtomIndex": 4,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 56,
+      "startAtomIndex": 4,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 88,
+      "startAtomIndex": 5,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 89,
+      "startAtomIndex": 5,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 90,
+      "startAtomIndex": 5,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 91,
+      "startAtomIndex": 5,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 50,
+      "startAtomIndex": 5,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 92,
+      "startAtomIndex": 5,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 93,
+      "startAtomIndex": 6,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 94,
+      "startAtomIndex": 6,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 95,
+      "startAtomIndex": 6,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 96,
+      "startAtomIndex": 6,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 97,
+      "startAtomIndex": 6,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 61,
+      "startAtomIndex": 7,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 98,
+      "startAtomIndex": 7,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 99,
+      "startAtomIndex": 7,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 100,
+      "startAtomIndex": 7,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 101,
+      "startAtomIndex": 7,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 102,
+      "startAtomIndex": 10,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 103,
+      "startAtomIndex": 10,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 51,
+      "startAtomIndex": 10,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 80,
+      "startAtomIndex": 12,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 74,
+      "startAtomIndex": 12,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 54,
+      "startAtomIndex": 12,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 104,
+      "startAtomIndex": 12,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 85,
+      "startAtomIndex": 13,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 94,
+      "startAtomIndex": 13,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 105,
+      "startAtomIndex": 13,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 57,
+      "startAtomIndex": 13,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 89,
+      "startAtomIndex": 14,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 61,
+      "startAtomIndex": 14,
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 91,
+      "startAtomIndex": 14,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 99,
+      "startAtomIndex": 14,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "endAtomIndex": 106,
+      "startAtomIndex": 14,
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    }
+  ],
+  "cell": {
+    "vectors": [
+      [
+        4.65491719,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        5.9707551,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        10.23619605
+      ]
+    ]
+  },
+  "polyhedra": [
+    {
+      "centerAtomIndex": 0,
+      "faces": [
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          4,
+          5,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          4,
+          5,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        0,
+        39,
+        40,
+        41,
+        42,
+        43,
+        29
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 8,
+      "faces": [
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          4,
+          1
+        ],
+        [
+          5,
+          4,
+          2
+        ]
+      ],
+      "hullAtomIndices": [
+        8,
+        35,
+        34,
+        28,
+        36,
+        31,
+        30
+      ],
+      "visibilityDependencies": [],
+      "visibilityDependencyGroups": []
+    },
+    {
+      "centerAtomIndex": 9,
+      "faces": [
+        [
+          6,
+          3,
+          1
+        ],
+        [
+          6,
+          3,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        9,
+        34,
+        44,
+        45,
+        36,
+        37,
+        46
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 11,
+      "faces": [
+        [
+          3,
+          5,
+          2
+        ],
+        [
+          3,
+          5,
+          1
+        ],
+        [
+          4,
+          5,
+          2
+        ],
+        [
+          4,
+          5,
+          1
+        ],
+        [
+          6,
+          3,
+          2
+        ],
+        [
+          6,
+          3,
+          1
+        ],
+        [
+          6,
+          4,
+          1
+        ],
+        [
+          6,
+          4,
+          2
+        ]
+      ],
+      "hullAtomIndices": [
+        11,
+        40,
+        47,
+        42,
+        48,
+        49,
+        38
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 15,
+      "faces": [
+        [
+          6,
+          4,
+          5
+        ],
+        [
+          3,
+          6,
+          5
+        ],
+        [
+          2,
+          3,
+          5
+        ],
+        [
+          2,
+          4,
+          5
+        ],
+        [
+          1,
+          3,
+          6
+        ],
+        [
+          1,
+          6,
+          4
+        ],
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          4
+        ]
+      ],
+      "hullAtomIndices": [
+        15,
+        50,
+        24,
+        33,
+        36,
+        30,
+        37
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 16,
+      "faces": [
+        [
+          2,
+          4,
+          5
+        ],
+        [
+          2,
+          1,
+          4
+        ],
+        [
+          3,
+          2,
+          5
+        ],
+        [
+          3,
+          2,
+          1
+        ],
+        [
+          6,
+          4,
+          5
+        ],
+        [
+          6,
+          1,
+          4
+        ],
+        [
+          6,
+          3,
+          5
+        ],
+        [
+          6,
+          3,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        16,
+        30,
+        51,
+        52,
+        26,
+        53,
+        54
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 17,
+      "faces": [
+        [
+          2,
+          5,
+          4
+        ],
+        [
+          2,
+          1,
+          4
+        ],
+        [
+          3,
+          2,
+          5
+        ],
+        [
+          3,
+          2,
+          1
+        ],
+        [
+          6,
+          5,
+          4
+        ],
+        [
+          6,
+          1,
+          4
+        ],
+        [
+          6,
+          3,
+          5
+        ],
+        [
+          6,
+          3,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        17,
+        31,
+        46,
+        55,
+        23,
+        56,
+        57
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 18,
+      "faces": [
+        [
+          1,
+          5,
+          4
+        ],
+        [
+          1,
+          2,
+          4
+        ],
+        [
+          3,
+          1,
+          5
+        ],
+        [
+          3,
+          1,
+          2
+        ],
+        [
+          6,
+          5,
+          4
+        ],
+        [
+          6,
+          2,
+          4
+        ],
+        [
+          6,
+          3,
+          5
+        ],
+        [
+          6,
+          3,
+          2
+        ]
+      ],
+      "hullAtomIndices": [
+        18,
+        58,
+        38,
+        27,
+        28,
+        32,
+        31
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 19,
+      "faces": [
+        [
+          4,
+          1,
+          3
+        ],
+        [
+          2,
+          1,
+          3
+        ],
+        [
+          2,
+          4,
+          3
+        ],
+        [
+          2,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        19,
+        23,
+        40,
+        38,
+        29
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 20,
+      "faces": [
+        [
+          4,
+          1,
+          3
+        ],
+        [
+          2,
+          1,
+          3
+        ],
+        [
+          2,
+          4,
+          3
+        ],
+        [
+          2,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        20,
+        59,
+        35,
+        32,
+        31
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 21,
+      "faces": [
+        [
+          4,
+          3,
+          1
+        ],
+        [
+          2,
+          3,
+          1
+        ],
+        [
+          2,
+          4,
+          1
+        ],
+        [
+          2,
+          4,
+          3
+        ]
+      ],
+      "hullAtomIndices": [
+        21,
+        60,
+        34,
+        30,
+        37
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 22,
+      "faces": [
+        [
+          4,
+          3,
+          1
+        ],
+        [
+          2,
+          3,
+          1
+        ],
+        [
+          2,
+          4,
+          1
+        ],
+        [
+          2,
+          4,
+          3
+        ]
+      ],
+      "hullAtomIndices": [
+        22,
+        26,
+        61,
+        25,
+        24
+      ],
+      "visibilityDependencies": [
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 1,
+      "faces": [
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        1,
+        72,
+        33,
+        73,
+        74,
+        75,
+        76
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 2,
+      "faces": [
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        2,
+        47,
+        77,
+        48,
+        78,
+        79,
+        58
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 3,
+      "faces": [
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        3,
+        80,
+        81,
+        26,
+        82,
+        53,
+        83
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 4,
+      "faces": [
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        4,
+        84,
+        85,
+        86,
+        23,
+        87,
+        56
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 5,
+      "faces": [
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        5,
+        88,
+        89,
+        90,
+        91,
+        50,
+        92
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 6,
+      "faces": [
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        6,
+        27,
+        93,
+        94,
+        95,
+        96,
+        97
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 7,
+      "faces": [
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        7,
+        61,
+        98,
+        99,
+        100,
+        25,
+        101
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 10,
+      "faces": [
+        [
+          6,
+          3,
+          1
+        ],
+        [
+          6,
+          3,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          1
+        ]
+      ],
+      "hullAtomIndices": [
+        10,
+        102,
+        35,
+        28,
+        103,
+        51,
+        32
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 12,
+      "faces": [
+        [
+          3,
+          5,
+          2
+        ],
+        [
+          3,
+          5,
+          1
+        ],
+        [
+          4,
+          5,
+          2
+        ],
+        [
+          4,
+          5,
+          1
+        ],
+        [
+          6,
+          3,
+          2
+        ],
+        [
+          6,
+          3,
+          1
+        ],
+        [
+          6,
+          4,
+          1
+        ],
+        [
+          6,
+          4,
+          2
+        ]
+      ],
+      "hullAtomIndices": [
+        12,
+        33,
+        80,
+        74,
+        26,
+        54,
+        104
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 13,
+      "faces": [
+        [
+          6,
+          3,
+          2
+        ],
+        [
+          6,
+          3,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          4,
+          1
+        ],
+        [
+          5,
+          4,
+          2
+        ]
+      ],
+      "hullAtomIndices": [
+        13,
+        85,
+        27,
+        23,
+        94,
+        105,
+        57
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    },
+    {
+      "centerAtomIndex": 14,
+      "faces": [
+        [
+          3,
+          6,
+          2
+        ],
+        [
+          3,
+          6,
+          1
+        ],
+        [
+          4,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1
+        ],
+        [
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          3,
+          1
+        ],
+        [
+          5,
+          4,
+          1
+        ],
+        [
+          5,
+          4,
+          2
+        ]
+      ],
+      "hullAtomIndices": [
+        14,
+        89,
+        61,
+        91,
+        99,
+        24,
+        106
+      ],
+      "visibilityDependencies": [
+        "boundaryAtoms",
+        "oneHopBondedAtoms"
+      ],
+      "visibilityDependencyGroups": [
+        [
+          "boundaryAtoms",
+          "oneHopBondedAtoms"
+        ]
+      ]
+    }
+  ],
+  "summary": {
+    "atomCount": 28,
+    "cell": {
+      "a": "4.65",
+      "alpha": "90.0",
+      "b": "5.97",
+      "beta": "90.0",
+      "c": "10.24",
+      "gamma": "90.0"
+    },
+    "formula": "LiFePO4",
+    "symmetry": {
+      "available": true,
+      "crystalSystem": "orthorhombic",
+      "latticeSystem": "orthorhombic",
+      "pointGroup": "mmm",
+      "pointGroupSchoenflies": "D2h",
+      "spaceGroup": "Pnma",
+      "spaceGroupNumber": 62
+    }
+  }
+}

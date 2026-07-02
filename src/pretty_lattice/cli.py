@@ -8,6 +8,7 @@ import threading
 import time
 import webbrowser
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import typer
 import uvicorn
@@ -18,7 +19,7 @@ HELP_OPTION_NAMES = ["-h", "--help"]
 DEFAULT_PORT = 8765
 AUTO_SHUTDOWN_HEARTBEAT_TIMEOUT_SECONDS = 6.0
 COMMAND_NAMES = {"gui"}
-STRUCTURE_PATH_NAMES = {"CONTCAR", "POSCAR"}
+STRUCTURE_PATH_NAMES = {"CONTCAR", "POSCAR", "STRU"}
 STRUCTURE_PATH_SUFFIXES = {
     ".cif",
     ".contcar",
@@ -30,7 +31,16 @@ STRUCTURE_PATH_SUFFIXES = {
 }
 
 app = typer.Typer(
-    help="Pretty Lattice command line tools.",
+    help=(
+        "Pretty Lattice command line tools. "
+        "Open structures directly with 'prl STRUCTURE.vasp'."
+    ),
+    epilog=(
+        "Examples:\n"
+        "  prl gui\n"
+        "  prl STRUCTURE.vasp\n"
+        "  prl STRUCTURE_1.vasp STRUCTURE_2.cif"
+    ),
     context_settings={"help_option_names": HELP_OPTION_NAMES},
 )
 
@@ -64,16 +74,41 @@ def _run_multiple_file_open_args(args: list[str]) -> int:
         return 2
 
     processes: list[subprocess.Popen[bytes]] = []
-    try:
-        for path in structure_paths:
-            processes.append(subprocess.Popen(_multi_file_child_command(path)))
-        return _wait_for_child_processes(processes)
-    except KeyboardInterrupt:
-        _terminate_child_processes(processes)
-        return 130
+    with TemporaryDirectory(prefix="pretty-lattice-open-") as temp_dir:
+        ready_files = [
+            Path(temp_dir) / f"structure-{index}.port"
+            for index in range(len(structure_paths))
+        ]
+        try:
+            for path, ready_file in zip(structure_paths, ready_files, strict=True):
+                processes.append(subprocess.Popen(_multi_file_child_command(path, ready_file)))
+            for path, ready_file, process in zip(
+                structure_paths,
+                ready_files,
+                processes,
+                strict=True,
+            ):
+                port = _wait_for_ready_port(ready_file, process)
+                if port is None:
+                    typer.echo(f"Pretty Lattice GUI did not start for {path}.", err=True)
+                    continue
+                url = _gui_url("127.0.0.1", port, has_startup_structure=True)
+                if _wait_for_server("127.0.0.1", port):
+                    if not _open_url(url, wait_for_opener=True):
+                        typer.echo(f"Open this URL in your browser: {url}", err=True)
+                    time.sleep(0.35)
+                else:
+                    typer.echo(
+                        f"Pretty Lattice GUI did not become reachable for {path}: {url}",
+                        err=True,
+                    )
+            return _wait_for_child_processes(processes)
+        except KeyboardInterrupt:
+            _terminate_child_processes(processes)
+            return 130
 
 
-def _multi_file_child_command(path: Path) -> list[str]:
+def _multi_file_child_command(path: Path, ready_file: Path) -> list[str]:
     return [
         sys.argv[0],
         "gui",
@@ -81,7 +116,36 @@ def _multi_file_child_command(path: Path) -> list[str]:
         str(path),
         "--port",
         "0",
+        "--no-open",
+        "--external-open",
+        "--ready-file",
+        str(ready_file),
     ]
+
+
+def _wait_for_ready_port(
+    ready_file: Path,
+    process: subprocess.Popen[bytes],
+    timeout_seconds: float = 30.0,
+) -> int | None:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        if ready_file.is_file():
+            try:
+                return int(ready_file.read_text(encoding="utf-8").strip())
+            except ValueError:
+                return None
+        if process.poll() is not None:
+            return None
+        time.sleep(0.05)
+    return None
+
+
+def _write_ready_port(ready_file: Path | None, port: int) -> None:
+    if ready_file is None:
+        return
+    ready_file.parent.mkdir(parents=True, exist_ok=True)
+    ready_file.write_text(f"{port}\n", encoding="utf-8")
 
 
 def _wait_for_child_processes(processes: list[subprocess.Popen[bytes]]) -> int:
@@ -183,17 +247,27 @@ def _open_browser_when_ready(url: str, host: str, port: int) -> None:
             typer.echo(f"Open this URL in your browser: {url}", err=True)
 
 
-def _open_url(url: str) -> bool:
+def _open_url(url: str, wait_for_opener: bool = False) -> bool:
     command = _open_url_command()
     if command is not None:
         try:
-            subprocess.Popen(
-                [*command, url],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+            opener_command = [*command, url]
+            if wait_for_opener:
+                subprocess.run(
+                    opener_command,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=5,
+                    check=False,
+                )
+            else:
+                subprocess.Popen(
+                    opener_command,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
             return True
-        except OSError:
+        except (OSError, subprocess.TimeoutExpired):
             pass
 
     return webbrowser.open(url)
@@ -281,6 +355,18 @@ def gui(
         help="Port for the local GUI server. Use 0 for any free port.",
     ),
     no_open: bool = typer.Option(False, "--no-open", help="Do not open the browser automatically."),
+    external_open: bool = typer.Option(
+        False,
+        "--external-open",
+        help="Internal: do not open the browser here, but keep browser-session shutdown enabled.",
+        hidden=True,
+    ),
+    ready_file: Path | None = typer.Option(
+        None,
+        "--ready-file",
+        help="Internal: write the selected port to this file after the server socket is ready.",
+        hidden=True,
+    ),
     reload: bool = typer.Option(False, help="Reload the server when Python files change."),
 ) -> None:
     """Start the local Pretty Lattice GUI server."""
@@ -316,16 +402,17 @@ def gui(
         typer.echo(f"Port {port} is already in use; using {selected_port} instead.")
     if startup_structure_path is not None:
         typer.echo(f"Opening structure: {startup_structure_path}")
+    _write_ready_port(ready_file, selected_port)
     if not no_open:
         _start_browser_opener(url, host, selected_port)
 
     app_instance = create_app(
         startup_structure_path=startup_structure_path,
-        auto_shutdown=not no_open,
+        auto_shutdown=not no_open or external_open,
     )
     config = uvicorn.Config(app_instance, host=host, port=selected_port)
     server = uvicorn.Server(config)
-    if not no_open:
+    if not no_open or external_open:
         _start_auto_shutdown_monitor(app_instance, server)
     server.run(sockets=[server_socket])
 

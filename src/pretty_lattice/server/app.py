@@ -163,11 +163,12 @@ def _mount_missing_web_page(app: FastAPI) -> None:
                   <section>
                     <h1>Pretty Lattice frontend is not built</h1>
                     <p>The Python API is running, but no bundled web app was found.</p>
-                    <p>For the built GUI, run:</p>
+                    <p>For source installs, build and bundle the web app before installing:</p>
                     <code>cd web
 bun run build
 cd ..
-uv run prl gui</code>
+python scripts/sync_web_static.py
+python -m pip install .</code>
                     <p>For live frontend development, run the Python API and Vite separately:</p>
                     <code>uv run prl gui --no-open
 cd web && bun run dev</code>

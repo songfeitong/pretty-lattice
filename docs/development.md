@@ -1,5 +1,27 @@
 # Development Setup
 
+## Install From Source
+
+Build the frontend bundle before installing the Python package:
+
+```bash
+cd web
+bun install
+bun run build
+
+cd ..
+python scripts/sync_web_static.py
+python -m pip install .
+```
+
+After installation, try:
+
+```bash
+prl gui
+prl path/to/structure.vasp
+prl first.vasp second.cif
+```
+
 ## Python
 
 Run the local GUI server:

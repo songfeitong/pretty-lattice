@@ -8,6 +8,34 @@ from pretty_lattice.server.app import create_app
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "structures"
 
+ABACUS_STRU_UPLOAD = b"""ATOMIC_SPECIES
+Bi 208.980 Bi.upf
+Te 127.603 Te.upf
+
+LATTICE_CONSTANT
+1.889726
+
+LATTICE_VECTORS
+3.789814801346 -2.18787053891 0
+3.789814801346 2.187870538915 0
+-0.01407170391 0 21.35281801402
+
+ATOMIC_POSITIONS
+Direct
+
+Bi
+0.000
+1
+0.636368774126 0.636368774126 0.606777619761 1 1 1 mag 0.0
+
+Te
+0.000
+3
+0.637637822126 0.637637822126 0.204628906668 1 1 1 mag 0.0
+0.303460363630 0.303460363630 0.704724802478 1 1 1 mag 0.0
+0.304623701217 0.304623701217 0.375032917975 1 1 1 mag 0.0
+"""
+
 
 @pytest.mark.anyio
 async def test_health_endpoint() -> None:
@@ -78,6 +106,24 @@ async def test_structure_preview_upload_endpoint_returns_scene() -> None:
             },
         }
         assert "view" not in payload
+
+
+@pytest.mark.anyio
+async def test_structure_preview_upload_endpoint_accepts_abacus_stru() -> None:
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app()), base_url="http://testserver"
+    ) as client:
+        response = await client.post(
+            "/api/structure-preview",
+            content=ABACUS_STRU_UPLOAD,
+            headers={"x-pretty-lattice-filename": "STRU"},
+        )
+        payload = response.json()
+
+        assert response.status_code == 200
+        canonical_atoms = [atom for atom in payload["atoms"] if not atom["isPeriodicImage"]]
+        assert [atom["element"] for atom in canonical_atoms] == ["Bi", "Te", "Te", "Te"]
+        assert payload["summary"]["atomCount"] == 4
 
 
 @pytest.mark.anyio

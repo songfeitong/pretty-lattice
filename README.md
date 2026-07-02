@@ -51,6 +51,23 @@ Requirements:
 - macOS, Linux, or Windows
 - Any modern browser
 
+### Install From Source
+
+If you clone the repository, build the frontend first, then install the Python package:
+
+```shell
+git clone https://github.com/songfeitong/pretty-lattice.git
+cd pretty-lattice
+
+cd web
+bun install
+bun run build
+
+cd ..
+python scripts/sync_web_static.py
+python -m pip install .
+```
+
 ## Quick start
 
 After installation, start the local GUI:

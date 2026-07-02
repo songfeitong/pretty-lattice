@@ -35,8 +35,12 @@ export async function renderExportRaster({
   visibleScene: SceneSpec;
 }): Promise<RasterExportImage> {
   const { renderStructureRasterImage } = await import("../scene/exportRenderer");
+  const atomLabelSettings = componentVisibility.atomLabels.enabled
+    ? componentVisibility.atomLabels
+    : null;
 
   return renderStructureRasterImage({
+    atomLabelSettings,
     backgroundColor: exportBackgroundColor(settings.background),
     cameraPose,
     componentOpacity,

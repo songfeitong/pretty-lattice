@@ -1,6 +1,6 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { Quaternion } from "three";
+import { Quaternion, Vector3 } from "three";
 
 import type { SceneSpec } from "../api/scene";
 import type { CameraInteractionStore } from "../model/cameraInteractionStore";
@@ -8,6 +8,7 @@ import type { PreviewSafeArea } from "../model/layout";
 import {
   DEFAULT_DRAG_SENSITIVITY,
   DEFAULT_PREVIEW_MESH_QUALITY,
+  type AtomLabelSettings,
   type ComponentOpacityState,
   type MeshQuality,
   type StyleState,
@@ -27,6 +28,7 @@ import {
   PreviewSceneContent,
 } from "./StructureSceneObjects";
 import { computeSceneStructureLayout, type SceneLayout } from "./sceneLayout";
+import { atomRadiusForModel } from "./sceneGeometry";
 import { DEFAULT_RENDERER_PARAMETERS } from "./rendererParameters";
 import type { VectorTuple } from "./viewMath";
 
@@ -69,6 +71,23 @@ interface OrthographicCanvasCameraProps {
   zoom: number;
 }
 
+interface ClientPoint {
+  x: number;
+  y: number;
+}
+
+interface ClientRectBounds {
+  bottom: number;
+  left: number;
+  right: number;
+  top: number;
+}
+
+export interface AtomBoxSelectionSnapshot {
+  atomIdAtClientPoint: (point: ClientPoint) => string | null;
+  atomIdsInClientRect: (rect: ClientRectBounds) => string[];
+}
+
 const EMPTY_SAFE_AREA: PreviewSafeArea = {
   bottom: 0,
   left: 0,
@@ -97,17 +116,20 @@ export function LatticeScene({
   onCameraOrientationFrame,
   onCameraOrientationChange,
   onAtomInspect,
+  onAtomBoxSelectionSnapshotChange,
+  onAtomMeasure,
   onAtomPulse,
   onLockedInteractionAttempt,
   resetCounter,
   safeArea = EMPTY_SAFE_AREA,
   scene,
   inspectedAtomId = null,
+  measuredAtomIds = [],
   pulseAtomId = null,
   pulseToken = 0,
   previewMeshQuality = DEFAULT_PREVIEW_MESH_QUALITY,
   previewFpsStore,
-  showAtomLabels = false,
+  atomLabelSettings = null,
   showAtoms = true,
   showFpsOverlay = false,
   showUnitCell = true,
@@ -134,17 +156,20 @@ export function LatticeScene({
   onCameraOrientationFrame?: () => void;
   onCameraOrientationChange?: () => void;
   onAtomInspect?: (atomId: string | null) => void;
+  onAtomBoxSelectionSnapshotChange?: (snapshot: AtomBoxSelectionSnapshot | null) => void;
+  onAtomMeasure?: (atomId: string) => void;
   onAtomPulse?: (atomId: string) => void;
   onLockedInteractionAttempt?: () => void;
   resetCounter: number;
   safeArea?: PreviewSafeArea;
   scene: SceneSpec;
   inspectedAtomId?: string | null;
+  measuredAtomIds?: string[];
   pulseAtomId?: string | null;
   pulseToken?: number;
   previewMeshQuality?: MeshQuality;
   previewFpsStore?: PreviewFpsStore;
-  showAtomLabels?: boolean;
+  atomLabelSettings?: AtomLabelSettings | null;
   showAtoms?: boolean;
   showFpsOverlay?: boolean;
   showUnitCell?: boolean;
@@ -219,19 +244,21 @@ export function LatticeScene({
         safeArea={safeArea}
       />
       <PreviewSceneContent
+        atomLabelSettings={atomLabelSettings}
         componentOpacity={componentOpacity}
         layout={layout}
         materialFamilies={materialFamilies}
         meshDetail={EXPORT_SCENE_MESH_DETAIL_PRESETS[previewMeshQuality]}
         scene={scene}
         inspectedAtomId={inspectedAtomId}
+        measuredAtomIds={measuredAtomIds}
         interactionLocked={interactionLocked}
         onAtomInspect={onAtomInspect}
+        onAtomMeasure={onAtomMeasure}
         onAtomPulse={onAtomPulse}
         onLockedInteractionAttempt={onLockedInteractionAttempt}
         pulseAtomId={pulseAtomId}
         pulseToken={pulseToken}
-        showAtomLabels={showAtomLabels}
         showAtoms={showAtoms}
         showUnitCell={showUnitCell}
         style={style}
@@ -242,6 +269,14 @@ export function LatticeScene({
         onCameraOrientationFrame={onCameraOrientationFrame}
         onCameraOrientationChange={onCameraOrientationChange}
         suspendUpdates={suspendCameraOrientationUpdates}
+      />
+      <AtomBoxSelectionSnapshotReporter
+        atomRadiusModel={style.atomRadiusModel}
+        atomRadiusScale={style.atomRadius / 100}
+        groupPosition={layout.groupPosition}
+        onSnapshotChange={onAtomBoxSelectionSnapshotChange}
+        scene={scene}
+        showAtoms={showAtoms}
       />
       {showFpsOverlay && previewFpsStore ? (
         <PreviewFpsMeter previewFpsStore={previewFpsStore} />
@@ -299,6 +334,140 @@ function CameraOrientationTracker({
   });
 
   return null;
+}
+
+function AtomBoxSelectionSnapshotReporter({
+  atomRadiusModel,
+  atomRadiusScale,
+  groupPosition,
+  onSnapshotChange,
+  scene,
+  showAtoms,
+}: {
+  atomRadiusModel: StyleState["atomRadiusModel"];
+  atomRadiusScale: number;
+  groupPosition: VectorTuple;
+  onSnapshotChange?: (snapshot: AtomBoxSelectionSnapshot | null) => void;
+  scene: SceneSpec;
+  showAtoms: boolean;
+}) {
+  const { camera, gl } = useThree();
+  const snapshot = useMemo<AtomBoxSelectionSnapshot>(
+    () => ({
+      atomIdAtClientPoint: (point) => {
+        if (!showAtoms) {
+          return null;
+        }
+
+        let nearestAtomId: string | null = null;
+        let nearestDistance = Infinity;
+        for (const atom of scene.atoms) {
+          const atomScreenPoint = atomClientPoint(atom.position, groupPosition, camera, gl.domElement);
+          if (!atomScreenPoint) {
+            continue;
+          }
+
+          const distance = Math.hypot(atomScreenPoint.x - point.x, atomScreenPoint.y - point.y);
+          const hitRadius = Math.max(
+            8,
+            atomClientRadius(
+              atom.position,
+              atomRadiusForModel(atom, atomRadiusModel) * atomRadiusScale,
+              groupPosition,
+              camera,
+              gl.domElement,
+            ) + 4,
+          );
+          if (distance <= hitRadius && distance < nearestDistance) {
+            nearestAtomId = atom.id;
+            nearestDistance = distance;
+          }
+        }
+
+        return nearestAtomId;
+      },
+      atomIdsInClientRect: (rect) => {
+        if (!showAtoms) {
+          return [];
+        }
+
+        return scene.atoms.flatMap((atom) => {
+          const atomScreenPoint = atomClientPoint(atom.position, groupPosition, camera, gl.domElement);
+          if (!atomScreenPoint) {
+            return [];
+          }
+
+          return atomScreenPoint.x >= rect.left &&
+            atomScreenPoint.x <= rect.right &&
+            atomScreenPoint.y >= rect.top &&
+            atomScreenPoint.y <= rect.bottom
+            ? [atom.id]
+            : [];
+        });
+      },
+    }),
+    [
+      atomRadiusModel,
+      atomRadiusScale,
+      camera,
+      gl.domElement,
+      groupPosition,
+      scene.atoms,
+      showAtoms,
+    ],
+  );
+
+  useEffect(() => {
+    onSnapshotChange?.(snapshot);
+
+    return () => {
+      onSnapshotChange?.(null);
+    };
+  }, [onSnapshotChange, snapshot]);
+
+  return null;
+}
+
+function atomClientPoint(
+  position: VectorTuple,
+  groupPosition: VectorTuple,
+  camera: Parameters<Vector3["project"]>[0],
+  canvas: HTMLCanvasElement,
+): ClientPoint | null {
+  const bounds = canvas.getBoundingClientRect();
+  const projected = new Vector3(...position)
+    .add(new Vector3(...groupPosition))
+    .project(camera);
+  if (projected.z < -1 || projected.z > 1) {
+    return null;
+  }
+
+  return {
+    x: bounds.left + ((projected.x + 1) * bounds.width) / 2,
+    y: bounds.top + ((1 - projected.y) * bounds.height) / 2,
+  };
+}
+
+function atomClientRadius(
+  position: VectorTuple,
+  radius: number,
+  groupPosition: VectorTuple,
+  camera: Parameters<Vector3["project"]>[0],
+  canvas: HTMLCanvasElement,
+): number {
+  const center = atomClientPoint(position, groupPosition, camera, canvas);
+  if (!center) {
+    return 0;
+  }
+
+  const cameraRight = new Vector3(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
+  const edgePosition = new Vector3(...position).add(cameraRight.multiplyScalar(radius));
+  const edge = atomClientPoint([edgePosition.x, edgePosition.y, edgePosition.z], groupPosition, camera, canvas);
+  if (!edge) {
+    return 0;
+  }
+
+  return Math.hypot(edge.x - center.x, edge.y - center.y);
 }
 
 function PreviewFpsMeter({

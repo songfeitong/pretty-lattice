@@ -53,6 +53,50 @@ CIF_FIXTURES = [
     ("TiO2.cif", 6, {"Ti", "O"}, "TiO2", 136, "tetragonal", "D4h"),
 ]
 
+ABACUS_STRU_FIXTURE = """ATOMIC_SPECIES
+Bi  208.980  Bi_ONCV_PBE-1.0.upf
+Sb  121.760  Sb_ONCV_PBE-1.0.upf
+Te  127.603  Te_ONCV_PBE-1.0.upf
+
+NUMERICAL_ORBITAL
+Bi_gga_7au_100Ry_2s2p2d1f.orb
+Sb_gga_7au_100Ry_2s2p2d1f.orb
+Te_gga_7au_100Ry_2s2p2d1f.orb
+
+LATTICE_CONSTANT
+1.889726
+
+LATTICE_VECTORS
+3.789814801346  -2.18787053891  0.000000000000
+3.789814801346  2.187870538915  0.000000000000
+-0.01407170391  0.000000000000  21.35281801402
+
+ATOMIC_POSITIONS
+Direct
+
+Bi
+0.000
+2
+0.636368774126  0.636368774126  0.606777619761  1  1  1  mag  0.0
+0.304071477621  0.304071477621  0.106685191760  1  1  1  mag  0.0
+
+Sb
+0.000
+2
+0.971158049397  0.971158049397  0.296486368704  1  1  1  mag  0.0
+0.970279058894  0.970279058894  0.796578538168  1  1  1  mag  0.0
+
+Te
+0.000
+6
+0.637637822126  0.637637822126  0.204628906668  1  1  1  mag  0.0
+0.303460363630  0.303460363630  0.704724802478  1  1  1  mag  0.0
+0.304623701217  0.304623701217  0.375032917975  1  1  1  mag  0.0
+0.970613056701  0.970613056701  0.024481601751  1  1  1  mag  0.0
+0.637180500556  0.637180500557  0.875125927137  1  1  1  mag  0.0
+0.969618934887  0.969618934887  0.524576885598  1  1  1  mag  0.0
+"""
+
 
 @pytest.mark.parametrize(
     (
@@ -115,6 +159,26 @@ Direct
 
     assert len(structure) == 2
     assert structure.composition.reduced_formula == "NaCl"
+
+
+def test_read_abacus_stru_from_path_and_bytes(tmp_path: Path) -> None:
+    payload = ABACUS_STRU_FIXTURE.encode()
+    structure_path = tmp_path / "STRU"
+    structure_path.write_bytes(payload)
+
+    structure = read_structure(structure_path)
+    uploaded_structure = read_structure_bytes(payload, filename="STRU")
+
+    assert len(structure) == 10
+    assert len(uploaded_structure) == 10
+    assert structure.composition.reduced_formula == "BiSbTe3"
+    assert {element.symbol for element in structure.composition.elements} == {"Bi", "Sb", "Te"}
+    assert structure.lattice.a == pytest.approx(4.376, abs=0.002)
+    assert structure.frac_coords[0].tolist() == pytest.approx([
+        0.636368774126,
+        0.636368774126,
+        0.606777619761,
+    ])
 
 
 def test_invalid_structure_bytes_raise_project_error() -> None:
