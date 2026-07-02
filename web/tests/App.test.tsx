@@ -253,6 +253,7 @@ async function renderLoadedStructure(user: ReturnType<typeof userEvent.setup>, s
 }
 
 beforeEach(() => {
+  window.history.replaceState(null, "", "/");
   Object.defineProperty(navigator, "gpu", {
     configurable: true,
     value: undefined,
@@ -344,6 +345,35 @@ describe("App", () => {
         .getAllByRole("checkbox")
         .map((checkbox) => checkbox.getAttribute("aria-label")),
     ).toEqual(["Atoms", "Bonds", "Unit cell", "Polyhedra"]);
+  });
+
+  test("loads a startup structure from the local server and recomputes bonding", async () => {
+    const user = userEvent.setup();
+    const scene = sceneWithPeriodicImages();
+    window.history.replaceState(null, "", "/?startup=1");
+    queueFetchResponse(jsonResponse({ fileName: "SrTiO3.vasp", scene }));
+
+    render(<App />);
+
+    expect((await screen.findByTestId("lattice-canvas")).isConnected).toBe(true);
+    expect(fetchCalls).toHaveLength(1);
+    expect(fetchCalls[0]?.input).toBe("/api/startup-structure-preview");
+    expect(fetchCalls[0]?.init).toBeUndefined();
+
+    const structureCard = screen.getByRole("complementary", { name: "Current structure" });
+    expect(within(structureCard).getByText("SrTiO3.vasp").isConnected).toBe(true);
+    expect(within(structureCard).getByText("NaCl").isConnected).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    queueFetchResponse(jsonResponse({ fileName: "SrTiO3.vasp", scene }));
+    await user.click(screen.getByRole("combobox", { name: "Bonding algorithm" }));
+    await user.click(await screen.findByRole("option", { name: "Minimum distance" }));
+
+    await waitFor(() => expect(fetchCalls).toHaveLength(2));
+    expect(fetchCalls[1]?.input).toBe(
+      "/api/startup-structure-preview?bondAlgorithm=minimum-distance",
+    );
+    expect(fetchCalls[1]?.init).toBeUndefined();
   });
 
   test("initializes uploaded structure camera controls from the uploaded cell", async () => {
@@ -626,11 +656,11 @@ describe("App", () => {
     const oneHopSwitch = screen.getByRole("switch", {
       name: "One-hop bonded atoms",
     });
-    expect(oneHopSwitch.getAttribute("aria-checked")).toBe("false");
+    expect(oneHopSwitch.getAttribute("aria-checked")).toBe("true");
 
     await user.click(oneHopSwitch);
 
-    expect(oneHopSwitch.getAttribute("aria-checked")).toBe("true");
+    expect(oneHopSwitch.getAttribute("aria-checked")).toBe("false");
 
     const legend = screen.getByRole("navigation", { name: "Element legend" });
     expect(legend.getAttribute("style")).toContain("calc(50% + 122px)");
@@ -2058,7 +2088,7 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Reset view" }));
 
-    expect((zoomInput as HTMLInputElement).value).toBe("100");
+    expect((zoomInput as HTMLInputElement).value).toBe("75");
     expect(rollInput.value).toBe(standardViewRoll);
   });
 

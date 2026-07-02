@@ -21,7 +21,7 @@ export const DEFAULT_COMPONENT_VISIBILITY: ComponentVisibilityState = {
   bonds: true,
   polyhedra: false,
   boundaryAtoms: true,
-  oneHopBondedAtoms: false,
+  oneHopBondedAtoms: true,
 };
 
 export interface ComponentOpacityState {

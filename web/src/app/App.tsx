@@ -79,6 +79,15 @@ type ResetLoadedPreviewState = (
   options?: ResetLoadedPreviewOptions,
 ) => void;
 
+const SESSION_HEARTBEAT_INTERVAL_MS = 3000;
+
+function sendSessionHeartbeat() {
+  void fetch("/api/session-heartbeat", {
+    method: "POST",
+    keepalive: true,
+  }).catch(() => {});
+}
+
 export function App() {
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [componentVisibility, setComponentVisibility] = useState(
@@ -112,6 +121,17 @@ export function App() {
     },
     [],
   );
+  useEffect(() => {
+    sendSessionHeartbeat();
+    const heartbeatInterval = window.setInterval(
+      sendSessionHeartbeat,
+      SESSION_HEARTBEAT_INTERVAL_MS,
+    );
+
+    return () => {
+      window.clearInterval(heartbeatInterval);
+    };
+  }, []);
   const handlePreviewCleared = useCallback(() => {
     setInspectedAtomId(null);
     setPulseAtom(null);

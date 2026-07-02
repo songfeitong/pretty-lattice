@@ -62,6 +62,12 @@ prl gui
 
 Pretty Lattice 会启动一个本地服务，并自动打开浏览器。
 
+也可以直接打开结构文件：
+
+```shell
+prl SrTiO3.vasp
+```
+
 也可以不安装，临时运行：
 
 ```shell
@@ -71,6 +77,7 @@ uvx --from pretty-lattice prl gui
 常用启动选项：
 
 ```shell
+prl gui --file SrTiO3.vasp
 prl gui --no-open     # 只启动服务，不自动打开浏览器
 prl gui -p 0          # 自动选择可用端口
 ```

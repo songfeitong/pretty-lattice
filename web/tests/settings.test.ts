@@ -326,9 +326,13 @@ describe("settings", () => {
     const scene = sceneWithPeriodicImages();
     const defaultVisibility = createDefaultComponentVisibility(scene);
 
-    const visibleScene = visibleSceneForComponents(scene, defaultVisibility);
+    const defaultWithoutOneHopVisibility = {
+      ...defaultVisibility,
+      oneHopBondedAtoms: false,
+    };
+    const visibleScene = visibleSceneForComponents(scene, defaultWithoutOneHopVisibility);
 
-    expect(defaultVisibility.oneHopBondedAtoms).toBe(false);
+    expect(defaultVisibility.oneHopBondedAtoms).toBe(true);
     expect(visibleScene?.atoms.map((atom) => atom.id)).toEqual([
       "Na-0",
       "Na-0-image-1-0-0",
@@ -341,7 +345,7 @@ describe("settings", () => {
     expect(visibleScene?.polyhedra).toEqual([]);
 
     const withOneHop = visibleSceneForComponents(scene, {
-      ...defaultVisibility,
+      ...defaultWithoutOneHopVisibility,
       oneHopBondedAtoms: true,
     });
     expect(withOneHop?.atoms.map((atom) => atom.id)).toEqual([

@@ -2,7 +2,7 @@ export type InteractionMode = "trackball" | "orbit";
 
 export const MIN_VIEW_SCALE = 0.2;
 export const MAX_VIEW_SCALE = 5;
-export const DEFAULT_VIEW_SCALE = 1;
+export const DEFAULT_VIEW_SCALE = 0.75;
 export const BASE_TRACKBALL_DRAG_SENSITIVITY = 2;
 export const BASE_ORBIT_DRAG_SENSITIVITY = 0.5;
 export const MIN_DRAG_SENSITIVITY = 0.5;

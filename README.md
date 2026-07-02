@@ -61,6 +61,12 @@ prl gui
 
 Pretty Lattice starts a local server and opens your browser automatically.
 
+Open a structure file directly:
+
+```shell
+prl SrTiO3.vasp
+```
+
 Run once without installing:
 
 ```shell
@@ -70,6 +76,7 @@ uvx --from pretty-lattice prl gui
 Useful launch options:
 
 ```shell
+prl gui --file SrTiO3.vasp
 prl gui --no-open     # start the server without opening a browser
 prl gui -p 0          # choose any available port automatically
 ```

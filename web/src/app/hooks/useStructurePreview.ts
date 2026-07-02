@@ -15,6 +15,8 @@ import {
   hasStaticScenePreview,
   isBackendUnavailablePreviewError,
   loadStaticScenePreview,
+  loadStartupStructurePreview,
+  shouldLoadStartupStructurePreview,
   uploadStructurePreview,
   type BondAlgorithm,
   type SceneSpec,
@@ -39,21 +41,65 @@ interface UseStructurePreviewOptions {
   ) => void;
 }
 
+type PreviewSource = "static" | "startup" | "upload";
+
 export function useStructurePreview({
   onBondAlgorithmSceneLoaded,
   onPreviewCleared,
   resetLoadedPreviewState,
 }: UseStructurePreviewOptions) {
   const isStaticScenePreview = hasStaticScenePreview();
+  const shouldLoadStartupStructure = shouldLoadStartupStructurePreview();
   const [scene, setScene] = useState<SceneSpec | null>(null);
   const [previewStatus, setPreviewStatus] = useState<PreviewStatus>(() =>
-    isStaticScenePreview ? "loading" : "idle",
+    isStaticScenePreview || shouldLoadStartupStructure ? "loading" : "idle",
   );
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [previewSource, setPreviewSource] = useState<PreviewSource | null>(null);
   const [bondAlgorithm, setBondAlgorithm] =
     useState<BondAlgorithm>(DEFAULT_BOND_ALGORITHM);
+
+  const loadStartupPreview = useCallback(
+    async (isCurrent: () => boolean) => {
+      try {
+        const preview = await loadStartupStructurePreview();
+        if (!isCurrent()) {
+          return;
+        }
+
+        setScene(preview.scene);
+        setSelectedFileName(preview.fileName);
+        setCurrentFile(null);
+        setPreviewSource("startup");
+        setBondAlgorithm(defaultBondAlgorithmForScene(preview.scene));
+        resetLoadedPreviewState(preview.scene);
+        setPreviewStatus("ready");
+      } catch (error) {
+        if (!isCurrent()) {
+          return;
+        }
+
+        if (!shouldLoadStartupStructure && isBackendUnavailablePreviewError(error)) {
+          return;
+        }
+
+        setScene(null);
+        setCurrentFile(null);
+        onPreviewCleared();
+        setSelectedFileName(null);
+        setPreviewSource(null);
+        setPreviewStatus("error");
+        setErrorMessage(
+          isBackendUnavailablePreviewError(error)
+            ? error.message
+            : STRUCTURE_PARSE_ERROR_MESSAGE,
+        );
+      }
+    },
+    [onPreviewCleared, resetLoadedPreviewState, shouldLoadStartupStructure],
+  );
 
   useEffect(() => {
     if (!isStaticScenePreview) {
@@ -71,6 +117,7 @@ export function useStructurePreview({
 
         setScene(nextScene);
         setSelectedFileName(STATIC_SCENE_PREVIEW_NAME);
+        setPreviewSource("static");
         setBondAlgorithm(defaultBondAlgorithmForScene(nextScene));
         resetLoadedPreviewState(nextScene);
         setPreviewStatus("ready");
@@ -82,6 +129,7 @@ export function useStructurePreview({
         setScene(null);
         onPreviewCleared();
         setSelectedFileName(null);
+        setPreviewSource(null);
         setPreviewStatus("error");
         setErrorMessage("Static example could not be loaded.");
       }
@@ -93,6 +141,34 @@ export function useStructurePreview({
       isCurrent = false;
     };
   }, [isStaticScenePreview, onPreviewCleared, resetLoadedPreviewState]);
+
+  useEffect(() => {
+    if (isStaticScenePreview || !shouldLoadStartupStructure) {
+      return;
+    }
+
+    let isCurrent = true;
+
+    void loadStartupPreview(() => isCurrent);
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [isStaticScenePreview, loadStartupPreview, shouldLoadStartupStructure]);
+
+  useEffect(() => {
+    if (isStaticScenePreview || shouldLoadStartupStructure) {
+      return;
+    }
+
+    let isCurrent = true;
+
+    void loadStartupPreview(() => isCurrent);
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [isStaticScenePreview, loadStartupPreview, shouldLoadStartupStructure]);
 
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -113,6 +189,7 @@ export function useStructurePreview({
         setErrorMessage(STRUCTURE_FILE_TOO_LARGE_MESSAGE);
         setScene(null);
         setCurrentFile(null);
+        setPreviewSource(null);
         onPreviewCleared();
         return;
       }
@@ -122,6 +199,7 @@ export function useStructurePreview({
       setErrorMessage(null);
       setScene(null);
       setCurrentFile(file);
+      setPreviewSource("upload");
       setBondAlgorithm(DEFAULT_BOND_ALGORITHM);
       resetLoadedPreviewState(null);
 
@@ -135,6 +213,7 @@ export function useStructurePreview({
         setScene(null);
         setCurrentFile(null);
         setSelectedFileName(null);
+        setPreviewSource(null);
         onPreviewCleared();
         setPreviewStatus("error");
         setErrorMessage(
@@ -149,7 +228,7 @@ export function useStructurePreview({
 
   const handleBondAlgorithmChange = useCallback(
     async (nextBondAlgorithm: BondAlgorithm) => {
-      if (!currentFile) {
+      if (!currentFile && previewSource !== "startup") {
         if (scene) {
           setErrorMessage(BACKEND_UNAVAILABLE_MESSAGE);
         }
@@ -160,9 +239,11 @@ export function useStructurePreview({
       setErrorMessage(null);
 
       try {
-        const nextScene = await uploadStructurePreview(currentFile, {
-          bondAlgorithm: nextBondAlgorithm,
-        });
+        const nextScene = currentFile
+          ? await uploadStructurePreview(currentFile, {
+              bondAlgorithm: nextBondAlgorithm,
+            })
+          : (await loadStartupStructurePreview({ bondAlgorithm: nextBondAlgorithm })).scene;
         setBondAlgorithm(nextBondAlgorithm);
         setScene(nextScene);
         onBondAlgorithmSceneLoaded(nextScene);
@@ -177,12 +258,13 @@ export function useStructurePreview({
         setScene(null);
         setCurrentFile(null);
         setSelectedFileName(null);
+        setPreviewSource(null);
         onPreviewCleared();
         setPreviewStatus("error");
         setErrorMessage(STRUCTURE_PARSE_ERROR_MESSAGE);
       }
     },
-    [currentFile, onBondAlgorithmSceneLoaded, onPreviewCleared, scene],
+    [currentFile, onBondAlgorithmSceneLoaded, onPreviewCleared, previewSource, scene],
   );
 
   const handleResetAllSettings = useCallback(async () => {
@@ -192,7 +274,10 @@ export function useStructurePreview({
 
     const defaultBondAlgorithm = defaultBondAlgorithmForScene(scene);
 
-    if (bondAlgorithm === defaultBondAlgorithm || !currentFile) {
+    if (
+      bondAlgorithm === defaultBondAlgorithm ||
+      (!currentFile && previewSource !== "startup")
+    ) {
       setBondAlgorithm(defaultBondAlgorithm);
       setPreviewStatus("ready");
       resetLoadedPreviewState(scene, {
@@ -206,7 +291,9 @@ export function useStructurePreview({
     setErrorMessage(null);
 
     try {
-      const nextScene = await uploadStructurePreview(currentFile);
+      const nextScene = currentFile
+        ? await uploadStructurePreview(currentFile)
+        : (await loadStartupStructurePreview()).scene;
       setBondAlgorithm(defaultBondAlgorithmForScene(nextScene));
       setScene(nextScene);
       resetLoadedPreviewState(nextScene, {
@@ -222,7 +309,14 @@ export function useStructurePreview({
           : STRUCTURE_PARSE_ERROR_MESSAGE,
       );
     }
-  }, [bondAlgorithm, currentFile, previewStatus, resetLoadedPreviewState, scene]);
+  }, [
+    bondAlgorithm,
+    currentFile,
+    previewSource,
+    previewStatus,
+    resetLoadedPreviewState,
+    scene,
+  ]);
 
   const errorTitle = useMemo(
     () =>

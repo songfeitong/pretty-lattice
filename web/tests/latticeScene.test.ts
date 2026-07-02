@@ -457,7 +457,10 @@ describe("computeSceneLayout", () => {
 
   test("derives export aspect from the projected currently visible content", () => {
     const scene = sceneWithExportVisibilityAtoms();
-    const visibility = createDefaultComponentVisibility(scene);
+    const visibility = {
+      ...createDefaultComponentVisibility(scene),
+      oneHopBondedAtoms: false,
+    };
     const cameraPose = createCameraPoseSnapshot(new Quaternion());
     const componentOpacity = createDefaultComponentOpacity();
     const style = createDefaultStyle();

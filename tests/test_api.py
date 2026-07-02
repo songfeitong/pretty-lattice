@@ -81,6 +81,50 @@ async def test_structure_preview_upload_endpoint_returns_scene() -> None:
 
 
 @pytest.mark.anyio
+async def test_startup_structure_preview_endpoint_returns_scene() -> None:
+    structure_path = FIXTURE_DIR / "SrTiO3.cif"
+
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app(startup_structure_path=structure_path)),
+        base_url="http://testserver",
+    ) as client:
+        response = await client.get("/api/startup-structure-preview")
+        payload = response.json()
+
+        assert response.status_code == 200
+        assert payload["fileName"] == "SrTiO3.cif"
+        assert payload["scene"]["summary"]["formula"] == "SrTiO3"
+        assert payload["scene"]["bonds"]
+
+
+@pytest.mark.anyio
+async def test_startup_structure_preview_endpoint_accepts_bond_algorithm() -> None:
+    structure_path = FIXTURE_DIR / "SrTiO3.cif"
+
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app(startup_structure_path=structure_path)),
+        base_url="http://testserver",
+    ) as client:
+        response = await client.get(
+            "/api/startup-structure-preview?bondAlgorithm=minimum-distance"
+        )
+
+    assert response.status_code == 200
+    assert response.json()["scene"]["bonds"]
+
+
+@pytest.mark.anyio
+async def test_startup_structure_preview_endpoint_requires_startup_file() -> None:
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app()), base_url="http://testserver"
+    ) as client:
+        response = await client.get("/api/startup-structure-preview")
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["message"] == "No startup structure file."
+
+
+@pytest.mark.anyio
 async def test_structure_preview_upload_endpoint_accepts_supported_bond_algorithm() -> None:
     payload = (FIXTURE_DIR / "SrTiO3.cif").read_bytes()
 

@@ -93,6 +93,11 @@ export interface AnalysisWarningSpec {
   message: string;
 }
 
+export interface StartupStructurePreview {
+  fileName: string;
+  scene: SceneSpec;
+}
+
 export function defaultBondAlgorithmForScene(
   scene: Pick<SceneSpec, "summary">,
 ): BondAlgorithm {
@@ -129,6 +134,10 @@ export function hasStaticScenePreview(): boolean {
   return STATIC_SCENE_PREVIEW_URL.length > 0;
 }
 
+export function shouldLoadStartupStructurePreview(): boolean {
+  return new URLSearchParams(window.location.search).get("startup") === "1";
+}
+
 export function isBackendUnavailablePreviewError(
   error: unknown,
 ): error is StructurePreviewError {
@@ -162,7 +171,7 @@ export async function uploadStructurePreview(
     throw new StructurePreviewError(BACKEND_UNAVAILABLE_MESSAGE, "backend-unavailable");
   }
 
-  const endpoint = previewEndpointForOptions(options);
+  const endpoint = previewEndpointForOptions("/api/structure-preview", options);
   let response: Response;
   try {
     response = await fetch(endpoint, {
@@ -191,7 +200,39 @@ export async function uploadStructurePreview(
   return (await response.json()) as SceneSpec;
 }
 
-function previewEndpointForOptions(options: { bondAlgorithm?: BondAlgorithm }): string {
+export async function loadStartupStructurePreview(
+  options: { bondAlgorithm?: BondAlgorithm } = {},
+): Promise<StartupStructurePreview> {
+  if (hasStaticScenePreview()) {
+    throw new StructurePreviewError(BACKEND_UNAVAILABLE_MESSAGE, "backend-unavailable");
+  }
+
+  const endpoint = previewEndpointForOptions("/api/startup-structure-preview", options);
+  let response: Response;
+  try {
+    response = await fetch(endpoint);
+  } catch {
+    throw new StructurePreviewError(BACKEND_UNAVAILABLE_MESSAGE, "backend-unavailable");
+  }
+
+  if (!response.ok) {
+    if (isBackendUnavailableResponse(response)) {
+      throw new StructurePreviewError(BACKEND_UNAVAILABLE_MESSAGE, "backend-unavailable");
+    }
+    throw new StructurePreviewError(await readPreviewError(response));
+  }
+
+  if (!isJsonResponse(response)) {
+    throw new StructurePreviewError(BACKEND_UNAVAILABLE_MESSAGE, "backend-unavailable");
+  }
+
+  return (await response.json()) as StartupStructurePreview;
+}
+
+function previewEndpointForOptions(
+  path: string,
+  options: { bondAlgorithm?: BondAlgorithm },
+): string {
   const params = new URLSearchParams();
   if (options.bondAlgorithm) {
     params.set("bondAlgorithm", options.bondAlgorithm);
@@ -199,10 +240,10 @@ function previewEndpointForOptions(options: { bondAlgorithm?: BondAlgorithm }): 
 
   const query = params.toString();
   if (!query) {
-    return "/api/structure-preview";
+    return path;
   }
 
-  return `/api/structure-preview?${query}`;
+  return `${path}?${query}`;
 }
 
 async function readPreviewError(response: Response): Promise<string> {
