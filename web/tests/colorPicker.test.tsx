@@ -1,11 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import * as React from "react";
 import { describe, expect, mock, test } from "bun:test";
 
 import {
   ColorPicker,
+  ColorPickerArea,
   ColorPickerContent,
   ColorPickerInput,
   ColorPickerTrigger,
+  useColorPicker,
 } from "../src/components/ui/color-picker";
 
 describe("ColorPicker", () => {
@@ -75,6 +78,38 @@ describe("ColorPicker", () => {
     expect(handleValueChange).toHaveBeenCalledTimes(1);
     expect(handleValueChange).toHaveBeenLastCalledWith("#445566");
   });
+
+  test("preserves hue when a controlled value echoes the current color", () => {
+    const { container } = render(<ControlledAreaColorPicker />);
+    const area = container.querySelector(
+      "[data-slot='color-picker-area']",
+    ) as HTMLDivElement;
+
+    area.getBoundingClientRect = () =>
+      ({
+        bottom: 100,
+        height: 100,
+        left: 0,
+        right: 100,
+        top: 0,
+        width: 100,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    area.setPointerCapture = () => {};
+
+    expect(screen.getByLabelText("Hue value").textContent).toBe("217");
+
+    fireEvent.pointerDown(area, {
+      clientX: 0,
+      clientY: 100,
+      pointerId: 1,
+    });
+
+    expect(screen.getByLabelText("Color value").textContent).toBe("#000000");
+    expect(screen.getByLabelText("Hue value").textContent).toBe("217");
+  });
 });
 
 function ControlledColorPicker({
@@ -108,4 +143,38 @@ function InputColorPicker({
       </ColorPickerContent>
     </ColorPicker>
   );
+}
+
+function ControlledAreaColorPicker() {
+  const [value, setValue] = React.useState("#3b82f6");
+
+  return (
+    <ColorPicker value={value} inline onValueChange={setValue}>
+      <ColorPickerContent>
+        <ColorPickerArea />
+        <ColorPickerStateReadout />
+      </ColorPickerContent>
+    </ColorPicker>
+  );
+}
+
+function ColorPickerStateReadout() {
+  const hue = useColorPicker((state) => state.hsv.h);
+  const color = useColorPicker(
+    (state) =>
+      `#${hexChannel(state.color.r)}${hexChannel(state.color.g)}${hexChannel(
+        state.color.b,
+      )}`,
+  );
+
+  return (
+    <>
+      <output aria-label="Hue value">{hue}</output>
+      <output aria-label="Color value">{color}</output>
+    </>
+  );
+}
+
+function hexChannel(value: number) {
+  return Math.round(value).toString(16).padStart(2, "0");
 }

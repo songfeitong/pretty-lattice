@@ -703,6 +703,10 @@ function ColorPickerImpl(props: ColorPickerImplProps) {
     if (valueProp !== undefined) {
       const currentState = store.getState();
       const color = hexToRgb(valueProp, currentState.color.a);
+      if (isSameColorValue(currentState.color, color)) {
+        return;
+      }
+
       const hsv = rgbToHsv(color);
       store.setColorAndHsv(color, hsv, { emit: false });
     }
