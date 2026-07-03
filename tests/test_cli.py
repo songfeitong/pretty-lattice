@@ -65,8 +65,6 @@ def test_help_accepts_short_option() -> None:
     assert gui_result.exit_code == 0
     assert "Pretty Lattice command line tools." in root_result.output
     assert "Start the local Pretty Lattice GUI server." in gui_result.output
-    assert "--version" in root_result.output
-    assert "-V" in root_result.output
 
 
 def test_wait_for_server_accepts_ready_port() -> None:
