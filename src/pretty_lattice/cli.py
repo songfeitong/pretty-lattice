@@ -4,13 +4,32 @@ import socket
 import threading
 import time
 import webbrowser
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as metadata_version
+from typing import Annotated
 
 import typer
 import uvicorn
 
+from pretty_lattice import __version__
 from pretty_lattice.server.app import create_app
 
 HELP_OPTION_NAMES = ["-h", "--help"]
+PACKAGE_NAME = "pretty-lattice"
+
+
+def _current_version() -> str:
+    try:
+        return metadata_version(PACKAGE_NAME)
+    except PackageNotFoundError:
+        return __version__
+
+
+def _print_version(show_version: bool) -> None:
+    if show_version:
+        typer.echo(f"Pretty Lattice {_current_version()}")
+        raise typer.Exit()
+
 
 app = typer.Typer(
     help="Pretty Lattice command line tools.",
@@ -19,7 +38,18 @@ app = typer.Typer(
 
 
 @app.callback()
-def main() -> None:
+def main(
+    version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            "-V",
+            help="Show the installed Pretty Lattice version.",
+            callback=_print_version,
+            is_eager=True,
+        ),
+    ] = False,
+) -> None:
     """Pretty Lattice command line tools."""
 
 
