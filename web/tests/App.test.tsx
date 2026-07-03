@@ -346,6 +346,23 @@ describe("App", () => {
     ).toEqual(["Atoms", "Bonds", "Unit cell", "Polyhedra"]);
   });
 
+  test("switches the legend color picker between elements", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user);
+
+    const sodiumColorButton = screen.getByRole("button", { name: "Set Na color" });
+    const chlorineColorButton = screen.getByRole("button", { name: "Set Cl color" });
+
+    await user.click(sodiumColorButton);
+    expect(await screen.findByLabelText("Na color value")).toBeTruthy();
+
+    await user.click(chlorineColorButton);
+
+    expect(await screen.findByLabelText("Cl color value")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByLabelText("Na color value")).toBeNull());
+  });
+
   test("initializes uploaded structure camera controls from the uploaded cell", async () => {
     const user = userEvent.setup();
     const scene = sceneWithPeriodicImages();
@@ -1030,16 +1047,34 @@ describe("App", () => {
     expect(bondStyleSelect.textContent).toContain("Bicolor");
     expect(within(commonControls).queryByRole("button", { name: "Bond color" })).toBeNull();
     expect(colorSchemeSelect.textContent).toContain("VESTA Soft");
+    async function readSodiumColorValue() {
+      await user.click(screen.getByRole("button", { name: "Set Na color" }));
+      const sodiumColorInput = await screen.findByLabelText("Na color value") as HTMLInputElement;
+      const sodiumColorValue = sodiumColorInput.value;
+      expect(screen.queryByLabelText("Alpha transparency percentage")).toBeNull();
+      await user.click(screen.getByRole("button", { name: "Set Na color" }));
+      return sodiumColorValue;
+    }
+
+    async function setSodiumColorValue(value: string) {
+      await user.click(screen.getByRole("button", { name: "Set Na color" }));
+      const sodiumColorInput = await screen.findByLabelText("Na color value") as HTMLInputElement;
+      fireEvent.change(sodiumColorInput, { target: { value } });
+      expect(sodiumColorInput.value).toBe(value);
+      expect(screen.queryByLabelText("Alpha transparency percentage")).toBeNull();
+      await user.click(screen.getByRole("button", { name: "Set Na color" }));
+    }
+
     await user.click(colorSchemeSelect);
     expect(await screen.findByRole("option", { name: "Custom" })).toBeTruthy();
     await user.click(await screen.findByRole("option", { name: "Custom" }));
     expect(colorSchemeSelect.textContent).toContain("Custom");
-    expect((screen.getByLabelText("Na color value") as HTMLInputElement).value).toBe("#e7d15f");
+    expect(await readSodiumColorValue()).toBe("#e7d15f");
     await user.click(colorSchemeSelect);
     await user.click(await screen.findByRole("option", { name: "Jmol" }));
     await user.click(colorSchemeSelect);
     await user.click(await screen.findByRole("option", { name: "Custom" }));
-    expect((screen.getByLabelText("Na color value") as HTMLInputElement).value).toBe("#ab5cf2");
+    expect(await readSodiumColorValue()).toBe("#ab5cf2");
     await user.click(colorSchemeSelect);
     await user.click(await screen.findByRole("option", { name: "VESTA Soft" }));
     expect(fogSwitch.getAttribute("aria-checked")).toBe("true");
@@ -1077,43 +1112,38 @@ describe("App", () => {
       name: "Bond color",
     });
     await user.click(bondColorButton);
-    const bondColorInput = within(
-      within(commonControls).getByText("Bond style").closest("div") ?? commonControls,
-    ).getByLabelText("Bond color value") as HTMLInputElement;
-    expect(bondColorInput.type).toBe("color");
+    const bondColorInput = await screen.findByLabelText("Bond color value") as HTMLInputElement;
+    expect(bondColorInput.type).toBe("text");
     expect(bondColorInput.value).toBe("#d2d2d2");
     fireEvent.change(bondColorInput, { target: { value: "#999999" } });
     expect(bondColorInput.value).toBe("#999999");
     expect(screen.queryByLabelText("Alpha transparency percentage")).toBeNull();
+    await user.click(bondColorButton);
     await user.click(bondStyleSelect);
     await user.click(await screen.findByRole("option", { name: "Bicolor" }));
     expect(bondStyleSelect.textContent).toContain("Bicolor");
     expect(within(commonControls).queryByRole("button", { name: "Bond color" })).toBeNull();
     await user.click(bondStyleSelect);
     await user.click(await screen.findByRole("option", { name: "Unicolor" }));
-    expect(
-      (
-        within(
-          within(commonControls).getByText("Bond style").closest("div") ?? commonControls,
-        ).getByLabelText("Bond color value") as HTMLInputElement
-      ).value,
-    ).toBe("#d2d2d2");
+    const resetBondColorButton = within(
+      within(commonControls).getByText("Bond style").closest("div") ?? commonControls,
+    ).getByRole("button", {
+      name: "Bond color",
+    });
+    await user.click(resetBondColorButton);
+    expect((await screen.findByLabelText("Bond color value") as HTMLInputElement).value).toBe(
+      "#d2d2d2",
+    );
+    await user.click(resetBondColorButton);
     expect(fetchCalls).toHaveLength(1);
 
     const sodiumColorButton = screen.getByRole("button", { name: "Set Na color" });
     expect(sodiumColorButton.isConnected).toBe(true);
-    const sodiumColorInput = screen.getByLabelText("Na color value") as HTMLInputElement;
-    expect(sodiumColorInput.value).toBe("#e7d15f");
-    const sodiumShowPicker = mock(() => {});
-    Object.defineProperty(sodiumColorInput, "showPicker", {
-      configurable: true,
-      value: sodiumShowPicker,
-    });
     await user.click(sodiumColorButton);
-    expect(sodiumShowPicker).toHaveBeenCalledTimes(1);
-    await user.click(sodiumColorButton);
-    expect(sodiumShowPicker).toHaveBeenCalledTimes(1);
-    fireEvent.change(sodiumColorInput, { target: { value: "#112233" } });
+    expect(await screen.findByLabelText("Na color value")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Set Na color" }));
+    expect(screen.queryByLabelText("Na color value")).toBeNull();
+    await setSodiumColorValue("#112233");
     expect(colorSchemeSelect.textContent).toContain("Custom");
 
     await user.click(colorSchemeSelect);
@@ -1123,7 +1153,7 @@ describe("App", () => {
     await user.click(colorSchemeSelect);
     await user.click(await screen.findByRole("option", { name: "Custom" }));
     expect(colorSchemeSelect.textContent).toContain("Custom");
-    expect(sodiumColorInput.value).toBe("#112233");
+    expect(await readSodiumColorValue()).toBe("#112233");
 
     await user.click(colorSchemeSelect);
     await user.click(await screen.findByRole("option", { name: "Jmol" }));

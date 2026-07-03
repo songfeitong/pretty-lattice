@@ -1,9 +1,10 @@
-import { useRef, useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type Dispatch, type SetStateAction } from "react";
 
 import { cn } from "@/lib/utils";
 
 import type { PreviewSafeArea } from "../../model/layout";
 import { lambertLegendSwatchBackground } from "../../scene/renderAppearance";
+import { HexColorPicker, normalizeHexColor } from "../controls/HexColorPicker";
 import type { ElementLegendEntry } from "../elementLegend";
 import { GLASS_SURFACE_CLASS } from "../surface";
 
@@ -60,84 +61,69 @@ function ElementLegendColorControl({
   color: string;
   element: string;
   onElementColorChange?: (element: string, color: string) => void;
-  onPickerActiveChange: (element: string | null) => void;
+  onPickerActiveChange: Dispatch<SetStateAction<string | null>>;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const nativeColor = nativeColorValue(color);
-
-  function handleOpenPicker() {
-    if (!onElementColorChange) {
-      return;
-    }
-
-    const input = inputRef.current;
-    if (!input) {
-      return;
-    }
-
-    if (active) {
-      input.blur();
-      onPickerActiveChange(null);
-      return;
-    }
-
-    onPickerActiveChange(element);
-
-    try {
-      if (typeof input.showPicker === "function") {
-        input.showPicker();
-        return;
-      }
-    } catch {
-      // Fall through to the click fallback for browsers that expose but reject showPicker.
-    }
-
-    input.click();
-  }
+  const hexColor = normalizeHexColor(color);
 
   if (!onElementColorChange) {
     return (
-      <span
-        aria-hidden="true"
-        data-slot="element-legend-swatch"
-        className="size-[18px] shrink-0 rounded-full border border-foreground/10 shadow-sm"
-        style={legendSphereStyle(color)}
-      />
+      <ElementLegendSwatch color={color} />
+    );
+  }
+
+  if (!active) {
+    return (
+      <button
+        type="button"
+        aria-label={`Set ${element} color`}
+        aria-expanded={false}
+        aria-haspopup="dialog"
+        className="pointer-events-auto inline-flex size-[18px] shrink-0 items-center justify-center rounded-full bg-transparent p-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        onClick={() => onPickerActiveChange(element)}
+      >
+        <ElementLegendSwatch color={color} />
+      </button>
     );
   }
 
   return (
-    <span className="relative inline-flex size-[18px] shrink-0">
-      <button
-        type="button"
-        aria-label={`Set ${element} color`}
-        className="pointer-events-auto inline-flex size-[18px] shrink-0 items-center justify-center rounded-full bg-transparent p-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-        onClick={handleOpenPicker}
-      >
-        <span
-          aria-hidden="true"
-          data-slot="element-legend-swatch"
-          className="size-[18px] shrink-0 rounded-full border border-foreground/10 shadow-sm"
-          style={legendSphereStyle(color)}
-        />
-      </button>
-      <input
-        ref={inputRef}
-        type="color"
-        aria-label={`${element} color value`}
-        tabIndex={-1}
-        value={nativeColor}
-        className="pointer-events-none absolute size-px opacity-0"
-        onBlur={() => onPickerActiveChange(null)}
-        onChange={(event) => {
-          const nextColor = event.target.value.toLowerCase();
-          onPickerActiveChange(null);
-          if (nextColor !== nativeColor) {
-            onElementColorChange(element, nextColor);
-          }
-        }}
-      />
-    </span>
+    <HexColorPicker
+      align="center"
+      ariaLabel={`Set ${element} color`}
+      inputLabel={`${element} color value`}
+      open={active}
+      side="top"
+      triggerClassName="pointer-events-auto rounded-full"
+      value={hexColor}
+      swatchClassName="rounded-full"
+      swatchStyle={legendSphereStyle(color)}
+      onOpenChange={(open) => {
+        if (open) {
+          onPickerActiveChange(element);
+          return;
+        }
+
+        onPickerActiveChange((currentElement) =>
+          currentElement === element ? null : currentElement,
+        );
+      }}
+      onValueChange={(nextColor) => {
+        if (nextColor !== hexColor) {
+          onElementColorChange(element, nextColor);
+        }
+      }}
+    />
+  );
+}
+
+function ElementLegendSwatch({ color }: { color: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      data-slot="element-legend-swatch"
+      className="size-[18px] shrink-0 rounded-full border border-foreground/10 shadow-sm"
+      style={legendSphereStyle(color)}
+    />
   );
 }
 
@@ -152,11 +138,4 @@ function legendSphereStyle(color: string): CSSProperties {
   return {
     background: lambertLegendSwatchBackground(color),
   };
-}
-
-function nativeColorValue(color: string) {
-  if (/^#[\da-fA-F]{6}$/.test(color)) {
-    return color.toLowerCase();
-  }
-  return "#808080";
 }

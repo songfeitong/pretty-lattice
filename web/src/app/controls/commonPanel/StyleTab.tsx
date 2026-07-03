@@ -59,6 +59,7 @@ import {
   COMMON_PANEL_ROW_STACK_CLASS,
   COMMON_PANEL_SECTION_TITLE_TEXT_CLASS,
 } from "./styles";
+import { HexColorPicker, normalizeHexColor } from "../HexColorPicker";
 import { MaterialPresetToken3D } from "./MaterialPresetToken3D";
 
 const BOND_COLOR_OPTIONS: { label: string; value: BondColorMode }[] = [
@@ -66,7 +67,6 @@ const BOND_COLOR_OPTIONS: { label: string; value: BondColorMode }[] = [
   { label: "Bicolor", value: "bicolor" },
 ];
 const CUSTOM_COLOR_SCHEME_VALUE = "__custom";
-const NATIVE_COLOR_VALUE_PATTERN = /^#[\da-fA-F]{6}$/;
 const ATOM_RADIUS_MODEL_OPTIONS: {
   menuLabel: string;
   value: AtomRadiusModel;
@@ -651,7 +651,7 @@ function bondStyleTokenStyle(
   unicolorColor: string,
 ): CSSProperties | undefined {
   if (value === "unicolor") {
-    return { background: nativeColorValue(unicolorColor) };
+    return { background: normalizeHexColor(unicolorColor, DEFAULT_BOND_COLOR) };
   }
   if (value === "bicolor") {
     return BY_ATOM_TOKEN_STYLE;
@@ -666,60 +666,20 @@ function BondColorPicker({
   onValueChange: (value: string) => void;
   value: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const nativeValue = nativeColorValue(value);
-
-  function handleOpenPicker() {
-    const input = inputRef.current;
-
-    if (!input) {
-      return;
-    }
-
-    try {
-      if (typeof input.showPicker === "function") {
-        input.showPicker();
-        return;
-      }
-    } catch {
-      // Fall through to the click fallback for browsers that expose but reject showPicker.
-    }
-
-    input.click();
-  }
-
+  const hexValue = normalizeHexColor(value, DEFAULT_BOND_COLOR);
   return (
-    <span className="relative inline-flex size-[18px] shrink-0">
-      <button
-        type="button"
-        aria-label="Bond color"
-        className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-md bg-transparent p-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-        onClick={handleOpenPicker}
-      >
-        <span
-          aria-hidden="true"
-          className="size-[18px] rounded-md border border-foreground/5 shadow-[0_0_0_1px_rgba(40,40,40,0.015),0_1px_1px_rgba(40,40,40,0.03)]"
-          style={{ background: nativeValue }}
-        />
-      </button>
-      <input
-        ref={inputRef}
-        type="color"
-        aria-label="Bond color value"
-        tabIndex={-1}
-        value={nativeValue}
-        className="pointer-events-none absolute size-px opacity-0"
-        onChange={(event) => onValueChange(event.target.value)}
-      />
-    </span>
+    <HexColorPicker
+      align="center"
+      ariaLabel="Bond color"
+      fallbackValue={DEFAULT_BOND_COLOR}
+      inputLabel="Bond color value"
+      side="left"
+      value={hexValue}
+      swatchClassName="border-foreground/5 shadow-[0_0_0_1px_rgba(40,40,40,0.015),0_1px_1px_rgba(40,40,40,0.03)]"
+      swatchStyle={{ background: hexValue }}
+      onValueChange={onValueChange}
+    />
   );
-}
-
-function nativeColorValue(value: string) {
-  if (NATIVE_COLOR_VALUE_PATTERN.test(value)) {
-    return value.toLowerCase();
-  }
-  return DEFAULT_BOND_COLOR;
 }
 
 function ColorSchemeOptionLabel({

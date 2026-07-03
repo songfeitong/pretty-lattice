@@ -131,6 +131,14 @@
     color: var(--foreground) !important;
   }
 
+  .tool-icon-button:active {
+    border-color: rgb(40 40 40 / 14%) !important;
+    background: rgb(40 40 40 / 6%) !important;
+    border-color: color-mix(in srgb, var(--foreground) 14%, transparent) !important;
+    background: color-mix(in srgb, var(--foreground) 6%, transparent) !important;
+    color: var(--foreground) !important;
+  }
+
   .tool-icon-button-active {
     border-color: rgb(40 40 40 / 14%) !important;
     background: rgb(40 40 40 / 6%) !important;
