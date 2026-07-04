@@ -174,13 +174,16 @@ function populateBatchedBondMesh(mesh: BatchedMesh, batch: BondBatchBuild) {
     ? mesh.addGeometry(prepareBatchGeometry(unicolorGeometry))
     : null;
 
+  mesh.perObjectFrustumCulled = true;
+  mesh.sortObjects = true;
+
   for (const item of batch.items) {
     const geometryId = unicolorGeometryId ?? addTwoToneBondGeometry(mesh, item, batch);
-    const instanceId = mesh.addInstance(geometryId);
+    const batchId = mesh.addInstance(geometryId);
     const scale =
       batch.mode === "unicolor" ? new Vector3(1, item.length, 1) : new Vector3(1, 1, 1);
     matrix.compose(item.center, item.quaternion, scale);
-    mesh.setMatrixAt(instanceId, matrix);
+    mesh.setMatrixAt(batchId, matrix);
   }
 
   unicolorGeometry?.dispose();

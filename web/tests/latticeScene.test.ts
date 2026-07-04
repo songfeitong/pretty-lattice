@@ -34,6 +34,12 @@ import {
   createPolyhedronSurfaceBatchBuild,
   disposePolyhedronSurfaceBatchBuild,
 } from "../src/scene/BatchedPolyhedra";
+import { createAtomRenderItems } from "../src/scene/AtomRenderItems";
+import {
+  createBatchPickRegistry,
+  itemForBatchId,
+  registerBatchPickItem,
+} from "../src/scene/batchPicking";
 import {
   createDefaultCrystalCameraState,
   stateWithDirectAxis,
@@ -232,6 +238,32 @@ describe("computeSceneLayout", () => {
     expect(STRUCTURE_RENDER_ORDER.polyhedronEdge).toBeLessThan(
       STRUCTURE_RENDER_ORDER.atomSelectionRing,
     );
+  });
+
+  test("builds atom render items for batched atom rendering", () => {
+    const [item] = createAtomRenderItems({
+      atoms: [atom("Si-0", [1, 2, 3])],
+      colorScheme: createDefaultStyle().colorScheme,
+      radiusModel: "uniform",
+      radiusScale: 1.5,
+    });
+
+    expect(item?.id).toBe("Si-0");
+    expect(item?.atom.id).toBe("Si-0");
+    expect(item?.position).toEqual([1, 2, 3]);
+    expect(item?.radius).toBeCloseTo(1.5);
+    expect(item?.color.startsWith("#")).toBe(true);
+  });
+
+  test("resolves batched pick items including batch id zero", () => {
+    const registry = createBatchPickRegistry<{ id: string; label: string }>();
+    const item = { id: "Si-0", label: "first atom" };
+
+    registerBatchPickItem(registry, 0, item);
+
+    expect(itemForBatchId(registry, 0)).toBe(item);
+    expect(itemForBatchId(registry, undefined)).toBeNull();
+    expect(registry.batchIdByItemId.get("Si-0")).toBe(0);
   });
 
   test("fits the preview layout from unit-cell bounds only", () => {

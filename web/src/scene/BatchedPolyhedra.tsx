@@ -353,9 +353,9 @@ function populateBatchedPolyhedraSurfaces(
 
   for (const item of batch.items) {
     const geometryId = mesh.addGeometry(item.geometry);
-    const instanceId = mesh.addInstance(geometryId);
-    mesh.setMatrixAt(instanceId, identity);
-    mesh.setColorAt(instanceId, item.color);
+    const batchId = mesh.addInstance(geometryId);
+    mesh.setMatrixAt(batchId, identity);
+    mesh.setColorAt(batchId, item.color);
   }
 
   disposePolyhedronSurfaceBatchBuild(batch);

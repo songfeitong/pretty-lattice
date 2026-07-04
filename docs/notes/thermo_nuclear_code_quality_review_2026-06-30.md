@@ -67,8 +67,9 @@ Scope: whole-repo maintainability review of the current `pretty-lattice` codebas
 
 ### 3. `StructureSceneObjects.tsx` 只是换了名字的 scene catch-all
 
-2026-06-30 更新：独立 atom mesh / bond mesh 渲染后端已经删除，当前
-composition 固定走 `InstancedAtoms.tsx` 和 `BatchedBonds.tsx`。下面原始
+2026-06-30 更新：独立 atom mesh / bond mesh 渲染后端已经删除。
+2026-07-04 更新：atom 后端也迁移为 `BatchedAtoms.tsx`，当前
+composition 固定走 `BatchedAtoms.tsx` 和 `BatchedBonds.tsx`。下面原始
 观察记录的是删除前的风险形态；后续不应再恢复 mesh/batched 双后端选择。
 
 这个文件表面上叫 “StructureSceneObjects”，但实际包含：
@@ -85,7 +86,7 @@ composition 固定走 `InstancedAtoms.tsx` 和 `BatchedBonds.tsx`。下面原始
 建议把它拆成：
 
 - `StructureSceneObjects.tsx`: 只做 atoms/bonds/polyhedra/cell frame 的 composition。
-- `InstancedAtoms.tsx`: 原子实例渲染和高亮动画。
+- `BatchedAtoms.tsx`: 原子 batch 渲染和高亮动画。
 - `BondRenderItems.ts`: 从 `SceneSpec` 生成单一 bond render model。
 - `BatchedBonds.tsx`: 消费 `BondRenderItem[]` 的唯一 bond 渲染后端。
 - `PolyhedronMesh.tsx`。

@@ -17,7 +17,7 @@ import {
 import type { ResolvedStructureMaterialFamilies } from "./materialPresetResolver";
 import type { SceneLayout } from "./sceneLayout";
 import type { VectorTuple } from "./viewMath";
-import { InstancedAtoms } from "./InstancedAtoms";
+import { BatchedAtoms } from "./BatchedAtoms";
 import { BatchedBonds } from "./BatchedBonds";
 import { createBondRenderItems } from "./BondRenderItems";
 import { CellFrame } from "./CellFrame";
@@ -329,7 +329,7 @@ export function StructureSceneObjects({
           opacity={componentOpacity.bonds / 100}
         />
         {showAtoms ? (
-          <InstancedAtoms
+          <BatchedAtoms
             atoms={scene.atoms}
             colorScheme={colorScheme}
             colorOverrides={colorOverrides}
