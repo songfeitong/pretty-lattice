@@ -363,6 +363,47 @@ describe("App", () => {
     await waitFor(() => expect(screen.queryByLabelText("Na color value")).toBeNull());
   });
 
+  test("keeps one color picker active across legend objects and style controls", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user);
+
+    const commonControls = screen.getByRole("complementary", { name: "Common controls" });
+    const legend = screen.getByRole("navigation", { name: "Element legend" });
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
+
+    await user.click(within(legend).getByRole("button", { name: "Set Na color" }));
+    expect(await screen.findByLabelText("Na color value")).toBeTruthy();
+    expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(1);
+
+    await user.click(within(sidebar).getByRole("button", { name: "Set Cl color" }));
+    expect(await screen.findByLabelText("Cl color value")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Na color value")).toBeNull();
+      expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(1);
+    });
+
+    await user.click(within(commonControls).getByRole("tab", { name: "Style" }));
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Cl color value")).toBeNull();
+      expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(0);
+    });
+    await user.click(within(commonControls).getByRole("combobox", { name: "Bond style" }));
+    await user.click(await screen.findByRole("option", { name: "Unicolor" }));
+    await user.click(within(commonControls).getByRole("button", { name: "Bond color" }));
+    expect(await screen.findByLabelText("Bond color value")).toBeTruthy();
+    expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(1);
+
+    await user.click(within(legend).getByRole("button", { name: "Set Cl color" }));
+    expect(await screen.findByLabelText("Cl color value")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Bond color value")).toBeNull();
+      expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(1);
+    });
+  });
+
   test("initializes uploaded structure camera controls from the uploaded cell", async () => {
     const user = userEvent.setup();
     const scene = sceneWithPeriodicImages();
@@ -797,6 +838,19 @@ describe("App", () => {
       expect(screen.queryByLabelText("Na color value")).toBeNull();
       expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(1);
     });
+
+    const leftControls = screen.getByRole("complementary", { name: "Common controls" });
+    await user.click(within(leftControls).getByRole("tab", { name: "Style" }));
+    const colorSchemeSelect = within(leftControls).getByRole("combobox", {
+      name: "Color scheme",
+    });
+    await user.click(colorSchemeSelect);
+    await user.click(await screen.findByRole("option", { name: "Jmol" }));
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Cl color value")).toBeNull();
+      expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(0);
+    });
+    await user.click(within(leftControls).getByRole("tab", { name: "Display" }));
 
     await user.click(within(sidebar).getByRole("button", { name: "Set Na:0 color" }));
     expect(await screen.findByLabelText("Na:0 color value")).toBeTruthy();

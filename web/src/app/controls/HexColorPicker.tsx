@@ -1,4 +1,4 @@
-import { type ComponentProps, type CSSProperties, useState } from "react";
+import { type ComponentProps, type CSSProperties, useEffect, useState } from "react";
 import { clampChroma, formatHex, type Oklch } from "culori";
 
 import {
@@ -13,6 +13,10 @@ import {
 } from "@/components/ui/color-picker";
 import { cn } from "@/lib/utils";
 
+import {
+  type ColorPickerId,
+  useOptionalColorPickerRegistry,
+} from "../colorPickerRegistry";
 import { TOOL_ICON_BUTTON_CLASS } from "../surface";
 
 type ColorFormat = "hex" | "rgb" | "hsl" | "oklch";
@@ -30,6 +34,7 @@ export function HexColorPicker({
   onOpenChange,
   onValueChange,
   open,
+  pickerId,
   side = "top",
   sideOffset = 8,
   swatchClassName,
@@ -45,6 +50,7 @@ export function HexColorPicker({
   onOpenChange?: (open: boolean) => void;
   onValueChange: (value: string) => void;
   open?: boolean;
+  pickerId?: ColorPickerId;
   side?: ComponentProps<typeof ColorPickerContent>["side"];
   sideOffset?: ComponentProps<typeof ColorPickerContent>["sideOffset"];
   swatchClassName?: string;
@@ -53,7 +59,25 @@ export function HexColorPicker({
   value: string;
 }) {
   const [format, setFormat] = useState<ColorFormat>("hex");
+  const colorPickerRegistry = useOptionalColorPickerRegistry();
   const hexValue = normalizeHexColor(value, fallbackValue);
+  const closeColorPicker = colorPickerRegistry?.closeColorPicker;
+  const isGloballyControlled = pickerId !== undefined;
+  const resolvedOpen = isGloballyControlled
+    ? colorPickerRegistry?.activeColorPickerId === pickerId
+    : open;
+
+  if (isGloballyControlled && !colorPickerRegistry) {
+    throw new Error("HexColorPicker with pickerId must be rendered inside ColorPickerRegistryProvider");
+  }
+
+  useEffect(() => {
+    if (!pickerId || !closeColorPicker) {
+      return;
+    }
+
+    return () => closeColorPicker(pickerId);
+  }, [closeColorPicker, pickerId]);
 
   function handleValueChange(nextValue: string) {
     const nextHex = colorStringToHex(nextValue);
@@ -68,26 +92,35 @@ export function HexColorPicker({
       defaultFormat="hex"
       format={format}
       onFormatChange={setFormat}
-      onOpenChange={onOpenChange}
+      onOpenChange={(nextOpen) => {
+        if (pickerId) {
+          colorPickerRegistry?.setColorPickerOpen(pickerId, nextOpen);
+        }
+        onOpenChange?.(nextOpen);
+      }}
       onValueChange={handleValueChange}
-      open={open}
+      open={resolvedOpen}
       value={hexValue}
     >
       <ColorPickerTrigger asChild>
         <button
           type="button"
           aria-label={ariaLabel}
+          data-color-picker-trigger=""
           className={cn(
             "inline-flex size-[18px] shrink-0 items-center justify-center rounded-md bg-transparent p-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
             triggerClassName,
           )}
           onClick={(event) => {
-            if (open === undefined) {
+            if (resolvedOpen === undefined) {
               return;
             }
 
             event.preventDefault();
-            onOpenChange?.(!open);
+            if (pickerId) {
+              colorPickerRegistry?.setColorPickerOpen(pickerId, !resolvedOpen);
+            }
+            onOpenChange?.(!resolvedOpen);
           }}
         >
           <span
@@ -109,6 +142,21 @@ export function HexColorPicker({
           contentClassName,
         )}
         onOpenAutoFocus={(event) => event.preventDefault()}
+        onInteractOutside={(event) => {
+          if (isColorPickerTriggerEvent(event)) {
+            event.preventDefault();
+          }
+        }}
+        onFocusOutside={(event) => {
+          if (isColorPickerTriggerEvent(event)) {
+            event.preventDefault();
+          }
+        }}
+        onPointerDownOutside={(event) => {
+          if (isColorPickerTriggerEvent(event)) {
+            event.preventDefault();
+          }
+        }}
       >
         <ColorPickerArea className="h-40 rounded-xl" />
         <div className="flex items-center gap-2">
@@ -132,6 +180,13 @@ export function HexColorPicker({
         </div>
       </ColorPickerContent>
     </ColorPicker>
+  );
+}
+
+function isColorPickerTriggerEvent(event: Event) {
+  return (
+    event.target instanceof Element &&
+    event.target.closest("[data-color-picker-trigger]") !== null
   );
 }
 

@@ -291,6 +291,13 @@ and analysis data, not user-edited visual overrides.
 Legend element color editing and Objects element color editing must share a
 single updater. Avoid duplicate color state.
 
+All rich color pickers share a single app-level active picker id. Opening any
+picker closes the previously active picker, including pickers in Legend,
+Objects, and common Style controls. Close the active picker when the scene is
+cleared or reloaded, when an owning panel/tab is dismissed or switched away,
+when Locate in objects changes the right-sidebar context, and when the global
+color scheme changes to a preset.
+
 The scene render path should resolve final atom appearance from:
 
 1. The active global preset or custom table.

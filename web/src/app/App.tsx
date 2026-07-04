@@ -34,6 +34,10 @@ import {
 } from "./controls/CommonControlsPanel";
 import { ViewControlRail } from "./controls/ViewControlRail";
 import { createCameraInteractionStore } from "./cameraInteractionStore";
+import {
+  ColorPickerRegistryProvider,
+  useColorPickerRegistry,
+} from "./colorPickerRegistry";
 import { createPreviewFpsStore } from "../model/previewFpsStore";
 import { deriveElementLegendEntries } from "./elementLegend";
 import { useFigureExportController } from "./hooks/useFigureExportController";
@@ -88,6 +92,15 @@ type ResetLoadedPreviewState = (
 ) => void;
 
 export function App() {
+  return (
+    <ColorPickerRegistryProvider>
+      <AppContent />
+    </ColorPickerRegistryProvider>
+  );
+}
+
+function AppContent() {
+  const { closeActiveColorPicker } = useColorPickerRegistry();
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [componentVisibility, setComponentVisibility] = useState(
     createDefaultComponentVisibility,
@@ -120,6 +133,10 @@ export function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inspectedAtomIdRef = useRef<string | null>(null);
   const previousAtomsVisibleRef = useRef(componentVisibility.atoms);
+  const colorSchemeSelectionRef = useRef({
+    colorScheme: style.colorScheme,
+    colorSchemeMode: style.colorSchemeMode,
+  });
   const resetLoadedPreviewStateRef = useRef<ResetLoadedPreviewState>(() => {});
   const resetLoadedPreviewStateForPreview = useCallback<ResetLoadedPreviewState>(
     (nextScene, options) => {
@@ -128,18 +145,20 @@ export function App() {
     [],
   );
   const handlePreviewCleared = useCallback(() => {
+    closeActiveColorPicker();
     setInspectedAtomId(null);
     setPulseAtom(null);
     setIsInspectorOpen(false);
     setIsStructureSummaryCollapsed(true);
-  }, []);
+  }, [closeActiveColorPicker]);
   const handleBondAlgorithmSceneLoaded = useCallback((nextScene: SceneSpec) => {
+    closeActiveColorPicker();
     setInspectedAtomId(null);
     setPulseAtom(null);
     setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
     setUnitCellLineStyle(DEFAULT_UNIT_CELL_LINE_STYLE);
     setShowCrystalAxisLabels(DEFAULT_SHOW_CRYSTAL_AXIS_LABELS);
-  }, []);
+  }, [closeActiveColorPicker]);
   const {
     bondAlgorithm,
     errorMessage,
@@ -245,6 +264,23 @@ export function App() {
   }, [inspectedAtomId]);
 
   useEffect(() => {
+    const previousSelection = colorSchemeSelectionRef.current;
+    const changedToPreset =
+      style.colorSchemeMode === "preset" &&
+      (previousSelection.colorSchemeMode !== "preset" ||
+        previousSelection.colorScheme !== style.colorScheme);
+
+    colorSchemeSelectionRef.current = {
+      colorScheme: style.colorScheme,
+      colorSchemeMode: style.colorSchemeMode,
+    };
+
+    if (changedToPreset) {
+      closeActiveColorPicker();
+    }
+  }, [closeActiveColorPicker, style.colorScheme, style.colorSchemeMode]);
+
+  useEffect(() => {
     if (!previousAtomsVisibleRef.current && componentVisibility.atoms) {
       setStyle((currentStyle) => ({
         ...currentStyle,
@@ -280,6 +316,7 @@ export function App() {
       options: ResetLoadedPreviewOptions = {},
     ) => {
       setErrorMessage(null);
+      closeActiveColorPicker();
       resetExportState();
       setInspectedAtomId(null);
       setPulseAtom(null);
@@ -300,6 +337,7 @@ export function App() {
       resetCameraForScene(nextScene);
     },
     [
+      closeActiveColorPicker,
       resetCameraForScene,
       resetExportState,
       resetLockedInteractionFeedback,
@@ -314,6 +352,28 @@ export function App() {
   const handlePreviewMeshQualityChange = useCallback((nextQuality: MeshQuality) => {
     setPreviewMeshQuality(nextQuality);
   }, []);
+
+  const handleInspectorOpenChange = useCallback((isOpen: boolean) => {
+    if (!isOpen) {
+      closeActiveColorPicker();
+    }
+    setIsInspectorOpen(isOpen);
+  }, [closeActiveColorPicker]);
+
+  const handleActiveCommonPanelTabChange = useCallback((tab: CommonPanelTab) => {
+    closeActiveColorPicker();
+    setActiveCommonPanelTab(tab);
+  }, [closeActiveColorPicker]);
+
+  const handleActiveInspectorTabChange = useCallback((tab: InspectorSidebarTab) => {
+    closeActiveColorPicker();
+    setActiveInspectorTab(tab);
+  }, [closeActiveColorPicker]);
+
+  const handleActiveObjectsTabChange = useCallback((tab: ObjectsPanelTab) => {
+    closeActiveColorPicker();
+    setActiveObjectsTab(tab);
+  }, [closeActiveColorPicker]);
 
   const handleFogAffectsUnitCellChange = useCallback((fogAffectsUnitCell: boolean) => {
     setStyle((currentStyle) => ({
@@ -367,11 +427,12 @@ export function App() {
   ]);
 
   const handleLocateAtomInObjects = useCallback((atomId: string) => {
+    closeActiveColorPicker();
     setIsInspectorOpen(true);
     setActiveInspectorTab("objects");
     setActiveObjectsTab("atoms");
     requestAtomLocateInObjects(atomId);
-  }, [requestAtomLocateInObjects]);
+  }, [closeActiveColorPicker, requestAtomLocateInObjects]);
 
   const handleAtomRadiusModelChange = useCallback(
     (atomRadiusModel: AtomRadiusStyleModel) => {
@@ -686,7 +747,7 @@ export function App() {
               exportSettings={exportSettings}
               hasPolyhedra={hasPolyhedra(scene)}
               isExporting={isExporting}
-              onActiveTabChange={setActiveCommonPanelTab}
+              onActiveTabChange={handleActiveCommonPanelTabChange}
               onAtomRadiusModelChange={handleAtomRadiusModelChange}
               onCameraPrimaryChange={handleCameraPrimaryChange}
               onCameraRollPreviewChange={handleCameraRollPreviewChange}
@@ -734,7 +795,7 @@ export function App() {
 
           <InspectorToggle
             isOpen={isInspectorOpen}
-            onOpenChange={setIsInspectorOpen}
+            onOpenChange={handleInspectorOpenChange}
           />
 
           <ContextMenu>
@@ -761,8 +822,8 @@ export function App() {
                   showCrystalAxisLabels={showCrystalAxisLabels}
                   style={style}
                   unitCellLineStyle={unitCellLineStyle}
-                  onActiveObjectsTabChange={setActiveObjectsTab}
-                  onActiveTabChange={setActiveInspectorTab}
+                  onActiveObjectsTabChange={handleActiveObjectsTabChange}
+                  onActiveTabChange={handleActiveInspectorTabChange}
                   onAtomSelect={handleAtomInspect}
                   onBondAlgorithmChange={(nextBondAlgorithm) => {
                     void handleBondAlgorithmChange(nextBondAlgorithm);

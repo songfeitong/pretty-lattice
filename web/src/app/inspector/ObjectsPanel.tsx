@@ -42,6 +42,10 @@ import { cn } from "@/lib/utils";
 
 import type { AtomSpec, SceneSpec } from "../../api/scene";
 import {
+  objectsAtomColorPickerId,
+  objectsElementColorPickerId,
+} from "../colorPickerRegistry";
+import {
   CUSTOM_ATOM_RADIUS_MODEL,
   baseAtomRadiusForStyle,
   baseColorSchemeForStyle,
@@ -209,34 +213,17 @@ function ObjectsAtomsTable({
   style: StyleState;
 }) {
   const [expandedElements, setExpandedElements] = useState<Record<string, boolean>>({});
-  const [activeColorPickerId, setActiveColorPickerId] = useState<string | null>(null);
   const [pendingLocateAtomId, setPendingLocateAtomId] = useState<string | null>(null);
   const [virtualViewport, setVirtualViewport] = useState<VirtualViewport>(() => ({
     height: OBJECTS_TABLE_DEFAULT_VIEWPORT_HEIGHT,
     scrollTop: 0,
   }));
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const activeColorPickerIdRef = useRef<string | null>(null);
-  const pendingColorPickerOpenTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     setExpandedElements({});
-    setActiveColorPickerId(null);
-    activeColorPickerIdRef.current = null;
     setPendingLocateAtomId(null);
-    if (pendingColorPickerOpenTimeoutRef.current !== null) {
-      window.clearTimeout(pendingColorPickerOpenTimeoutRef.current);
-      pendingColorPickerOpenTimeoutRef.current = null;
-    }
   }, [scene]);
-
-  useEffect(() => {
-    return () => {
-      if (pendingColorPickerOpenTimeoutRef.current !== null) {
-        window.clearTimeout(pendingColorPickerOpenTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const objectAtoms = useMemo(
     () => canonicalAtomsForObjectStyles(scene.atoms),
@@ -354,43 +341,6 @@ function ObjectsAtomsTable({
     refreshVirtualViewport();
     setPendingLocateAtomId(null);
   }, [pendingLocateAtomId, refreshVirtualViewport, rowIndexByAtomId]);
-
-  const handleColorPickerOpenChange = useCallback((pickerId: string, open: boolean) => {
-    if (open) {
-      if (pendingColorPickerOpenTimeoutRef.current !== null) {
-        window.clearTimeout(pendingColorPickerOpenTimeoutRef.current);
-        pendingColorPickerOpenTimeoutRef.current = null;
-      }
-
-      if (
-        activeColorPickerIdRef.current !== null &&
-        activeColorPickerIdRef.current !== pickerId
-      ) {
-        activeColorPickerIdRef.current = null;
-        setActiveColorPickerId(null);
-        pendingColorPickerOpenTimeoutRef.current = window.setTimeout(() => {
-          activeColorPickerIdRef.current = pickerId;
-          pendingColorPickerOpenTimeoutRef.current = null;
-          setActiveColorPickerId(pickerId);
-        }, 0);
-        return;
-      }
-
-      activeColorPickerIdRef.current = pickerId;
-      setActiveColorPickerId(pickerId);
-      return;
-    }
-
-    setActiveColorPickerId((currentPickerId) => {
-      if (currentPickerId !== pickerId) {
-        activeColorPickerIdRef.current = currentPickerId;
-        return currentPickerId;
-      }
-
-      activeColorPickerIdRef.current = null;
-      return null;
-    });
-  }, []);
 
   function toggleElementExpanded(element: string) {
     setExpandedElements((currentExpandedElements) => ({
@@ -599,14 +549,11 @@ function ObjectsAtomsTable({
             );
           return (
             <ColorCell
-              active={activeColorPickerId === elementColorPickerId(item.element)}
               ariaLabel={`Set ${item.element} color`}
               color={appearance.color}
               inputLabel={`${item.element} color value`}
               onChange={(color) => onElementColorChange(item.element, color)}
-              onOpenChange={(open) =>
-                handleColorPickerOpenChange(elementColorPickerId(item.element), open)
-              }
+              pickerId={objectsElementColorPickerId(item.element)}
             />
           );
         }
@@ -620,14 +567,11 @@ function ObjectsAtomsTable({
         );
         return (
           <ColorCell
-            active={activeColorPickerId === atomColorPickerId(item.atom.id)}
             ariaLabel={`Set ${formatAtomSite(item.atom)} color`}
             color={appearance.color}
             inputLabel={`${formatAtomSite(item.atom)} color value`}
             onChange={(color) => setAtomColor(item.atom, color)}
-            onOpenChange={(open) =>
-              handleColorPickerOpenChange(atomColorPickerId(item.atom.id), open)
-            }
+            pickerId={objectsAtomColorPickerId(item.atom.id)}
           />
         );
       }
@@ -920,19 +864,17 @@ function RadiusCell({
 }
 
 function ColorCell({
-  active,
   ariaLabel,
   color,
   inputLabel,
   onChange,
-  onOpenChange,
+  pickerId,
 }: {
-  active: boolean;
   ariaLabel: string;
   color: string;
   inputLabel: string;
   onChange: (color: string) => void;
-  onOpenChange: (open: boolean) => void;
+  pickerId: string;
 }) {
   const hexColor = normalizeHexColor(color);
 
@@ -946,11 +888,10 @@ function ColorCell({
         align="center"
         ariaLabel={ariaLabel}
         inputLabel={inputLabel}
-        open={active}
+        pickerId={pickerId}
         side="left"
         value={hexColor}
         swatchClassName="shadow-none"
-        onOpenChange={onOpenChange}
         onValueChange={onChange}
       />
     </span>
@@ -1273,14 +1214,6 @@ function ensureCustomColorStyle(
 
 function formatAtomSite(atom: AtomSpec): string {
   return `${atom.element}:${atom.siteIndex}`;
-}
-
-function elementColorPickerId(element: string): string {
-  return `element:${element}`;
-}
-
-function atomColorPickerId(atomId: string): string {
-  return `atom:${atomId}`;
 }
 
 function formatRadius(value: number): string {

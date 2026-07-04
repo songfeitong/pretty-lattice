@@ -1,10 +1,11 @@
-import { useState, type CSSProperties, type Dispatch, type SetStateAction } from "react";
+import { type CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
 
 import type { PreviewSafeArea } from "../../model/layout";
 import { lambertLegendSwatchBackground } from "../../scene/renderAppearance";
 import { HexColorPicker, normalizeHexColor } from "../controls/HexColorPicker";
+import { legendElementColorPickerId } from "../colorPickerRegistry";
 import type { ElementLegendEntry } from "../elementLegend";
 import { GLASS_SURFACE_CLASS } from "../surface";
 
@@ -19,8 +20,6 @@ export function ElementLegend({
   onElementColorChange?: (element: string, color: string) => void;
   safeArea: PreviewSafeArea;
 }) {
-  const [activeColorPickerElement, setActiveColorPickerElement] = useState<string | null>(null);
-
   return (
     <nav
       aria-label="Element legend"
@@ -34,11 +33,9 @@ export function ElementLegend({
         {entries.map((entry) => (
           <li key={entry.element} className="flex min-w-0 items-center gap-2">
             <ElementLegendColorControl
-              active={activeColorPickerElement === entry.element}
               color={entry.color}
               element={entry.element}
               onElementColorChange={onElementColorChange}
-              onPickerActiveChange={setActiveColorPickerElement}
             />
             <span className="font-sans text-[0.95rem] font-normal leading-none text-foreground">
               {entry.element}
@@ -51,17 +48,13 @@ export function ElementLegend({
 }
 
 function ElementLegendColorControl({
-  active,
   color,
   element,
   onElementColorChange,
-  onPickerActiveChange,
 }: {
-  active: boolean;
   color: string;
   element: string;
   onElementColorChange?: (element: string, color: string) => void;
-  onPickerActiveChange: Dispatch<SetStateAction<string | null>>;
 }) {
   const hexColor = normalizeHexColor(color);
 
@@ -71,42 +64,17 @@ function ElementLegendColorControl({
     );
   }
 
-  if (!active) {
-    return (
-      <button
-        type="button"
-        aria-label={`Set ${element} color`}
-        aria-expanded={false}
-        aria-haspopup="dialog"
-        className="pointer-events-auto inline-flex size-[18px] shrink-0 items-center justify-center rounded-full bg-transparent p-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-        onClick={() => onPickerActiveChange(element)}
-      >
-        <ElementLegendSwatch color={color} />
-      </button>
-    );
-  }
-
   return (
     <HexColorPicker
       align="center"
       ariaLabel={`Set ${element} color`}
       inputLabel={`${element} color value`}
-      open={active}
+      pickerId={legendElementColorPickerId(element)}
       side="top"
       triggerClassName="pointer-events-auto rounded-full"
       value={hexColor}
       swatchClassName="rounded-full"
       swatchStyle={legendSphereStyle(color)}
-      onOpenChange={(open) => {
-        if (open) {
-          onPickerActiveChange(element);
-          return;
-        }
-
-        onPickerActiveChange((currentElement) =>
-          currentElement === element ? null : currentElement,
-        );
-      }}
       onValueChange={(nextColor) => {
         if (nextColor !== hexColor) {
           onElementColorChange(element, nextColor);

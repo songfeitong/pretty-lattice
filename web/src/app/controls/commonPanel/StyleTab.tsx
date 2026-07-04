@@ -53,6 +53,7 @@ import {
   TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS,
   TOOL_ICON_BUTTON_RESET_FEEDBACK_B_CLASS,
 } from "../../surface";
+import { BOND_COLOR_PICKER_ID } from "../../colorPickerRegistry";
 import { TOOL_ICON_BUTTON_FEEDBACK_ANIMATION_MS } from "./controlFeedback";
 import { PercentSliderRow, clampPercentValue } from "./sharedControls";
 import {
@@ -677,6 +678,7 @@ function BondColorPicker({
       ariaLabel="Bond color"
       fallbackValue={DEFAULT_BOND_COLOR}
       inputLabel="Bond color value"
+      pickerId={BOND_COLOR_PICKER_ID}
       side="left"
       value={hexValue}
       swatchClassName="border-foreground/5 shadow-[0_0_0_1px_rgba(40,40,40,0.015),0_1px_1px_rgba(40,40,40,0.03)]"
