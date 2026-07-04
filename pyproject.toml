@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pretty-lattice"
-version = "0.1.1"
+version = "0.1.2"
 description = "Local web GUI for rendering crystal structures as publication-ready figures."
 readme = "README.md"
 license = "MIT"

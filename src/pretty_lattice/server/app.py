@@ -11,7 +11,7 @@ from pretty_lattice.server.routes import router
 
 
 def create_app(static_root: Path | None = None, dev_static_fallback: bool = True) -> FastAPI:
-    app = FastAPI(title="Pretty Lattice", version="0.1.1")
+    app = FastAPI(title="Pretty Lattice", version="0.1.2")
     app.include_router(router, prefix="/api")
     _mount_static_web(app, static_root=static_root, dev_static_fallback=dev_static_fallback)
     return app
