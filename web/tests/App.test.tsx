@@ -770,15 +770,15 @@ describe("App", () => {
     await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
 
     expect(within(sidebar).getByRole("tab", { name: "Atoms" })).toBeTruthy();
-    expect(within(sidebar).getByText("r (Å)").isConnected).toBe(true);
-    expect(within(sidebar).queryByText("Na: 0")).toBeNull();
+    expect(within(sidebar).getByText("R (Å)").isConnected).toBe(true);
+    expect(within(sidebar).queryByText("Na:0")).toBeNull();
     expect(within(sidebar).queryByText(/image/)).toBeNull();
 
     await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
 
-    const sodiumAtomLabel = within(sidebar).getByText("Na: 0");
+    const sodiumAtomLabel = within(sidebar).getByText("Na:0");
     expect(sodiumAtomLabel.isConnected).toBe(true);
-    expect(within(sidebar).queryByText("Na:0")).toBeNull();
+    expect(within(sidebar).queryByText("Na: 0")).toBeNull();
     expect(within(sidebar).queryByText("Na 0")).toBeNull();
     expect(within(sidebar).queryByText("Na-0")).toBeNull();
     expect(
@@ -787,14 +787,33 @@ describe("App", () => {
       }).isConnected,
     ).toBe(true);
 
-    const sodiumRow = sodiumAtomLabel.closest("tr");
+    await user.click(within(sidebar).getByRole("button", { name: "Set Na color" }));
+    expect(await screen.findByLabelText("Na color value")).toBeTruthy();
+    expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(1);
+
+    await user.click(within(sidebar).getByRole("button", { name: "Set Cl color" }));
+    expect(await screen.findByLabelText("Cl color value")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Na color value")).toBeNull();
+      expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(1);
+    });
+
+    await user.click(within(sidebar).getByRole("button", { name: "Set Na:0 color" }));
+    expect(await screen.findByLabelText("Na:0 color value")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Cl color value")).toBeNull();
+      expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(1);
+    });
+
+    const sodiumRow = within(sidebar).getByText("Na:0").closest("tr");
     expect(sodiumRow).not.toBeNull();
     await user.click(sodiumRow!);
     expect(screen.queryByRole("complementary", { name: "Selected atom" })).toBeNull();
     await user.dblClick(sodiumRow!);
-    expect(screen.getByRole("complementary", { name: "Selected atom" }).isConnected).toBe(
-      true,
-    );
+    const atomInfo = screen.getByRole("complementary", { name: "Selected atom" });
+    expect(atomInfo.isConnected).toBe(true);
+    expect(within(atomInfo).getByText("Na:0").isConnected).toBe(true);
+    expect(within(atomInfo).queryByText(/idx/)).toBeNull();
 
     const sodiumElementVisibility = () =>
       within(sidebar).getByRole("button", {
@@ -802,7 +821,7 @@ describe("App", () => {
       });
     const sodiumAtomVisibility = () =>
       within(sidebar).getByRole("button", {
-        name: "Na: 0 visibility",
+        name: "Na:0 visibility",
       });
     const chlorineElementVisibility = () =>
       within(sidebar).getByRole("button", {

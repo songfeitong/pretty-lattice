@@ -1,4 +1,4 @@
-import { Copy, ListTree, X } from "lucide-react";
+import { Copy, SquareMousePointer, X } from "lucide-react";
 import { useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,7 @@ export function AtomInspectorCard({
           style={{ backgroundColor: atomColor }}
         />
         <span className="min-w-0 whitespace-nowrap text-[0.78rem] font-semibold text-foreground">
-          {canonicalAtom.element}, idx: {atomSiteIndex(canonicalAtom)}
+          {canonicalAtom.element}:{atomSiteIndex(canonicalAtom)}
         </span>
 
         <TooltipProvider delayDuration={500}>
@@ -115,7 +115,7 @@ export function AtomInspectorCard({
                 className={cn(TOOL_ICON_BUTTON_CLASS, "size-6 rounded-[9px] [&_svg]:size-3.25")}
                 onClick={() => onLocateInObjects?.(atom.id)}
               >
-                <ListTree aria-hidden="true" />
+                <SquareMousePointer aria-hidden="true" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Locate in Objects</TooltipContent>

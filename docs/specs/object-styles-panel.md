@@ -43,7 +43,7 @@ DataTable abstraction unless this table shape is reused elsewhere.
 Columns:
 
 - Site
-- r (Å)
+- R (Å)
 - Color
 - Visible
 
@@ -60,8 +60,9 @@ The Atoms table lists unit-cell atoms only. Periodic image atoms are not shown
 as separate editable rows. Periodic images inherit the style of their
 corresponding unit-cell atom through the shared `siteId`.
 
-Atom labels use a colon and a small space between element and site index, for
-example `Li: 15`.
+Atom labels use a colon between element and site index without an intervening
+space, for example `Li:15`. This label is rendered in monospace in Objects and
+in the selected-atom information card.
 Do not display the backend `siteId` delimiter form such as `Li-15` in the
 Objects table, because hyphenated labels are reserved for bond-like notation.
 
@@ -71,8 +72,14 @@ groups.
 Element rows are editable group rows, not passive section headers. Editing an
 element row applies the change to every atom in that element group.
 
+Element rows use a subtly stronger muted background than atom rows, so the
+grouping is visible while remaining quiet. The element atom count aligns in a
+fixed-width numeric column, independent of whether the element symbol has one
+or two letters. The count is left-aligned and close to two-letter symbols, not
+spread far to the right.
+
 Expanded atom rows align their label text to the element label text, not to the
-left edge of the expander icon. For example, `Sr: 0` starts at the same x
+left edge of the expander icon. For example, `Sr:0` starts at the same x
 position as the parent `Sr` text.
 
 ## Editing Semantics
@@ -101,7 +108,7 @@ Element rows never show mixed state. They always show the element-level value.
 Radius values are absolute display radii in Angstrom.
 
 The radius cell uses an inline numeric input. The input contains only the
-number. The unit appears only in the column header as `r (Å)`.
+number. The unit appears only in the column header as `R (Å)`.
 
 The radius input follows the compact manual-input sizing used in the Pose
 panel: 22px control height, small monospace numerals, and no unit inside the
@@ -142,6 +149,9 @@ picker popover. The table does not show hex values or color names.
 
 Objects swatches are flat color chips. Do not use the legend's Lambert-style
 highlighted swatch background in the table.
+
+Only one Objects color picker may be open at a time. Opening another element or
+atom color picker closes the previously open one, matching the legend behavior.
 
 Element color edits in Objects and element color edits from the legend are the
 same operation. They must write through the same element-color override path and
@@ -230,6 +240,10 @@ Objects linkage:
   must not open the sidebar or switch to Objects.
 - AtomInspectorCard may provide an explicit action to open Objects > Atoms and
   locate the selected atom.
+- Locating an atom from AtomInspectorCard uses the normal sidebar opening state.
+  The follow-up row reveal must scroll only the inspector body vertically, not
+  call page-level `scrollIntoView`, so opening the sidebar does not jolt the
+  preview or floating cards.
 - Double-clicking an atom row's non-control selection area sets the scene
   selected atom id. Single-clicking an atom row does not select it.
 - Radius, color, and visibility controls inside a row must not also trigger row

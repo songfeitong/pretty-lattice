@@ -14,6 +14,7 @@ import {
   type Dispatch,
   type KeyboardEvent,
   type SetStateAction,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -186,10 +187,12 @@ function ObjectsAtomsTable({
   style: StyleState;
 }) {
   const [expandedElements, setExpandedElements] = useState<Record<string, boolean>>({});
+  const [activeColorPickerId, setActiveColorPickerId] = useState<string | null>(null);
   const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
 
   useEffect(() => {
     setExpandedElements({});
+    setActiveColorPickerId(null);
   }, [scene]);
 
   const objectAtoms = useMemo(
@@ -240,14 +243,24 @@ function ObjectsAtomsTable({
     }));
 
     const frame = window.requestAnimationFrame(() => {
-      rowRefs.current.get(atom.id)?.scrollIntoView({
-        block: "nearest",
-        inline: "nearest",
-      });
+      const row = rowRefs.current.get(atom.id);
+      if (row) {
+        scrollRowIntoInspectorBody(row);
+      }
     });
 
     return () => window.cancelAnimationFrame(frame);
   }, [atomById, atomLocateRequest]);
+
+  const handleColorPickerOpenChange = useCallback((pickerId: string, open: boolean) => {
+    setActiveColorPickerId((currentPickerId) => {
+      if (open) {
+        return pickerId;
+      }
+
+      return currentPickerId === pickerId ? null : currentPickerId;
+    });
+  }, []);
 
   function toggleElementExpanded(element: string) {
     setExpandedElements((currentExpandedElements) => ({
@@ -426,7 +439,7 @@ function ObjectsAtomsTable({
       },
       {
         id: "radius",
-        header: "r (Å)",
+        header: "R (Å)",
         cell: ({ row }) => {
           const item = row.original;
           if (item.kind === "element") {
@@ -479,10 +492,14 @@ function ObjectsAtomsTable({
             );
             return (
               <ColorCell
+                active={activeColorPickerId === elementColorPickerId(item.element)}
                 ariaLabel={`Set ${item.element} color`}
                 color={appearance.color}
                 inputLabel={`${item.element} color value`}
                 onChange={(color) => onElementColorChange(item.element, color)}
+                onOpenChange={(open) =>
+                  handleColorPickerOpenChange(elementColorPickerId(item.element), open)
+                }
               />
             );
           }
@@ -496,10 +513,14 @@ function ObjectsAtomsTable({
           );
           return (
             <ColorCell
+              active={activeColorPickerId === atomColorPickerId(item.atom.id)}
               ariaLabel={`Set ${formatAtomSite(item.atom)} color`}
               color={appearance.color}
               inputLabel={`${formatAtomSite(item.atom)} color value`}
               onChange={(color) => setAtomColor(item.atom, color)}
+              onOpenChange={(open) =>
+                handleColorPickerOpenChange(atomColorPickerId(item.atom.id), open)
+              }
             />
           );
         },
@@ -546,6 +567,8 @@ function ObjectsAtomsTable({
     ],
     [
       expandedElements,
+      activeColorPickerId,
+      handleColorPickerOpenChange,
       onElementColorChange,
       onAtomsVisibleChange,
       atomsVisible,
@@ -620,7 +643,7 @@ function ObjectsAtomsTable({
                 className={cn(
                   "group border-border/45",
                   item.kind === "element"
-                    ? "bg-muted/25 hover:bg-muted/40"
+                    ? "bg-muted/40 hover:bg-muted/55"
                     : "cursor-default hover:bg-muted/35",
                   selected ? "bg-accent hover:bg-accent" : null,
                 )}
@@ -666,7 +689,7 @@ function ElementSiteCell({
   onToggle: () => void;
 }) {
   return (
-    <div className="grid min-w-0 grid-cols-[1.25rem_minmax(0,auto)_auto_1fr_auto] items-center gap-x-1.5">
+    <div className="grid min-w-0 grid-cols-[1.25rem_2.1ch_2ch_1fr_auto] items-center gap-x-1">
       <Button
         type="button"
         variant="ghost"
@@ -690,10 +713,10 @@ function ElementSiteCell({
           )}
         />
       </Button>
-      <span className="min-w-0 shrink-0 font-semibold leading-tight text-foreground">
+      <span className="min-w-0 truncate font-semibold leading-tight text-foreground">
         {element}
       </span>
-      <span className="shrink-0 text-[11px] leading-none text-muted-foreground">
+      <span className="shrink-0 text-left text-[11px] leading-none text-muted-foreground tabular-nums">
         {atomCount}
       </span>
       <span aria-hidden="true" />
@@ -727,7 +750,7 @@ function AtomSiteCell({ atom }: { atom: AtomSpec }) {
   return (
     <div className="grid min-w-0 grid-cols-[1.25rem_minmax(0,1fr)] gap-x-1.5 leading-tight text-foreground">
       <span aria-hidden="true" />
-      <span className="block truncate">{formatAtomSite(atom)}</span>
+      <span className="block truncate font-mono text-[12px]">{formatAtomSite(atom)}</span>
     </div>
   );
 }
@@ -796,15 +819,19 @@ function RadiusCell({
 }
 
 function ColorCell({
+  active,
   ariaLabel,
   color,
   inputLabel,
   onChange,
+  onOpenChange,
 }: {
+  active: boolean;
   ariaLabel: string;
   color: string;
   inputLabel: string;
   onChange: (color: string) => void;
+  onOpenChange: (open: boolean) => void;
 }) {
   const hexColor = normalizeHexColor(color);
 
@@ -818,13 +845,36 @@ function ColorCell({
         align="center"
         ariaLabel={ariaLabel}
         inputLabel={inputLabel}
+        open={active}
         side="left"
         value={hexColor}
         swatchClassName="shadow-none"
+        onOpenChange={onOpenChange}
         onValueChange={onChange}
       />
     </span>
   );
+}
+
+function scrollRowIntoInspectorBody(row: HTMLTableRowElement) {
+  const scrollContainer = row.closest<HTMLElement>('[data-slot="inspector-body"]');
+  if (!scrollContainer) {
+    return;
+  }
+
+  const rowRect = row.getBoundingClientRect();
+  const containerRect = scrollContainer.getBoundingClientRect();
+  const topOverflow = rowRect.top - containerRect.top;
+  const bottomOverflow = rowRect.bottom - containerRect.bottom;
+
+  if (topOverflow < 0) {
+    scrollContainer.scrollTop += topOverflow - 8;
+    return;
+  }
+
+  if (bottomOverflow > 0) {
+    scrollContainer.scrollTop += bottomOverflow + 8;
+  }
 }
 
 function VisibilityCell({
@@ -1022,7 +1072,15 @@ function ensureCustomColorStyle(
 }
 
 function formatAtomSite(atom: AtomSpec): string {
-  return `${atom.element}: ${atom.siteIndex}`;
+  return `${atom.element}:${atom.siteIndex}`;
+}
+
+function elementColorPickerId(element: string): string {
+  return `element:${element}`;
+}
+
+function atomColorPickerId(atomId: string): string {
+  return `atom:${atomId}`;
 }
 
 function formatRadius(value: number): string {

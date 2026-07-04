@@ -205,17 +205,17 @@ export function InspectorSidebar({
         <header className="flex h-16 shrink-0 items-start px-4 pt-4 pr-16">
           <TabsList
             variant="line"
-            className="h-8 w-full justify-start gap-6 rounded-none p-0"
+            className="h-8 w-full justify-start gap-5 rounded-none p-0"
           >
             <TabsTrigger
               value="settings"
-              className="h-8 flex-none px-0 text-[0.875rem] font-semibold after:bottom-[-2px]"
+              className="h-8 flex-none px-0 text-[0.875rem] font-semibold after:-inset-x-2 after:bottom-[4px]"
             >
               Settings
             </TabsTrigger>
             <TabsTrigger
               value="objects"
-              className="h-8 flex-none px-0 text-[0.875rem] font-semibold after:bottom-[-2px]"
+              className="h-8 flex-none px-0 text-[0.875rem] font-semibold after:-inset-x-2 after:bottom-[4px]"
             >
               Objects
             </TabsTrigger>
