@@ -45,6 +45,6 @@ describe("orientation control math", () => {
       direct: ["1.00", "0.00", "-0.13"],
       reciprocal: ["0.33", "2.00", "0.00"],
     });
-    expect(screenAxisLabel("outward")).toBe("z");
+    expect(screenAxisLabel("outward")).toBe("Z");
   });
 });

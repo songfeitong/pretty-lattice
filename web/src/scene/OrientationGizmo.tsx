@@ -14,9 +14,9 @@ import {
   Group,
   LinearFilter,
   LinearMipmapLinearFilter,
+  NoColorSpace,
   OrthographicCamera,
   Quaternion,
-  SRGBColorSpace,
   Vector3,
 } from "three";
 
@@ -47,7 +47,7 @@ const LABEL_FILL_COLOR = "#343434";
 const LABEL_HALO_COLOR = "#ffffff";
 const LABEL_TEXTURE_SIZE = 1024;
 const LABEL_FONT_SIZE = 608;
-const LABEL_OUTLINE_RADIUS = 44;
+const LABEL_OUTLINE_WIDTH = 66;
 const ORIGIN_SPHERE_RADIUS = 0.13;
 const SHAFT_LENGTH = 0.82;
 const SHAFT_RADIUS = 0.055;
@@ -478,8 +478,8 @@ function AxisLabel({
   position: VectorTuple;
   showHalo: boolean;
 }) {
-  const fillTexture = useMemo(() => createLabelTexture(label, "fill"), [label]);
-  const outlineTexture = useMemo(() => createLabelTexture(label, "outline"), [label]);
+  const fillTexture = useMemo(() => createLabelAlphaMap(label, "fill"), [label]);
+  const outlineTexture = useMemo(() => createLabelAlphaMap(label, "outline"), [label]);
   const fillColor = hovered ? "#111111" : labelColor;
 
   useEffect(() => () => fillTexture.dispose(), [fillTexture]);
@@ -493,10 +493,11 @@ function AxisLabel({
           scale={[LABEL_SCALE, LABEL_SCALE, 1]}
         >
           <spriteMaterial
+            alphaMap={outlineTexture}
             color={labelHaloColor}
             depthTest={false}
             depthWrite={false}
-            map={outlineTexture}
+            alphaTest={0.18}
             transparent
           />
         </sprite>
@@ -506,10 +507,11 @@ function AxisLabel({
         scale={[LABEL_SCALE, LABEL_SCALE, 1]}
       >
         <spriteMaterial
+          alphaMap={fillTexture}
           color={fillColor}
           depthTest={false}
           depthWrite={false}
-          map={fillTexture}
+          alphaTest={0.08}
           transparent
         />
       </sprite>
@@ -517,7 +519,7 @@ function AxisLabel({
   );
 }
 
-function createLabelTexture(label: string, layer: "fill" | "outline") {
+function createLabelAlphaMap(label: string, layer: "fill" | "outline") {
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
 
@@ -525,7 +527,8 @@ function createLabelTexture(label: string, layer: "fill" | "outline") {
   canvas.height = LABEL_TEXTURE_SIZE;
 
   if (context) {
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#000000";
+    context.fillRect(0, 0, canvas.width, canvas.height);
     context.font = `italic 500 ${LABEL_FONT_SIZE}px Geist, 'Helvetica Neue', Arial, sans-serif`;
     context.textAlign = "center";
     context.textBaseline = "middle";
@@ -540,7 +543,7 @@ function createLabelTexture(label: string, layer: "fill" | "outline") {
   }
 
   const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
+  texture.colorSpace = NoColorSpace;
   texture.generateMipmaps = true;
   texture.magFilter = LinearFilter;
   texture.minFilter = LinearMipmapLinearFilter;
@@ -551,14 +554,8 @@ function createLabelTexture(label: string, layer: "fill" | "outline") {
 function drawLabelOutline(context: CanvasRenderingContext2D, label: string) {
   const centerX = context.canvas.width / 2;
   const centerY = context.canvas.height / 2 + 4;
-  const steps = 24;
 
-  for (let index = 0; index < steps; index += 1) {
-    const angle = (index / steps) * Math.PI * 2;
-    context.fillText(
-      label,
-      centerX + Math.cos(angle) * LABEL_OUTLINE_RADIUS,
-      centerY + Math.sin(angle) * LABEL_OUTLINE_RADIUS,
-    );
-  }
+  context.lineWidth = LABEL_OUTLINE_WIDTH;
+  context.strokeStyle = "#ffffff";
+  context.strokeText(label, centerX, centerY);
 }

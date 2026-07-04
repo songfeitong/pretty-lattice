@@ -283,14 +283,14 @@ function VectorEditorRow({
   ) : (
     <button
       type="button"
-      aria-label={`${secondaryToggleOption.letter.toLowerCase()} secondary axis`}
+      aria-label={`${secondaryToggleOption.letter} secondary axis`}
       className={cn(
         VECTOR_AXIS_TOKEN_CLASS,
         "bg-muted text-muted-foreground transition-[background-color,color,box-shadow] hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-ring/25",
       )}
       onClick={() => onSecondaryChange(nextSecondaryDirection)}
     >
-      {secondaryToggleOption.letter.toLowerCase()}
+      {secondaryToggleOption.letter}
     </button>
   );
 

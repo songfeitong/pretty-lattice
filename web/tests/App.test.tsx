@@ -382,13 +382,13 @@ describe("App", () => {
     await user.click(within(commonControls).getByRole("tab", { name: "Pose" }));
 
     expect(
-      within(commonControls).getByRole("textbox", { name: "z a" }),
+      within(commonControls).getByRole("textbox", { name: "Z a" }),
     ).toHaveProperty("value", defaultCamera.direct[0].toFixed(2));
     expect(
-      within(commonControls).getByRole("textbox", { name: "z b" }),
+      within(commonControls).getByRole("textbox", { name: "Z b" }),
     ).toHaveProperty("value", defaultCamera.direct[1].toFixed(2));
     expect(
-      within(commonControls).getByRole("textbox", { name: "z c" }),
+      within(commonControls).getByRole("textbox", { name: "Z c" }),
     ).toHaveProperty("value", defaultCamera.direct[2].toFixed(2));
   });
 
@@ -1641,40 +1641,40 @@ describe("App", () => {
         .map((textbox) => textbox.getAttribute("aria-label")),
     ).toEqual([
       "Roll value",
-      "z a",
-      "z b",
-      "z c",
-      "y a*",
-      "y b*",
-      "y c*",
+      "Z a",
+      "Z b",
+      "Z c",
+      "Y a*",
+      "Y b*",
+      "Y c*",
     ]);
     expect(
-      within(commonControls).getByRole("textbox", { name: "z a" }),
+      within(commonControls).getByRole("textbox", { name: "Z a" }),
     ).toHaveProperty("value", "1.00");
     expect(
-      within(commonControls).getByRole("textbox", { name: "z b" }),
+      within(commonControls).getByRole("textbox", { name: "Z b" }),
     ).toHaveProperty("value", "0.33");
     expect(
-      within(commonControls).getByRole("textbox", { name: "z c" }),
+      within(commonControls).getByRole("textbox", { name: "Z c" }),
     ).toHaveProperty("value", "0.17");
     expect(
-      within(commonControls).getByRole("textbox", { name: "y b*" }),
+      within(commonControls).getByRole("textbox", { name: "Y b*" }),
     ).toHaveProperty("value", "-0.05");
     expect(
-      within(commonControls).getByRole("textbox", { name: "y c*" }),
+      within(commonControls).getByRole("textbox", { name: "Y c*" }),
     ).toHaveProperty("value", "1.00");
     expect(
-      within(commonControls).getByRole("button", { name: "y secondary axis" }).textContent,
-    ).toBe("y");
+      within(commonControls).getByRole("button", { name: "Y secondary axis" }).textContent,
+    ).toBe("Y");
     expect(
       within(commonControls)
-        .getByRole("textbox", { name: "z a" })
+        .getByRole("textbox", { name: "Z a" })
         .closest('[data-camera-vector-row="z"]')
         ?.getAttribute("data-primary-axis"),
     ).toBe("true");
     expect(
       within(commonControls)
-        .getByRole("textbox", { name: "y a*" })
+        .getByRole("textbox", { name: "Y a*" })
         .closest('[data-camera-vector-row="y"]')
         ?.hasAttribute("data-primary-axis"),
     ).toBe(false);
@@ -1738,10 +1738,10 @@ describe("App", () => {
     await user.click(within(commonControls).getByRole("tab", { name: "Pose" }));
 
     const outwardA = within(commonControls).getByRole("textbox", {
-      name: "z a",
+      name: "Z a",
     }) as HTMLInputElement;
     const outwardC = within(commonControls).getByRole("textbox", {
-      name: "z c",
+      name: "Z c",
     }) as HTMLInputElement;
 
     await user.click(outwardA);
@@ -1801,32 +1801,32 @@ describe("App", () => {
         .map((textbox) => textbox.getAttribute("aria-label")),
     ).toEqual([
       "Roll value",
-      "y a",
-      "y b",
-      "y c",
-      "z a*",
-      "z b*",
-      "z c*",
+      "Y a",
+      "Y b",
+      "Y c",
+      "Z a*",
+      "Z b*",
+      "Z c*",
     ]);
-    expect(within(commonControls).getByRole("textbox", { name: "y b" }).isConnected)
+    expect(within(commonControls).getByRole("textbox", { name: "Y b" }).isConnected)
       .toBe(true);
-    expect(within(commonControls).getByRole("textbox", { name: "z c*" }).isConnected)
+    expect(within(commonControls).getByRole("textbox", { name: "Z c*" }).isConnected)
       .toBe(true);
     expect(
       within(commonControls)
-        .getByRole("textbox", { name: "y b" })
+        .getByRole("textbox", { name: "Y b" })
         .closest('[data-camera-vector-row="y"]')
         ?.getAttribute("data-primary-axis"),
     ).toBe("true");
     expect(
       within(commonControls)
-        .getByRole("textbox", { name: "z c*" })
+        .getByRole("textbox", { name: "Z c*" })
         .closest('[data-camera-vector-row="z"]')
         ?.hasAttribute("data-primary-axis"),
     ).toBe(false);
-    expect(within(commonControls).queryByRole("textbox", { name: "z c" })).toBeNull();
+    expect(within(commonControls).queryByRole("textbox", { name: "Z c" })).toBeNull();
 
-    await user.click(within(commonControls).getByRole("button", { name: "z secondary axis" }));
+    await user.click(within(commonControls).getByRole("button", { name: "Z secondary axis" }));
 
     expect(
       within(commonControls)
@@ -1834,12 +1834,12 @@ describe("App", () => {
         .map((textbox) => textbox.getAttribute("aria-label")),
     ).toEqual([
       "Roll value",
-      "y a",
-      "y b",
-      "y c",
-      "x a*",
-      "x b*",
-      "x c*",
+      "Y a",
+      "Y b",
+      "Y c",
+      "X a*",
+      "X b*",
+      "X c*",
     ]);
     await act(async () => {
       await new Promise((resolve) => window.setTimeout(resolve, 240));
@@ -1860,17 +1860,17 @@ describe("App", () => {
     await user.click(within(commonControls).getByRole("tab", { name: "Pose" }));
 
     expect(
-      within(commonControls).getByRole("textbox", { name: "z a" }),
+      within(commonControls).getByRole("textbox", { name: "Z a" }),
     ).toHaveProperty("value", "1.00");
     expect(
-      within(commonControls).getByRole("textbox", { name: "z c" }),
+      within(commonControls).getByRole("textbox", { name: "Z c" }),
     ).toHaveProperty("value", "0.00");
 
     await user.click(within(commonControls).getByRole("button", { name: "Y Up" }));
     await user.click(screen.getByRole("button", { name: "gizmo c" }));
 
     expect(
-      within(commonControls).getByRole("textbox", { name: "y c" }),
+      within(commonControls).getByRole("textbox", { name: "Y c" }),
     ).toHaveProperty("value", "1.00");
   });
 

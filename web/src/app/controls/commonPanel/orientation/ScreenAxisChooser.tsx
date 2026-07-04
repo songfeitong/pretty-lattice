@@ -38,12 +38,12 @@ const SCREEN_AXIS_OUTWARD_SHAFT_TIP_RADIUS_SCALE = 0.6;
 const SCREEN_AXIS_Y = new Vector3(0, 1, 0);
 const SCREEN_AXIS_GIZMO_AXES: readonly {
   direction: CrystalCameraScreenDirection;
-  label: "x" | "y" | "z";
+  label: "X" | "Y" | "Z";
   vector: VectorTuple;
 }[] = [
-  { direction: "right", label: "x", vector: [1, 0, 0] },
-  { direction: "upward", label: "y", vector: [0, 1, 0] },
-  { direction: "outward", label: "z", vector: [0, 0, 1] },
+  { direction: "right", label: "X", vector: [1, 0, 0] },
+  { direction: "upward", label: "Y", vector: [0, 1, 0] },
+  { direction: "outward", label: "Z", vector: [0, 0, 1] },
 ];
 
 const SCREEN_AXIS_HITBOX_ORIGIN = [4.05, 3.8] as const;
@@ -102,7 +102,7 @@ export function ScreenAxisChooser({
         selectedAxis={value}
         className="left-[4.325rem] top-[0.65rem]"
       >
-        y
+        Y
       </ScreenAxisOverlayLabel>
       <ScreenAxisOverlayLabel
         direction="right"
@@ -110,15 +110,15 @@ export function ScreenAxisChooser({
         selectedAxis={value}
         className="left-[7.8rem] top-[5.15rem]"
       >
-        x
+        X
       </ScreenAxisOverlayLabel>
       <ScreenAxisOverlayLabel
         direction="outward"
         hoveredAxis={hoveredAxis}
         selectedAxis={value}
-        className="left-[1.6rem] top-[6.375rem]"
+        className="left-[1.6rem] top-[6.5rem]"
       >
-        z
+        Z
       </ScreenAxisOverlayLabel>
       <button
         type="button"

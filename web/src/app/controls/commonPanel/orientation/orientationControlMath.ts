@@ -20,7 +20,7 @@ export function screenAxisOption(direction: CrystalCameraScreenDirection) {
 
 export function screenAxisLabel(direction: CrystalCameraScreenDirection): string {
   const option = screenAxisOption(direction);
-  return option.letter.toLowerCase();
+  return option.letter;
 }
 
 export function shortestRollDelta(from: number, to: number): number {

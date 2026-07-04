@@ -84,10 +84,10 @@ describe("vector editor model", () => {
     const draft = resetVectorEditorDraft(cameraState);
 
     expect(vectorEditorRows(cameraState, draft)).toMatchObject([
-      { isPrimaryAxis: true, label: "x", row: "direct" },
+      { isPrimaryAxis: true, label: "X", row: "direct" },
       {
         isPrimaryAxis: false,
-        label: "y",
+        label: "Y",
         row: "reciprocal",
         secondaryOptions: [
           { direction: "upward", letter: "Y", label: "Up" },
