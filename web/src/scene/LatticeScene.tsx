@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Quaternion } from "three";
 
 import type { SceneSpec } from "../api/scene";
@@ -181,13 +181,14 @@ export function LatticeScene({
     }),
     [layout.cameraPose.cameraPosition, layout.cameraPose.distance, layout.span],
   );
+  const { materialPreset } = style;
   const materialFamily = useMemo(
-    () => resolveStructureMaterialFamilyForStyle(style),
-    [style.materialPreset],
+    () => resolveStructureMaterialFamilyForStyle({ materialPreset }),
+    [materialPreset],
   );
   const materialFamilies = useMemo(
-    () => resolveStructureMaterialFamiliesForStyle(style),
-    [style.materialPreset],
+    () => resolveStructureMaterialFamiliesForStyle({ materialPreset }),
+    [materialPreset],
   );
 
   return (
@@ -198,6 +199,7 @@ export function LatticeScene({
       gl={DEFAULT_RENDERER_PARAMETERS}
       data-testid="lattice-canvas"
     >
+      <DemandFrameInvalidator />
       <MaterialPresetLights
         intensityScale={lightStrength}
         lighting={materialFamily.lighting}
@@ -246,6 +248,16 @@ export function LatticeScene({
       ) : null}
     </Canvas>
   );
+}
+
+function DemandFrameInvalidator() {
+  const invalidate = useThree((state) => state.invalidate);
+
+  useLayoutEffect(() => {
+    invalidate();
+  });
+
+  return null;
 }
 
 function CameraOrientationTracker({

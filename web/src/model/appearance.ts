@@ -1,4 +1,4 @@
-import type { AtomRadiusModel, AtomSpec } from "../api/scene";
+import type { AtomSpec } from "../api/scene";
 import {
   autoDistinctElementColorOverrides,
   DEFAULT_COLOR_SCHEME_ID,
@@ -10,6 +10,11 @@ import {
   DEFAULT_MATERIAL_PRESET_ID,
   type MaterialPresetId,
 } from "./materialPresets";
+import {
+  createDefaultObjectStyleState,
+  type AtomRadiusStyleModel,
+  type ObjectStyleState,
+} from "./objectStyles";
 
 export const DEFAULT_BOND_COLOR = "#d2d2d2";
 
@@ -23,7 +28,7 @@ export interface CustomColormap {
 
 export interface StyleState {
   atomRadius: number;
-  atomRadiusModel: AtomRadiusModel;
+  atomRadiusModel: AtomRadiusStyleModel;
   bondColor: string;
   bondColorMode: BondColorMode;
   bondThickness: number;
@@ -36,6 +41,7 @@ export interface StyleState {
   fogEnabled: boolean;
   fogStart: number;
   materialPreset: MaterialPresetId;
+  objectStyles: ObjectStyleState;
 }
 
 export const DEFAULT_STYLE: StyleState = {
@@ -53,6 +59,7 @@ export const DEFAULT_STYLE: StyleState = {
   fogEnabled: true,
   fogStart: 40,
   materialPreset: DEFAULT_MATERIAL_PRESET_ID,
+  objectStyles: createDefaultObjectStyleState(),
 };
 
 export const STYLE_SCALE_MIN: Pick<StyleState, "atomRadius" | "bondThickness"> = {
@@ -71,7 +78,10 @@ export const STYLE_FOG_START_MIN = 0;
 export const STYLE_FOG_START_MAX = 100;
 
 export function createDefaultStyle(): StyleState {
-  return { ...DEFAULT_STYLE };
+  return {
+    ...DEFAULT_STYLE,
+    objectStyles: createDefaultObjectStyleState(),
+  };
 }
 
 export function createCustomColormapFromScheme(
@@ -80,6 +90,20 @@ export function createCustomColormapFromScheme(
   return {
     baseColorScheme: colorScheme,
     elements: elementColorsForScheme(colorScheme),
+  };
+}
+
+export function createCustomColormapFromStyle(
+  atoms: readonly AtomSpec[],
+  style: StyleState,
+): CustomColormap {
+  const baseColorScheme = baseColorSchemeForStyle(style);
+  return {
+    baseColorScheme,
+    elements: {
+      ...elementColorsForScheme(baseColorScheme),
+      ...elementColorOverridesForStyle(atoms, style),
+    },
   };
 }
 

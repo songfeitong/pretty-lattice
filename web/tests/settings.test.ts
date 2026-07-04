@@ -16,6 +16,7 @@ import {
   createCustomColormapFromScheme,
   createDefaultComponentVisibility,
   elementColorOverridesForStyle,
+  canonicalAtomsForObjectStyles,
   hasCustomColormapChanges,
   INSPECTOR_OPEN_SCENE_OFFSET_X_PX,
   INSPECTOR_PREVIEW_SAFE_AREA,
@@ -36,6 +37,8 @@ import {
   sceneOffsetXForInspector,
   syncExportSettingsProjectedSize,
   validateExportSettings,
+  resolveAtomAppearance,
+  setAtomOverrideProperty,
   visibleSceneForComponents,
 } from "../src/model";
 
@@ -69,6 +72,13 @@ describe("settings", () => {
       fogEnabled: true,
       fogStart: 40,
       materialPreset: "modern-matte",
+      objectStyles: {
+        atomOverrides: {},
+        customAtomRadii: {},
+        customRadiusBaseModel: null,
+        customRadiusPreviousScale: null,
+        elementOverrides: {},
+      },
     });
     expect(STYLE_FOG_START_MIN).toBe(0);
     expect(STYLE_FOG_START_MAX).toBe(100);
@@ -443,6 +453,62 @@ describe("settings", () => {
       "Cl-1-image-1-1-0",
     ]);
     expect(scene.polyhedra).toHaveLength(4);
+  });
+
+  test("applies canonical atom object styles to periodic images", () => {
+    const scene = sceneWithPeriodicImages();
+    const defaultStyle = createDefaultStyle();
+    const defaultVisibility = createDefaultComponentVisibility(scene);
+    const canonicalAtoms = canonicalAtomsForObjectStyles(scene.atoms);
+    let objectStyles = setAtomOverrideProperty(
+      defaultStyle.objectStyles,
+      "Na-0",
+      "radius",
+      1.23,
+    );
+    objectStyles = setAtomOverrideProperty(
+      objectStyles,
+      "Na-0",
+      "color",
+      "#123456",
+    );
+    objectStyles = setAtomOverrideProperty(
+      objectStyles,
+      "Na-0",
+      "visible",
+      false,
+    );
+
+    expect(canonicalAtoms.map((atom) => atom.id)).toEqual(["Na-0", "Cl-1"]);
+    expect(
+      resolveAtomAppearance({
+        atom: scene.atoms[1]!,
+        colorScheme: "vesta-soft",
+        style: {
+          ...defaultStyle,
+          objectStyles,
+        },
+      }),
+    ).toEqual({
+      color: "#123456",
+      radius: 1.23,
+      visible: false,
+    });
+
+    const visibleScene = visibleSceneForComponents(
+      scene,
+      {
+        ...defaultVisibility,
+        oneHopBondedAtoms: true,
+      },
+      objectStyles,
+    );
+
+    expect(visibleScene?.atoms.map((atom) => atom.id)).toEqual([
+      "Cl-1",
+      "Cl-1-image-0--1-0",
+      "Cl-1-image-1-1-0",
+    ]);
   });
 
   test("uses a stable right safe area and a small inspector scene offset", () => {

@@ -761,6 +761,105 @@ describe("App", () => {
     );
   });
 
+  test("shows unit-cell atoms in Objects and keeps Display atoms visibility in sync", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user);
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
+
+    expect(within(sidebar).getByRole("tab", { name: "Atoms" })).toBeTruthy();
+    expect(within(sidebar).getByText("r (Å)").isConnected).toBe(true);
+    expect(within(sidebar).queryByText("Na: 0")).toBeNull();
+    expect(within(sidebar).queryByText(/image/)).toBeNull();
+
+    await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
+
+    const sodiumAtomLabel = within(sidebar).getByText("Na: 0");
+    expect(sodiumAtomLabel.isConnected).toBe(true);
+    expect(within(sidebar).queryByText("Na:0")).toBeNull();
+    expect(within(sidebar).queryByText("Na 0")).toBeNull();
+    expect(within(sidebar).queryByText("Na-0")).toBeNull();
+    expect(
+      within(sidebar).getByRole("button", {
+        name: "Apply Na style to all atoms",
+      }).isConnected,
+    ).toBe(true);
+
+    const sodiumRow = sodiumAtomLabel.closest("tr");
+    expect(sodiumRow).not.toBeNull();
+    await user.click(sodiumRow!);
+    expect(screen.queryByRole("complementary", { name: "Selected atom" })).toBeNull();
+    await user.dblClick(sodiumRow!);
+    expect(screen.getByRole("complementary", { name: "Selected atom" }).isConnected).toBe(
+      true,
+    );
+
+    const sodiumElementVisibility = () =>
+      within(sidebar).getByRole("button", {
+        name: "Na visibility",
+      });
+    const sodiumAtomVisibility = () =>
+      within(sidebar).getByRole("button", {
+        name: "Na: 0 visibility",
+      });
+    const chlorineElementVisibility = () =>
+      within(sidebar).getByRole("button", {
+        name: "Cl visibility",
+      });
+    expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("true");
+    expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("true");
+    expect(chlorineElementVisibility().getAttribute("aria-pressed")).toBe("true");
+
+    await user.click(sodiumElementVisibility());
+    await waitFor(() => {
+      expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
+      expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("false");
+    });
+
+    await user.click(sodiumAtomVisibility());
+    await waitFor(() => {
+      expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
+      expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("true");
+    });
+
+    const commonControls = screen.getByRole("complementary", { name: "Common controls" });
+    const atomsCheckbox = within(commonControls).getByRole("checkbox", { name: "Atoms" });
+    await user.click(atomsCheckbox);
+    await waitFor(() => {
+      expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
+      expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("false");
+    });
+
+    await user.click(atomsCheckbox);
+    await waitFor(() => {
+      expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("true");
+      expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("true");
+    });
+
+    await user.click(sodiumElementVisibility());
+    await waitFor(() => {
+      expect(atomsCheckbox.getAttribute("aria-checked")).toBe("true");
+      expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
+      expect(chlorineElementVisibility().getAttribute("aria-pressed")).toBe("true");
+    });
+
+    await user.click(chlorineElementVisibility());
+    await waitFor(() => {
+      expect(atomsCheckbox.getAttribute("aria-checked")).toBe("false");
+      expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
+      expect(chlorineElementVisibility().getAttribute("aria-pressed")).toBe("false");
+    });
+
+    await user.click(atomsCheckbox);
+    await waitFor(() => {
+      expect(atomsCheckbox.getAttribute("aria-checked")).toBe("true");
+      expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("true");
+      expect(chlorineElementVisibility().getAttribute("aria-pressed")).toBe("true");
+    });
+  });
+
   test("exports without carrying renderer state", async () => {
     const user = userEvent.setup();
 
@@ -1153,7 +1252,7 @@ describe("App", () => {
     await user.click(colorSchemeSelect);
     await user.click(await screen.findByRole("option", { name: "Custom" }));
     expect(colorSchemeSelect.textContent).toContain("Custom");
-    expect(await readSodiumColorValue()).toBe("#112233");
+    expect(await readSodiumColorValue()).toBe("#ab5cf2");
 
     await user.click(colorSchemeSelect);
     await user.click(await screen.findByRole("option", { name: "Jmol" }));

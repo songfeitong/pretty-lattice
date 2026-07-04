@@ -1,7 +1,8 @@
 import { Box3, Vector3 } from "three";
 
-import type { AtomRadiusModel, SceneSpec } from "../api/scene";
+import type { SceneSpec } from "../api/scene";
 import type { PreviewSafeArea } from "../model/layout";
+import type { AtomRadiusStyleModel } from "../model/objectStyles";
 import {
   computeCrystalCameraPose,
   createDefaultCrystalCameraState,
@@ -39,7 +40,7 @@ export interface SceneLayout extends SceneStructureLayout {
 
 export function computeSceneLayout(
   scene: SceneSpec,
-  _atomRadiusModel: AtomRadiusModel = "uniform",
+  _atomRadiusModel: AtomRadiusStyleModel = "uniform",
   cameraState?: CrystalCameraState,
 ): SceneLayout {
   const structureLayout = computeSceneStructureLayout(scene);
@@ -57,7 +58,7 @@ export function computeSceneLayout(
 
 export function computeSceneStructureLayout(
   scene: SceneSpec,
-  _atomRadiusModel: AtomRadiusModel = "uniform",
+  _atomRadiusModel: AtomRadiusStyleModel = "uniform",
 ): SceneStructureLayout {
   const points = cellCorners(scene.cell.vectors);
   const box = new Box3().setFromPoints(points);

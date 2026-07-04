@@ -20,7 +20,11 @@ export async function createCombinedExportFile({
   style,
   unitCellLineStyle,
 }: CreateFigureExportOptions): Promise<FigureExportFile> {
-  const visibleScene = visibleSceneForComponents(scene, componentVisibility);
+  const visibleScene = visibleSceneForComponents(
+    scene,
+    componentVisibility,
+    style.objectStyles,
+  );
   const cameraPose = createCameraPoseSnapshot(cameraOrientationRef.current);
   const rasterImage = await renderCombinedExportRaster({
     cameraPose,

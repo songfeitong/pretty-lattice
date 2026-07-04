@@ -17,10 +17,10 @@ import type {
   PolyhedronSpec,
 } from "../api/scene";
 import {
-  atomColorForScheme,
   type ElementColorOverrides,
 } from "../model/colorSchemes";
 import type { StyleState } from "../model";
+import { resolveAtomAppearance } from "../model";
 import { StructureMaterial } from "./StructureMaterial";
 import type { ResolvedStructureMaterialFamily } from "./materialPresetResolver";
 import { STRUCTURE_RENDER_ORDER } from "./renderOrder";
@@ -62,6 +62,7 @@ export function BatchedPolyhedra({
   materialFamily,
   opacity,
   polyhedra,
+  style,
 }: {
   atoms: AtomSpec[];
   colorScheme: StyleState["colorScheme"];
@@ -70,6 +71,7 @@ export function BatchedPolyhedra({
   materialFamily: ResolvedStructureMaterialFamily;
   opacity: number;
   polyhedra: PolyhedronSpec[];
+  style: StyleState;
 }) {
   const meshRef = useRef<BatchedMesh | null>(null);
   const populatedBatchMeshRef = useRef<BatchedMesh | null>(null);
@@ -82,8 +84,9 @@ export function BatchedPolyhedra({
         colorScheme,
         colorOverrides,
         polyhedra,
+        style,
       }),
-    [atoms, colorScheme, colorOverrides, polyhedra],
+    [atoms, colorScheme, colorOverrides, polyhedra, style],
   );
 
   useLayoutEffect(() => {
@@ -160,11 +163,13 @@ export function createPolyhedronSurfaceBatchBuild({
   colorScheme,
   colorOverrides,
   polyhedra,
+  style,
 }: {
   atoms: AtomSpec[];
   colorScheme: StyleState["colorScheme"];
   colorOverrides?: ElementColorOverrides;
   polyhedra: PolyhedronSpec[];
+  style: StyleState;
 }): PolyhedronSurfaceBatchBuild | null {
   const edgeItems: PolyhedronEdgeRenderItem[] = [];
   const items: PolyhedronSurfaceRenderItem[] = [];
@@ -212,7 +217,14 @@ export function createPolyhedronSurfaceBatchBuild({
     }
 
     items.push({
-      color: new Color(atomColorForScheme(centerAtom, colorScheme, colorOverrides)),
+      color: new Color(
+        resolveAtomAppearance({
+          atom: centerAtom,
+          colorOverrides,
+          colorScheme,
+          style,
+        }).color,
+      ),
       geometry,
       polyhedron,
       polyhedronIndex,

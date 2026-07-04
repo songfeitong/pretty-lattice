@@ -23,7 +23,6 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import type { AtomRadiusModel } from "../../../api/scene";
 import {
   COLOR_SCHEME_OPTIONS,
   colorSchemeTokenStyle,
@@ -43,7 +42,9 @@ import {
   createDefaultStyle,
   createCustomColormapFromScheme,
   DEFAULT_BOND_COLOR,
-  hasCustomColormapChanges,
+  CUSTOM_ATOM_RADIUS_MODEL,
+  clearObjectStyleProperty,
+  type AtomRadiusStyleModel,
   type BondColorMode,
   type StyleState,
 } from "../../../model";
@@ -69,12 +70,13 @@ const BOND_COLOR_OPTIONS: { label: string; value: BondColorMode }[] = [
 const CUSTOM_COLOR_SCHEME_VALUE = "__custom";
 const ATOM_RADIUS_MODEL_OPTIONS: {
   menuLabel: string;
-  value: AtomRadiusModel;
+  value: AtomRadiusStyleModel;
 }[] = [
   { menuLabel: "Uniform", value: "uniform" },
   { menuLabel: "Atomic", value: "atomic" },
   { menuLabel: "Van der Waals", value: "vdw" },
   { menuLabel: "Ionic", value: "ionic" },
+  { menuLabel: "Custom", value: CUSTOM_ATOM_RADIUS_MODEL },
 ];
 const BY_ATOM_TOKEN_STYLE = { background: "linear-gradient(90deg, #f58c9a 0 50%, #78a7ff 50% 100%)" } as const;
 const CUSTOM_COLOR_SCHEME_TOKEN_STYLE = {
@@ -89,7 +91,7 @@ export function StyleTabContent({
   onStyleChange,
   style,
 }: {
-  onAtomRadiusModelChange: (atomRadiusModel: AtomRadiusModel) => void;
+  onAtomRadiusModelChange: (atomRadiusModel: AtomRadiusStyleModel) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   style: StyleState;
 }) {
@@ -100,7 +102,7 @@ export function StyleTabContent({
     }));
   }
 
-  function setAtomRadiusModel(atomRadiusModel: AtomRadiusModel) {
+  function setAtomRadiusModel(atomRadiusModel: AtomRadiusStyleModel) {
     onAtomRadiusModelChange(atomRadiusModel);
   }
 
@@ -141,11 +143,11 @@ export function StyleTabContent({
         ...currentStyle,
         colorScheme: value,
         colorSchemeMode: "preset",
-        customColormap:
-          currentStyle.customColormap &&
-          hasCustomColormapChanges(currentStyle.customColormap)
-            ? currentStyle.customColormap
-            : null,
+        customColormap: null,
+        objectStyles: clearObjectStyleProperty(
+          currentStyle.objectStyles,
+          "color",
+        ),
       };
     });
   }
@@ -199,6 +201,7 @@ export function StyleTabContent({
     style.colorSchemeMode === "custom" && style.customColormap
       ? CUSTOM_COLOR_SCHEME_VALUE
       : style.colorScheme;
+  const isCustomAtomRadiusModel = style.atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL;
 
   useEffect(
     () => () => {
@@ -295,6 +298,7 @@ export function StyleTabContent({
             max={STYLE_SCALE_MAX.atomRadius}
             min={STYLE_SCALE_MIN.atomRadius}
             value={style.atomRadius}
+            disabled={isCustomAtomRadiusModel}
             onValueChange={(value) => setStyleScale("atomRadius", value)}
           />
           <PercentSliderRow
@@ -536,8 +540,8 @@ function AtomRadiusModelPopover({
   onValueChange,
   value,
 }: {
-  onValueChange: (value: AtomRadiusModel) => void;
-  value: AtomRadiusModel;
+  onValueChange: (value: AtomRadiusStyleModel) => void;
+  value: AtomRadiusStyleModel;
 }) {
   const [open, setOpen] = useState(false);
   const selectedOption = ATOM_RADIUS_MODEL_OPTIONS.find((option) => option.value === value);

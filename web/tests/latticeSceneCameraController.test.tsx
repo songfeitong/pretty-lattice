@@ -93,7 +93,8 @@ mock.module("@react-three/fiber", () => ({
             (child) =>
               isValidElement(child) &&
               typeof child.type === "function" &&
-              child.type.name === "PreviewCameraController",
+              (child.type.name === "PreviewCameraController" ||
+                child.type.name === "DemandFrameInvalidator"),
           )}
         </div>
       );
@@ -101,19 +102,27 @@ mock.module("@react-three/fiber", () => ({
   useFrame: (callback: () => void) => {
     latestFrameCallback = callback;
   },
-  useThree: () => ({
-    camera: mockCamera,
-    gl: {
-      domElement: mockDomElement,
-    },
-    invalidate: () => {
-      invalidateCalls += 1;
-    },
-    size: {
-      height: 800,
-      width: 1000,
-    },
-  }),
+  useThree: (selector?: (state: {
+    camera: OrthographicCamera;
+    gl: { domElement: HTMLCanvasElement };
+    invalidate: () => void;
+    size: { height: number; width: number };
+  }) => unknown) => {
+    const state = {
+      camera: mockCamera,
+      gl: {
+        domElement: mockDomElement,
+      },
+      invalidate: () => {
+        invalidateCalls += 1;
+      },
+      size: {
+        height: 800,
+        width: 1000,
+      },
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 mock.module("three/examples/jsm/controls/OrbitControls.js", () => ({
@@ -278,6 +287,39 @@ describe("LatticeScene camera commands", () => {
 
     invalidateCalls = 0;
     act(() => latestControls?.dispatchTestEvent("change"));
+
+    expect(invalidateCalls).toBeGreaterThan(0);
+  });
+
+  test("requests a demand frame when preview render props change", () => {
+    const scene = orthogonalScene();
+    const props = {
+      cameraCommandVersion: 0,
+      cameraInteractionStore: createCameraInteractionStore(),
+      cameraState: createDefaultCrystalCameraState(scene.cell.vectors),
+      componentOpacity: createDefaultComponentOpacity(),
+      interactionLocked: false,
+      interactionMode: "trackball" as const,
+      resetCounter: 0,
+      scene,
+      style: createDefaultStyle(),
+    };
+
+    const { rerender } = render(<LatticeScene {...props} />);
+
+    invalidateCalls = 0;
+    rerender(<LatticeScene {...props} showAtoms={false} />);
+
+    expect(invalidateCalls).toBeGreaterThan(0);
+
+    invalidateCalls = 0;
+    rerender(
+      <LatticeScene
+        {...props}
+        showAtoms={false}
+        showUnitCell={false}
+      />,
+    );
 
     expect(invalidateCalls).toBeGreaterThan(0);
   });

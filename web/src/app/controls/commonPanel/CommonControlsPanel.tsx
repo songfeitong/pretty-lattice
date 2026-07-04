@@ -18,8 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import type { AtomRadiusModel } from "../../../api/scene";
 import type {
+  AtomRadiusStyleModel,
   ComponentOpacityState,
   ComponentVisibilityState,
   CrystalCameraPrimaryDirection,
@@ -91,7 +91,7 @@ export function CommonControlsPanel({
   exportSettings: ExportSettingsState;
   hasPolyhedra: boolean;
   isExporting: boolean;
-  onAtomRadiusModelChange: (atomRadiusModel: AtomRadiusModel) => void;
+  onAtomRadiusModelChange: (atomRadiusModel: AtomRadiusStyleModel) => void;
   onCameraPrimaryChange: (primary: CrystalCameraPrimaryDirection) => void;
   onCameraRollPreviewChange: (rollDegrees: number) => void;
   onCameraRollPreviewStart: () => void;

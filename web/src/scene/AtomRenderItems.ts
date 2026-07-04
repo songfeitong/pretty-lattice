@@ -1,9 +1,9 @@
 import { Color } from "three";
 
-import type { AtomRadiusModel, AtomSpec } from "../api/scene";
-import { atomColorForScheme, type ElementColorOverrides } from "../model/colorSchemes";
+import type { AtomSpec } from "../api/scene";
+import type { ElementColorOverrides } from "../model/colorSchemes";
 import type { StyleState } from "../model";
-import { atomRadiusForModel } from "./sceneGeometry";
+import { resolveAtomAppearance } from "../model";
 import type { VectorTuple } from "./viewMath";
 
 export interface AtomRenderItem {
@@ -19,24 +19,27 @@ export function createAtomRenderItems({
   atoms,
   colorScheme,
   colorOverrides,
-  radiusModel,
-  radiusScale,
+  style,
 }: {
   atoms: AtomSpec[];
   colorScheme: StyleState["colorScheme"];
   colorOverrides?: ElementColorOverrides;
-  radiusModel: AtomRadiusModel;
-  radiusScale: number;
+  style: StyleState;
 }): AtomRenderItem[] {
   return atoms.map((atom) => {
-    const color = atomColorForScheme(atom, colorScheme, colorOverrides);
+    const appearance = resolveAtomAppearance({
+      atom,
+      colorOverrides,
+      colorScheme,
+      style,
+    });
     return {
       atom,
-      baseColor: new Color(color),
-      color,
+      baseColor: new Color(appearance.color),
+      color: appearance.color,
       id: atom.id,
       position: atom.position,
-      radius: atomRadiusForModel(atom, radiusModel) * radiusScale,
+      radius: appearance.radius,
     };
   });
 }

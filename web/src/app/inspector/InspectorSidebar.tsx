@@ -1,7 +1,9 @@
 import {
   type CSSProperties,
+  type Dispatch,
   type KeyboardEvent,
   type ReactNode,
+  type SetStateAction,
   useEffect,
   useState,
 } from "react";
@@ -26,6 +28,7 @@ import { cn } from "@/lib/utils";
 import {
   BOND_ALGORITHM_OPTIONS,
   type BondAlgorithm,
+  type SceneSpec,
 } from "../../api/scene";
 import {
   TOOL_ICON_BUTTON_ACTIVE_CLASS,
@@ -56,8 +59,12 @@ import {
   MESH_QUALITY_LABELS,
   MESH_QUALITY_OPTIONS,
   type MeshQuality,
+  type StyleState,
   type UnitCellLineStyle,
 } from "../../model";
+import { ObjectsPanel, type ObjectsPanelTab } from "./ObjectsPanel";
+
+export type InspectorSidebarTab = "settings" | "objects";
 
 const INSPECTOR_BODY_TEXT_CLASS = "text-sm";
 const INSPECTOR_SECTION_TITLE_CLASS =
@@ -104,6 +111,10 @@ export function InspectorToggle({
 }
 
 export function InspectorSidebar({
+  activeObjectsTab,
+  activeTab,
+  atomLocateRequest,
+  atomsVisible,
   bondAlgorithm,
   distinguishSimilarColors,
   dragSensitivity,
@@ -116,7 +127,14 @@ export function InspectorSidebar({
   fogAffectsUnitCell,
   showFpsOverlay,
   showCrystalAxisLabels,
+  scene,
+  selectedAtomId,
+  style,
   unitCellLineStyle,
+  onActiveObjectsTabChange,
+  onActiveTabChange,
+  onAtomSelect,
+  onAtomsVisibleChange,
   onBondAlgorithmChange,
   onDistinguishSimilarColorsChange,
   onDragSensitivityChange,
@@ -126,8 +144,14 @@ export function InspectorSidebar({
   onFogAffectsUnitCellChange,
   onShowFpsOverlayChange,
   onShowCrystalAxisLabelsChange,
+  onElementColorChange,
+  onStyleChange,
   onUnitCellLineStyleChange,
 }: {
+  activeObjectsTab: ObjectsPanelTab;
+  activeTab: InspectorSidebarTab;
+  atomLocateRequest: { atomId: string; token: number } | null;
+  atomsVisible: boolean;
   bondAlgorithm: BondAlgorithm;
   distinguishSimilarColors: boolean;
   dragSensitivity: number;
@@ -140,7 +164,14 @@ export function InspectorSidebar({
   fogAffectsUnitCell: boolean;
   showFpsOverlay: boolean;
   showCrystalAxisLabels: boolean;
+  scene: SceneSpec;
+  selectedAtomId: string | null;
+  style: StyleState;
   unitCellLineStyle: UnitCellLineStyle;
+  onActiveObjectsTabChange: (tab: ObjectsPanelTab) => void;
+  onActiveTabChange: (tab: InspectorSidebarTab) => void;
+  onAtomSelect: (atomId: string) => void;
+  onAtomsVisibleChange: (atomsVisible: boolean) => void;
   onBondAlgorithmChange: (bondAlgorithm: BondAlgorithm) => void;
   onDistinguishSimilarColorsChange: (distinguishSimilarColors: boolean) => void;
   onDragSensitivityChange: (dragSensitivity: number) => void;
@@ -150,6 +181,8 @@ export function InspectorSidebar({
   onFogAffectsUnitCellChange: (fogAffectsUnitCell: boolean) => void;
   onShowFpsOverlayChange: (showFpsOverlay: boolean) => void;
   onShowCrystalAxisLabelsChange: (showCrystalAxisLabels: boolean) => void;
+  onElementColorChange: (element: string, color: string) => void;
+  onStyleChange: Dispatch<SetStateAction<StyleState>>;
   onUnitCellLineStyleChange: (lineStyle: UnitCellLineStyle) => void;
 }) {
   return (
@@ -165,19 +198,26 @@ export function InspectorSidebar({
       )}
     >
       <Tabs
-        defaultValue="settings"
+        value={activeTab}
+        onValueChange={(value) => onActiveTabChange(value as InspectorSidebarTab)}
         className="flex min-h-0 flex-1 flex-col gap-0"
       >
         <header className="flex h-16 shrink-0 items-start px-4 pt-4 pr-16">
           <TabsList
             variant="line"
-            className="h-8 w-full justify-start rounded-none p-0"
+            className="h-8 w-full justify-start gap-6 rounded-none p-0"
           >
             <TabsTrigger
               value="settings"
               className="h-8 flex-none px-0 text-[0.875rem] font-semibold after:bottom-[-2px]"
             >
               Settings
+            </TabsTrigger>
+            <TabsTrigger
+              value="objects"
+              className="h-8 flex-none px-0 text-[0.875rem] font-semibold after:bottom-[-2px]"
+            >
+              Objects
             </TabsTrigger>
           </TabsList>
         </header>
@@ -210,6 +250,21 @@ export function InspectorSidebar({
               onShowFpsOverlayChange={onShowFpsOverlayChange}
               onShowCrystalAxisLabelsChange={onShowCrystalAxisLabelsChange}
               onUnitCellLineStyleChange={onUnitCellLineStyleChange}
+            />
+          </TabsContent>
+          <TabsContent value="objects" className="m-0 min-h-0">
+            <ObjectsPanel
+              activeTab={activeObjectsTab}
+              atomLocateRequest={atomLocateRequest}
+              atomsVisible={atomsVisible}
+              onActiveTabChange={onActiveObjectsTabChange}
+              onAtomSelect={onAtomSelect}
+              onAtomsVisibleChange={onAtomsVisibleChange}
+              onElementColorChange={onElementColorChange}
+              onStyleChange={onStyleChange}
+              scene={scene}
+              selectedAtomId={selectedAtomId}
+              style={style}
             />
           </TabsContent>
         </div>

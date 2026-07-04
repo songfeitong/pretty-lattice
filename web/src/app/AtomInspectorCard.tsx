@@ -1,4 +1,4 @@
-import { Copy, X } from "lucide-react";
+import { Copy, ListTree, X } from "lucide-react";
 import { useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,11 @@ import {
   formatCellOffset,
   type InspectedAtomInfo,
 } from "./atomInspector";
-import { atomColorForScheme, type ElementColorOverrides } from "./colorSchemes";
-import type { StyleState } from "../model";
+import {
+  resolveAtomAppearance,
+  type StyleState,
+} from "../model";
+import type { ElementColorOverrides } from "./colorSchemes";
 import { GLASS_SURFACE_CLASS, TOOL_ICON_BUTTON_CLASS } from "./surface";
 
 export function AtomInspectorCard({
@@ -22,15 +25,24 @@ export function AtomInspectorCard({
   info,
   isInspectorOpen,
   onClose,
+  onLocateInObjects,
+  style,
 }: {
   colorScheme: StyleState["colorScheme"];
   colorOverrides?: ElementColorOverrides;
   info: InspectedAtomInfo;
   isInspectorOpen: boolean;
   onClose: () => void;
+  onLocateInObjects?: (atomId: string) => void;
+  style: StyleState;
 }) {
   const { atom, canonicalAtom } = info;
-  const atomColor = atomColorForScheme(canonicalAtom, colorScheme, colorOverrides);
+  const atomColor = resolveAtomAppearance({
+    atom: canonicalAtom,
+    colorOverrides,
+    colorScheme,
+    style,
+  }).color;
   const handleCopy = useCallback(() => {
     void navigator.clipboard?.writeText(atomInspectorCopyText(info));
   }, [info]);
@@ -46,7 +58,7 @@ export function AtomInspectorCard({
         GLASS_SURFACE_CLASS,
       )}
     >
-      <div className="grid h-7 grid-cols-[1.5rem_0.875rem_minmax(8rem,1fr)_1.5rem] items-center gap-2">
+      <div className="grid h-7 grid-cols-[1.5rem_0.875rem_minmax(7rem,1fr)_1.5rem_1.5rem] items-center gap-2">
         <TooltipProvider delayDuration={500}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -89,6 +101,24 @@ export function AtomInspectorCard({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Copy atom info</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Locate atom in Objects"
+                className={cn(TOOL_ICON_BUTTON_CLASS, "size-6 rounded-[9px] [&_svg]:size-3.25")}
+                onClick={() => onLocateInObjects?.(atom.id)}
+              >
+                <ListTree aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Locate in Objects</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

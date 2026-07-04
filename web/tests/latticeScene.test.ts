@@ -241,11 +241,14 @@ describe("computeSceneLayout", () => {
   });
 
   test("builds atom render items for batched atom rendering", () => {
+    const style = {
+      ...createDefaultStyle(),
+      atomRadius: 150,
+    };
     const [item] = createAtomRenderItems({
       atoms: [atom("Si-0", [1, 2, 3])],
-      colorScheme: createDefaultStyle().colorScheme,
-      radiusModel: "uniform",
-      radiusScale: 1.5,
+      colorScheme: style.colorScheme,
+      style,
     });
 
     expect(item?.id).toBe("Si-0");
@@ -627,6 +630,7 @@ describe("computeSceneLayout", () => {
         secondValidPolyhedron,
         invalidFacePolyhedron,
       ],
+      style: createDefaultStyle(),
     });
 
     expect(batch).not.toBeNull();
@@ -655,6 +659,7 @@ describe("computeSceneLayout", () => {
           centerAtomIndex: 1,
         },
       ],
+      style: createDefaultStyle(),
     });
 
     expect(batch).not.toBeNull();
@@ -690,6 +695,7 @@ describe("computeSceneLayout", () => {
           hullAtomIndices: [4, 5, 6, 7],
         },
       ],
+      style: createDefaultStyle(),
     });
 
     expect(batch).not.toBeNull();

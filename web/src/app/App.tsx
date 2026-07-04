@@ -50,17 +50,25 @@ import { StructureSummaryCard } from "./panels/StructureSummaryCard";
 import {
   InspectorSidebar,
   InspectorToggle,
+  type InspectorSidebarTab,
 } from "./inspector/InspectorSidebar";
+import type { ObjectsPanelTab } from "./inspector/ObjectsPanel";
 import {
+  CUSTOM_ATOM_RADIUS_MODEL,
   createDefaultComponentOpacity,
   createDefaultComponentVisibility,
   createDefaultStyle,
   baseColorSchemeForStyle,
+  clearAtomOverridePropertyForElement,
+  clearObjectStyleProperty,
+  canonicalAtomsForObjectStyles,
   DEFAULT_SHOW_CRYSTAL_AXIS_LABELS,
   DEFAULT_UNIT_CELL_LINE_STYLE,
-  createCustomColormapFromScheme,
+  createCustomAtomRadii,
+  createCustomColormapFromStyle,
   defaultPreviewMeshQualityForScene,
   elementColorOverridesForStyle,
+  type AtomRadiusStyleModel,
   type MeshQuality,
   type UnitCellLineStyle,
   hasPolyhedra,
@@ -97,6 +105,12 @@ export function App() {
   );
   const [inspectedAtomId, setInspectedAtomId] = useState<string | null>(null);
   const [pulseAtom, setPulseAtom] = useState<{ atomId: string; token: number } | null>(null);
+  const [activeInspectorTab, setActiveInspectorTab] =
+    useState<InspectorSidebarTab>("settings");
+  const [activeObjectsTab, setActiveObjectsTab] =
+    useState<ObjectsPanelTab>("atoms");
+  const [atomLocateRequest, setAtomLocateRequest] =
+    useState<{ atomId: string; token: number } | null>(null);
   const [activeCommonPanelTab, setActiveCommonPanelTab] =
     useState<CommonPanelTab>("display");
   const [cameraInteractionStore] = useState(createCameraInteractionStore);
@@ -105,6 +119,7 @@ export function App() {
   const viewportSize = useViewportSize();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inspectedAtomIdRef = useRef<string | null>(null);
+  const previousAtomsVisibleRef = useRef(componentVisibility.atoms);
   const resetLoadedPreviewStateRef = useRef<ResetLoadedPreviewState>(() => {});
   const resetLoadedPreviewStateForPreview = useCallback<ResetLoadedPreviewState>(
     (nextScene, options) => {
@@ -142,8 +157,12 @@ export function App() {
     resetLoadedPreviewState: resetLoadedPreviewStateForPreview,
   });
   const visibleScene = useMemo(
-    () => visibleSceneForComponents(scene, componentVisibility),
-    [componentVisibility, scene],
+    () => visibleSceneForComponents(scene, componentVisibility, style.objectStyles),
+    [componentVisibility, scene, style.objectStyles],
+  );
+  const objectStyleAtoms = useMemo(
+    () => (scene ? canonicalAtomsForObjectStyles(scene.atoms) : []),
+    [scene],
   );
   const inspectedAtomInfo = useMemo(
     () => inspectedAtomInfoForId(visibleScene, inspectedAtomId),
@@ -226,6 +245,20 @@ export function App() {
   }, [inspectedAtomId]);
 
   useEffect(() => {
+    if (!previousAtomsVisibleRef.current && componentVisibility.atoms) {
+      setStyle((currentStyle) => ({
+        ...currentStyle,
+        objectStyles: clearObjectStyleProperty(
+          currentStyle.objectStyles,
+          "visible",
+        ),
+      }));
+    }
+
+    previousAtomsVisibleRef.current = componentVisibility.atoms;
+  }, [componentVisibility.atoms]);
+
+  useEffect(() => {
     if (!pulseAtom) {
       return;
     }
@@ -270,6 +303,7 @@ export function App() {
       resetCameraForScene,
       resetExportState,
       resetLockedInteractionFeedback,
+      setErrorMessage,
     ],
   );
 
@@ -307,10 +341,95 @@ export function App() {
     }));
   }, []);
 
+  const requestAtomLocateInObjects = useCallback((atomId: string) => {
+    setAtomLocateRequest((currentRequest) => ({
+      atomId,
+      token: (currentRequest?.token ?? 0) + 1,
+    }));
+  }, []);
+
   const handleAtomInspect = useCallback((atomId: string | null) => {
     inspectedAtomIdRef.current = atomId;
     setInspectedAtomId(atomId);
+    if (
+      atomId &&
+      isInspectorOpen &&
+      activeInspectorTab === "objects" &&
+      activeObjectsTab === "atoms"
+    ) {
+      requestAtomLocateInObjects(atomId);
+    }
+  }, [
+    activeInspectorTab,
+    activeObjectsTab,
+    isInspectorOpen,
+    requestAtomLocateInObjects,
+  ]);
+
+  const handleLocateAtomInObjects = useCallback((atomId: string) => {
+    setIsInspectorOpen(true);
+    setActiveInspectorTab("objects");
+    setActiveObjectsTab("atoms");
+    requestAtomLocateInObjects(atomId);
+  }, [requestAtomLocateInObjects]);
+
+  const handleAtomsVisibleChange = useCallback((atomsVisible: boolean) => {
+    setComponentVisibility((currentVisibility) =>
+      currentVisibility.atoms === atomsVisible
+        ? currentVisibility
+        : {
+            ...currentVisibility,
+            atoms: atomsVisible,
+          },
+    );
   }, []);
+
+  const handleAtomRadiusModelChange = useCallback(
+    (atomRadiusModel: AtomRadiusStyleModel) => {
+      setStyle((currentStyle) => {
+        if (atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL) {
+          if (currentStyle.atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL) {
+            return currentStyle;
+          }
+
+          const customAtomRadii = createCustomAtomRadii(
+            objectStyleAtoms,
+            currentStyle,
+          );
+          const objectStylesWithoutRadius = clearObjectStyleProperty(
+            currentStyle.objectStyles,
+            "radius",
+          );
+
+          return {
+            ...currentStyle,
+            atomRadiusModel,
+            objectStyles: {
+              ...objectStylesWithoutRadius,
+              customAtomRadii,
+              customRadiusBaseModel: currentStyle.atomRadiusModel,
+              customRadiusPreviousScale: currentStyle.atomRadius,
+            },
+          };
+        }
+
+        return {
+          ...currentStyle,
+          atomRadius:
+            currentStyle.atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL &&
+            currentStyle.objectStyles.customRadiusPreviousScale !== null
+              ? currentStyle.objectStyles.customRadiusPreviousScale
+              : currentStyle.atomRadius,
+          atomRadiusModel,
+          objectStyles: clearObjectStyleProperty(
+            currentStyle.objectStyles,
+            "radius",
+          ),
+        };
+      });
+    },
+    [objectStyleAtoms],
+  );
 
   const elementColorOverrides = useMemo(
     () =>
@@ -326,10 +445,20 @@ export function App() {
   );
   const handleLegendElementColorChange = useCallback((element: string, color: string) => {
     setStyle((currentStyle) => {
-      const draft =
-        currentStyle.colorSchemeMode === "custom" && currentStyle.customColormap
-          ? currentStyle.customColormap
-          : createCustomColormapFromScheme(currentStyle.colorScheme);
+      const draft = scene
+        ? createCustomColormapFromStyle(scene.atoms, currentStyle)
+        : (
+            currentStyle.customColormap ??
+            createCustomColormapFromStyle([], currentStyle)
+          );
+      const objectStyles = scene
+        ? clearAtomOverridePropertyForElement(
+            currentStyle.objectStyles,
+            scene.atoms,
+            element,
+            "color",
+          )
+        : currentStyle.objectStyles;
 
       return {
         ...currentStyle,
@@ -342,9 +471,10 @@ export function App() {
             [element]: color,
           },
         },
+        objectStyles,
       };
     });
-  }, []);
+  }, [scene]);
   const previewSafeArea = previewSafeAreaForInspector();
   const sceneOffsetX = sceneOffsetXForInspector(isInspectorOpen, viewportSize.width);
   const effectivePreviewSafeArea = useMemo(
@@ -533,6 +663,8 @@ export function App() {
           info={inspectedAtomInfo}
           isInspectorOpen={isInspectorOpen}
           onClose={() => setInspectedAtomId(null)}
+          onLocateInObjects={handleLocateAtomInObjects}
+          style={style}
         />
       ) : null}
 
@@ -566,9 +698,7 @@ export function App() {
               hasPolyhedra={hasPolyhedra(scene)}
               isExporting={isExporting}
               onActiveTabChange={setActiveCommonPanelTab}
-              onAtomRadiusModelChange={(atomRadiusModel) => {
-                setStyle((currentStyle) => ({ ...currentStyle, atomRadiusModel }));
-              }}
+              onAtomRadiusModelChange={handleAtomRadiusModelChange}
               onCameraPrimaryChange={handleCameraPrimaryChange}
               onCameraRollPreviewChange={handleCameraRollPreviewChange}
               onCameraRollPreviewStart={handleCameraRollPreviewStart}
@@ -622,6 +752,10 @@ export function App() {
             <ContextMenuTrigger asChild>
               <div className="contents">
                 <InspectorSidebar
+                  activeObjectsTab={activeObjectsTab}
+                  activeTab={activeInspectorTab}
+                  atomLocateRequest={atomLocateRequest}
+                  atomsVisible={componentVisibility.atoms}
                   bondAlgorithm={bondAlgorithm}
                   dragSensitivity={viewState.dragSensitivity}
                   interactionMode={viewState.interactionMode}
@@ -632,9 +766,16 @@ export function App() {
                   previewMeshQuality={previewMeshQuality}
                   fogAffectsUnitCell={style.fogAffectsUnitCell}
                   distinguishSimilarColors={style.distinguishSimilarColors}
+                  scene={scene}
+                  selectedAtomId={inspectedAtomId}
                   showFpsOverlay={viewState.showFpsOverlay}
                   showCrystalAxisLabels={showCrystalAxisLabels}
+                  style={style}
                   unitCellLineStyle={unitCellLineStyle}
+                  onActiveObjectsTabChange={setActiveObjectsTab}
+                  onActiveTabChange={setActiveInspectorTab}
+                  onAtomSelect={handleAtomInspect}
+                  onAtomsVisibleChange={handleAtomsVisibleChange}
                   onBondAlgorithmChange={(nextBondAlgorithm) => {
                     void handleBondAlgorithmChange(nextBondAlgorithm);
                   }}
@@ -644,8 +785,10 @@ export function App() {
                   onPreviewMeshQualityChange={handlePreviewMeshQualityChange}
                   onFogAffectsUnitCellChange={handleFogAffectsUnitCellChange}
                   onDistinguishSimilarColorsChange={handleDistinguishSimilarColorsChange}
+                  onElementColorChange={handleLegendElementColorChange}
                   onShowFpsOverlayChange={handleShowFpsOverlayChange}
                   onShowCrystalAxisLabelsChange={setShowCrystalAxisLabels}
+                  onStyleChange={setStyle}
                   onUnitCellLineStyleChange={setUnitCellLineStyle}
                 />
               </div>

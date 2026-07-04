@@ -12,7 +12,7 @@ import {
   Vector3,
 } from "three";
 
-import type { AtomRadiusModel, AtomSpec } from "../api/scene";
+import type { AtomSpec } from "../api/scene";
 import type { ElementColorOverrides } from "../model/colorSchemes";
 import type { StyleState } from "../model";
 import type { ResolvedStructureMaterialFamily } from "./materialPresetResolver";
@@ -69,8 +69,7 @@ export function BatchedAtoms({
   opacity,
   pulseAtomId,
   pulseToken,
-  radiusModel,
-  radiusScale,
+  style,
 }: {
   atoms: AtomSpec[];
   colorScheme: StyleState["colorScheme"];
@@ -85,8 +84,7 @@ export function BatchedAtoms({
   opacity: number;
   pulseAtomId: string | null;
   pulseToken: number;
-  radiusModel: AtomRadiusModel;
-  radiusScale: number;
+  style: StyleState;
 }) {
   const meshRef = useRef<BatchedMesh | null>(null);
   const pickRegistryRef = useRef<BatchPickRegistry<AtomRenderItem>>(
@@ -102,10 +100,9 @@ export function BatchedAtoms({
         atoms,
         colorScheme,
         colorOverrides,
-        radiusModel,
-        radiusScale,
+        style,
       }),
-    [atoms, colorOverrides, colorScheme, radiusModel, radiusScale],
+    [atoms, colorOverrides, colorScheme, style],
   );
   const itemByAtomId = useMemo(
     () => atomRenderItemById(atomRenderItems),

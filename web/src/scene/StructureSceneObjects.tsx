@@ -280,14 +280,14 @@ export function StructureSceneObjects({
         colorMode: style.bondColorMode,
         colorScheme,
         colorOverrides,
+        style,
       }),
     [
       colorScheme,
       colorOverrides,
       scene.atoms,
       scene.bonds,
-      style.bondColor,
-      style.bondColorMode,
+      style,
     ],
   );
   const handlePointerMissed = useCallback(() => {
@@ -319,6 +319,7 @@ export function StructureSceneObjects({
           opacity={componentOpacity.polyhedra / 100}
           polyhedra={scene.polyhedra}
           lineWidthScale={polyhedronEdgeLineWidthScale}
+          style={style}
         />
         <BatchedBonds
           bondRenderItems={bondRenderItems}
@@ -342,9 +343,8 @@ export function StructureSceneObjects({
             onLockedInteractionAttempt={onLockedInteractionAttempt}
             pulseAtomId={pulseAtomId}
             pulseToken={pulseToken}
-            radiusModel={style.atomRadiusModel}
-            radiusScale={style.atomRadius / 100}
             opacity={componentOpacity.atoms / 100}
+            style={style}
           />
         ) : null}
       </group>

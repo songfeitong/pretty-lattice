@@ -27,7 +27,11 @@ export async function createStructureExportFile({
     throw new Error(validation.message ?? "Export settings are invalid.");
   }
 
-  const visibleScene = visibleSceneForComponents(scene, componentVisibility);
+  const visibleScene = visibleSceneForComponents(
+    scene,
+    componentVisibility,
+    style.objectStyles,
+  );
   if (!visibleScene) {
     throw new Error("No structure is available to export.");
   }

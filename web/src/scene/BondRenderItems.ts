@@ -5,13 +5,13 @@ import type {
   BondSpec,
 } from "../api/scene";
 import {
-  atomColorForScheme,
   type ElementColorOverrides,
 } from "../model/colorSchemes";
 import type {
   BondColorMode,
   StyleState,
 } from "../model";
+import { resolveAtomAppearance } from "../model";
 
 const BOND_UP_AXIS = new Vector3(0, 1, 0);
 
@@ -32,6 +32,7 @@ export function createBondRenderItems({
   colorMode,
   colorScheme,
   colorOverrides,
+  style,
 }: {
   atoms: AtomSpec[];
   bondColor: string;
@@ -39,6 +40,7 @@ export function createBondRenderItems({
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
   colorOverrides?: ElementColorOverrides;
+  style: StyleState;
 }): BondRenderItem[] {
   const items: BondRenderItem[] = [];
 
@@ -56,24 +58,36 @@ export function createBondRenderItems({
     if (length <= 0) {
       continue;
     }
+    const startColor =
+      colorMode === "bicolor"
+        ? resolveAtomAppearance({
+            atom: startAtom,
+            colorOverrides,
+            colorScheme,
+            style,
+          }).color
+        : bondColor;
+    const endColor =
+      colorMode === "bicolor"
+        ? resolveAtomAppearance({
+            atom: endAtom,
+            colorOverrides,
+            colorScheme,
+            style,
+          }).color
+        : bondColor;
 
     items.push({
       center: start.clone().add(end).multiplyScalar(0.5),
       endAtomIndex: bond.endAtomIndex,
-      endColor:
-        colorMode === "bicolor"
-          ? atomColorForScheme(endAtom, colorScheme, colorOverrides)
-          : bondColor,
+      endColor,
       length,
       quaternion: new Quaternion().setFromUnitVectors(
         BOND_UP_AXIS,
         direction.clone().normalize(),
       ),
       startAtomIndex: bond.startAtomIndex,
-      startColor:
-        colorMode === "bicolor"
-          ? atomColorForScheme(startAtom, colorScheme, colorOverrides)
-          : bondColor,
+      startColor,
     });
   }
 

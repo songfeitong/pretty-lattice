@@ -5,6 +5,10 @@ import type {
   SceneSpec,
   VisibilityDependency,
 } from "../api/scene";
+import {
+  visibleSceneForObjectStyles,
+  type ObjectStyleState,
+} from "./objectStyles";
 
 export interface ComponentVisibilityState {
   atoms: boolean;
@@ -86,6 +90,7 @@ export function hasPolyhedra(scene: SceneSpec | null): boolean {
 export function visibleSceneForComponents(
   scene: SceneSpec | null,
   visibility: ComponentVisibilityState,
+  objectStyles?: ObjectStyleState,
 ): SceneSpec | null {
   if (!scene) {
     return scene;
@@ -106,12 +111,18 @@ export function visibleSceneForComponents(
     ? scene.polyhedra.flatMap((polyhedron) => remapPolyhedron(polyhedron, atomIndexMap))
     : [];
 
-  return {
+  const visibleScene = {
     ...scene,
     atoms,
     bonds,
     polyhedra,
   };
+
+  if (!objectStyles) {
+    return visibleScene;
+  }
+
+  return visibleSceneForObjectStyles(visibleScene, objectStyles);
 }
 
 function isAtomAvailable(atom: AtomSpec, visibility: ComponentVisibilityState): boolean {

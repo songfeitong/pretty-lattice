@@ -3,6 +3,7 @@ export * from "./crystalCameraState";
 export * from "./displayState";
 export * from "./exportSettings";
 export * from "./layout";
+export * from "./objectStyles";
 export * from "./rendering";
 export * from "./structureLimits";
 export * from "./vector";
