@@ -1,5 +1,4 @@
 import {
-  flexRender,
   getCoreRowModel,
   useReactTable,
   type ColumnDef,
@@ -89,6 +88,8 @@ type ObjectsAtomRow =
       kind: "atom";
     };
 
+type ObjectsAtomColumnId = "site" | "radius" | "color" | "visible";
+
 interface VirtualViewport {
   height: number;
   scrollTop: number;
@@ -108,6 +109,17 @@ const OBJECTS_TABLE_ROW_HEIGHT = 32;
 const OBJECTS_TABLE_VIRTUAL_OVERSCAN = 8;
 const OBJECTS_TABLE_DEFAULT_VIEWPORT_HEIGHT = 640;
 const RADIUS_STEP = 0.01;
+const OBJECTS_ATOM_COLUMNS = [
+  { id: "site", header: "Site" },
+  { id: "radius", header: "R (Å)" },
+  { id: "color", header: "Color" },
+  { id: "visible", header: "Visible" },
+] satisfies Array<{ id: ObjectsAtomColumnId; header: string }>;
+const OBJECTS_ATOM_COLUMN_DEFS: ColumnDef<ObjectsAtomRow>[] =
+  OBJECTS_ATOM_COLUMNS.map((column) => ({
+    id: column.id,
+    header: column.header,
+  }));
 
 export function ObjectsPanel({
   activeTab,
@@ -204,12 +216,27 @@ function ObjectsAtomsTable({
     scrollTop: 0,
   }));
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const activeColorPickerIdRef = useRef<string | null>(null);
+  const pendingColorPickerOpenTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     setExpandedElements({});
     setActiveColorPickerId(null);
+    activeColorPickerIdRef.current = null;
     setPendingLocateAtomId(null);
+    if (pendingColorPickerOpenTimeoutRef.current !== null) {
+      window.clearTimeout(pendingColorPickerOpenTimeoutRef.current);
+      pendingColorPickerOpenTimeoutRef.current = null;
+    }
   }, [scene]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingColorPickerOpenTimeoutRef.current !== null) {
+        window.clearTimeout(pendingColorPickerOpenTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const objectAtoms = useMemo(
     () => canonicalAtomsForObjectStyles(scene.atoms),
@@ -329,12 +356,39 @@ function ObjectsAtomsTable({
   }, [pendingLocateAtomId, refreshVirtualViewport, rowIndexByAtomId]);
 
   const handleColorPickerOpenChange = useCallback((pickerId: string, open: boolean) => {
-    setActiveColorPickerId((currentPickerId) => {
-      if (open) {
-        return pickerId;
+    if (open) {
+      if (pendingColorPickerOpenTimeoutRef.current !== null) {
+        window.clearTimeout(pendingColorPickerOpenTimeoutRef.current);
+        pendingColorPickerOpenTimeoutRef.current = null;
       }
 
-      return currentPickerId === pickerId ? null : currentPickerId;
+      if (
+        activeColorPickerIdRef.current !== null &&
+        activeColorPickerIdRef.current !== pickerId
+      ) {
+        activeColorPickerIdRef.current = null;
+        setActiveColorPickerId(null);
+        pendingColorPickerOpenTimeoutRef.current = window.setTimeout(() => {
+          activeColorPickerIdRef.current = pickerId;
+          pendingColorPickerOpenTimeoutRef.current = null;
+          setActiveColorPickerId(pickerId);
+        }, 0);
+        return;
+      }
+
+      activeColorPickerIdRef.current = pickerId;
+      setActiveColorPickerId(pickerId);
+      return;
+    }
+
+    setActiveColorPickerId((currentPickerId) => {
+      if (currentPickerId !== pickerId) {
+        activeColorPickerIdRef.current = currentPickerId;
+        return currentPickerId;
+      }
+
+      activeColorPickerIdRef.current = null;
+      return null;
     });
   }, []);
 
@@ -475,178 +529,149 @@ function ObjectsAtomsTable({
     onElementColorChange(group.element, elementAppearance.color);
   }
 
-  const columns = useMemo<ColumnDef<ObjectsAtomRow>[]>(
-    () => [
-      {
-        id: "site",
-        header: "Site",
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.kind === "element") {
-            return (
-              <ElementSiteCell
-                atomCount={item.atoms.length}
-                expanded={expandedElements[item.element] === true}
-                element={item.element}
-                onApply={() => applyElementToAllAtoms(item)}
-                onToggle={() => toggleElementExpanded(item.element)}
-              />
-            );
-          }
-
-          return <AtomSiteCell atom={item.atom} />;
-        },
-      },
-      {
-        id: "radius",
-        header: "R (Å)",
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.kind === "element") {
-            const group = { atoms: item.atoms, element: item.element };
-            const appearance =
-              elementAppearanceByElement.get(item.element) ??
-              elementRowAppearance(
-                group,
-                style,
-                colorScheme,
-                colorOverrides,
-                atomsVisible,
-              );
-            return (
-              <RadiusCell
-                ariaLabel={`${item.element} radius`}
-                value={appearance.radius}
-                onCommit={(radius) => setElementRadius(item.element, radius)}
-              />
-            );
-          }
-
-          const appearance = resolveAtomAppearanceForRow(
-            item.atom,
-            style,
-            colorScheme,
-            colorOverrides,
-            atomsVisible,
-          );
+  function renderObjectsAtomCell(
+    item: ObjectsAtomRow,
+    columnId: ObjectsAtomColumnId,
+  ) {
+    switch (columnId) {
+      case "site": {
+        if (item.kind === "element") {
           return (
-            <RadiusCell
-              ariaLabel={`${formatAtomSite(item.atom)} radius`}
-              value={appearance.radius}
-              onCommit={(radius) => setAtomRadius(item.atom, radius)}
+            <ElementSiteCell
+              atomCount={item.atoms.length}
+              expanded={expandedElements[item.element] === true}
+              element={item.element}
+              onApply={() => applyElementToAllAtoms(item)}
+              onToggle={() => toggleElementExpanded(item.element)}
             />
           );
-        },
-      },
-      {
-        id: "color",
-        header: "Color",
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.kind === "element") {
-            const group = { atoms: item.atoms, element: item.element };
-            const appearance =
-              elementAppearanceByElement.get(item.element) ??
-              elementRowAppearance(
-                group,
-                style,
-                colorScheme,
-                colorOverrides,
-                atomsVisible,
-              );
-            return (
-              <ColorCell
-                active={activeColorPickerId === elementColorPickerId(item.element)}
-                ariaLabel={`Set ${item.element} color`}
-                color={appearance.color}
-                inputLabel={`${item.element} color value`}
-                onChange={(color) => onElementColorChange(item.element, color)}
-                onOpenChange={(open) =>
-                  handleColorPickerOpenChange(elementColorPickerId(item.element), open)
-                }
-              />
-            );
-          }
+        }
 
-          const appearance = resolveAtomAppearanceForRow(
-            item.atom,
-            style,
-            colorScheme,
-            colorOverrides,
-            atomsVisible,
+        return <AtomSiteCell atom={item.atom} />;
+      }
+      case "radius": {
+        if (item.kind === "element") {
+          const group = { atoms: item.atoms, element: item.element };
+          const appearance =
+            elementAppearanceByElement.get(item.element) ??
+            elementRowAppearance(
+              group,
+              style,
+              colorScheme,
+              colorOverrides,
+              atomsVisible,
+            );
+          return (
+            <RadiusCell
+              ariaLabel={`${item.element} radius`}
+              value={appearance.radius}
+              onCommit={(radius) => setElementRadius(item.element, radius)}
+            />
           );
+        }
+
+        const appearance = resolveAtomAppearanceForRow(
+          item.atom,
+          style,
+          colorScheme,
+          colorOverrides,
+          atomsVisible,
+        );
+        return (
+          <RadiusCell
+            ariaLabel={`${formatAtomSite(item.atom)} radius`}
+            value={appearance.radius}
+            onCommit={(radius) => setAtomRadius(item.atom, radius)}
+          />
+        );
+      }
+      case "color": {
+        if (item.kind === "element") {
+          const group = { atoms: item.atoms, element: item.element };
+          const appearance =
+            elementAppearanceByElement.get(item.element) ??
+            elementRowAppearance(
+              group,
+              style,
+              colorScheme,
+              colorOverrides,
+              atomsVisible,
+            );
           return (
             <ColorCell
-              active={activeColorPickerId === atomColorPickerId(item.atom.id)}
-              ariaLabel={`Set ${formatAtomSite(item.atom)} color`}
+              active={activeColorPickerId === elementColorPickerId(item.element)}
+              ariaLabel={`Set ${item.element} color`}
               color={appearance.color}
-              inputLabel={`${formatAtomSite(item.atom)} color value`}
-              onChange={(color) => setAtomColor(item.atom, color)}
+              inputLabel={`${item.element} color value`}
+              onChange={(color) => onElementColorChange(item.element, color)}
               onOpenChange={(open) =>
-                handleColorPickerOpenChange(atomColorPickerId(item.atom.id), open)
+                handleColorPickerOpenChange(elementColorPickerId(item.element), open)
               }
             />
           );
-        },
-      },
-      {
-        id: "visible",
-        header: "Visible",
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.kind === "element") {
-            const group = { atoms: item.atoms, element: item.element };
-            const appearance =
-              elementAppearanceByElement.get(item.element) ??
-              elementRowAppearance(
-                group,
-                style,
-                colorScheme,
-                colorOverrides,
-                atomsVisible,
-              );
-            return (
-              <VisibilityCell
-                ariaLabel={`${item.element} visibility`}
-                visible={appearance.visible}
-                onToggle={() => setElementVisible(item.element, !appearance.visible)}
-              />
-            );
-          }
+        }
 
-          const appearance = resolveAtomAppearanceForRow(
-            item.atom,
-            style,
-            colorScheme,
-            colorOverrides,
-            atomsVisible,
-          );
+        const appearance = resolveAtomAppearanceForRow(
+          item.atom,
+          style,
+          colorScheme,
+          colorOverrides,
+          atomsVisible,
+        );
+        return (
+          <ColorCell
+            active={activeColorPickerId === atomColorPickerId(item.atom.id)}
+            ariaLabel={`Set ${formatAtomSite(item.atom)} color`}
+            color={appearance.color}
+            inputLabel={`${formatAtomSite(item.atom)} color value`}
+            onChange={(color) => setAtomColor(item.atom, color)}
+            onOpenChange={(open) =>
+              handleColorPickerOpenChange(atomColorPickerId(item.atom.id), open)
+            }
+          />
+        );
+      }
+      case "visible": {
+        if (item.kind === "element") {
+          const group = { atoms: item.atoms, element: item.element };
+          const appearance =
+            elementAppearanceByElement.get(item.element) ??
+            elementRowAppearance(
+              group,
+              style,
+              colorScheme,
+              colorOverrides,
+              atomsVisible,
+            );
           return (
             <VisibilityCell
-              ariaLabel={`${formatAtomSite(item.atom)} visibility`}
+              ariaLabel={`${item.element} visibility`}
               visible={appearance.visible}
-              onToggle={() => setAtomVisible(item.atom, !appearance.visible)}
+              onToggle={() => setElementVisible(item.element, !appearance.visible)}
             />
           );
-        },
-      },
-    ],
-    [
-      expandedElements,
-      activeColorPickerId,
-      handleColorPickerOpenChange,
-      onElementColorChange,
-      atomsVisible,
-      elementAppearanceByElement,
-      objectAtoms,
-      style,
-      colorOverrides,
-      colorScheme,
-    ],
-  );
+        }
+
+        const appearance = resolveAtomAppearanceForRow(
+          item.atom,
+          style,
+          colorScheme,
+          colorOverrides,
+          atomsVisible,
+        );
+        return (
+          <VisibilityCell
+            ariaLabel={`${formatAtomSite(item.atom)} visibility`}
+            visible={appearance.visible}
+            onToggle={() => setAtomVisible(item.atom, !appearance.visible)}
+          />
+        );
+      }
+    }
+  }
 
   const table = useReactTable({
-    columns,
+    columns: OBJECTS_ATOM_COLUMN_DEFS,
     data: rows,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
@@ -668,30 +693,20 @@ function ObjectsAtomsTable({
           <col className="w-[16%]" />
         </colgroup>
         <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow
-              key={headerGroup.id}
-              className="border-border/70 hover:bg-transparent"
-            >
-              {headerGroup.headers.map((header) => (
-                <TableHead
-                  key={header.id}
-                  className={cn(
-                    "h-7 px-1.5 py-0",
-                    OBJECTS_HEADER_TEXT_CLASS,
-                    header.id === "visible" ? "text-center" : null,
-                  )}
-                >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
+          <TableRow className="border-border/70 hover:bg-transparent">
+            {OBJECTS_ATOM_COLUMNS.map((column) => (
+              <TableHead
+                key={column.id}
+                className={cn(
+                  "h-7 px-1.5 py-0",
+                  OBJECTS_HEADER_TEXT_CLASS,
+                  column.id === "visible" ? "text-center" : null,
+                )}
+              >
+                {column.header}
+              </TableHead>
+            ))}
+          </TableRow>
         </TableHeader>
         <TableBody>
           {topSpacerHeight > 0 ? (
@@ -700,7 +715,10 @@ function ObjectsAtomsTable({
               className="border-0 hover:bg-transparent"
               style={{ height: topSpacerHeight }}
             >
-              <TableCell colSpan={4} className="h-0 border-0 p-0" />
+              <TableCell
+                colSpan={OBJECTS_ATOM_COLUMNS.length}
+                className="h-0 border-0 p-0"
+              />
             </TableRow>
           ) : null}
           {virtualRows.map((tableRow) => {
@@ -724,17 +742,17 @@ function ObjectsAtomsTable({
                   }
                 }}
               >
-                {tableRow.getVisibleCells().map((cell) => (
+                {OBJECTS_ATOM_COLUMNS.map((column) => (
                   <TableCell
-                    key={cell.id}
+                    key={`${tableRow.id}:${column.id}`}
                     className={cn(
                       OBJECTS_CELL_CLASS,
-                      cell.column.id === "visible" || cell.column.id === "color"
+                      column.id === "visible" || column.id === "color"
                         ? "text-center"
                         : null,
                     )}
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    {renderObjectsAtomCell(item, column.id)}
                   </TableCell>
                 ))}
               </TableRow>
@@ -746,7 +764,10 @@ function ObjectsAtomsTable({
               className="border-0 hover:bg-transparent"
               style={{ height: bottomSpacerHeight }}
             >
-              <TableCell colSpan={4} className="h-0 border-0 p-0" />
+              <TableCell
+                colSpan={OBJECTS_ATOM_COLUMNS.length}
+                className="h-0 border-0 p-0"
+              />
             </TableRow>
           ) : null}
         </TableBody>
@@ -948,32 +969,25 @@ function VisibilityCell({
   const Icon = visible ? Eye : EyeOff;
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label={ariaLabel}
-          aria-pressed={visible}
-          className={cn(
-            TOOL_ICON_BUTTON_CLASS,
-            "size-6 rounded-[8px] [&_svg]:size-3.5",
-            visible ? "text-foreground" : "text-muted-foreground/55",
-          )}
-          onClick={(event) => {
-            event.stopPropagation();
-            onToggle();
-          }}
-          onDoubleClick={(event) => event.stopPropagation()}
-        >
-          <Icon aria-hidden="true" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="left">
-        {visible ? "Visible" : "Invisible"}
-      </TooltipContent>
-    </Tooltip>
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      aria-label={ariaLabel}
+      aria-pressed={visible}
+      className={cn(
+        TOOL_ICON_BUTTON_CLASS,
+        "size-6 rounded-[8px] [&_svg]:size-3.5",
+        visible ? "text-foreground" : "text-muted-foreground/55",
+      )}
+      onClick={(event) => {
+        event.stopPropagation();
+        onToggle();
+      }}
+      onDoubleClick={(event) => event.stopPropagation()}
+    >
+      <Icon aria-hidden="true" />
+    </Button>
   );
 }
 

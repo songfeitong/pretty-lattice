@@ -81,6 +81,14 @@ export function HexColorPicker({
             "inline-flex size-[18px] shrink-0 items-center justify-center rounded-md bg-transparent p-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
             triggerClassName,
           )}
+          onClick={(event) => {
+            if (open === undefined) {
+              return;
+            }
+
+            event.preventDefault();
+            onOpenChange?.(!open);
+          }}
         >
           <span
             aria-hidden="true"
