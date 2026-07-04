@@ -1,6 +1,12 @@
 "use client";
 
 import { cva, type VariantProps } from "class-variance-authority";
+import {
+  clampChroma,
+  converter,
+  type Oklch,
+  type Rgb,
+} from "culori";
 import { PipetteIcon } from "lucide-react";
 import {
   Direction as DirectionPrimitive,
@@ -42,7 +48,20 @@ const EYE_DROPPER_NAME = "ColorPickerEyeDropper";
 const FORMAT_SELECT_NAME = "ColorPickerFormatSelect";
 const INPUT_NAME = "ColorPickerInput";
 
-const colorFormats = ["hex", "rgb", "hsl", "hsb"] as const;
+const colorFormats = ["hex", "rgb", "hsl", "oklch"] as const;
+
+const OKLCH_CHROMA_PERCENT_SCALE = 0.4;
+const convertToOklch = converter("oklch");
+const convertToRgb = converter("rgb");
+const CHANNEL_INPUT_CLASS = "w-12";
+
+function getFormatMenuLabel(format: ColorFormat) {
+  return format === "oklch" ? "OKLCH" : format.toUpperCase();
+}
+
+function getFormatTriggerLabel(format: ColorFormat) {
+  return format === "oklch" ? "LCH" : getFormatMenuLabel(format);
+}
 
 interface DivProps extends React.ComponentProps<"div"> {
   asChild?: boolean;
@@ -239,11 +258,15 @@ function colorToString(color: ColorValue, format: ColorFormat = "hex"): string {
         ? `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, ${color.a})`
         : `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
     }
-    case "hsb": {
-      const hsv = rgbToHsv(color);
+    case "oklch": {
+      const oklch = rgbToOklchCssChannels(color);
       return color.a < 1
-        ? `hsba(${hsv.h}, ${hsv.s}%, ${hsv.v}%, ${color.a})`
-        : `hsb(${hsv.h}, ${hsv.s}%, ${hsv.v}%)`;
+        ? `oklch(${formatOklchNumber(oklch.l)}% ${formatOklchNumber(
+            oklch.c,
+          )}% ${formatOklchNumber(oklch.h)}deg / ${color.a})`
+        : `oklch(${formatOklchNumber(oklch.l)}% ${formatOklchNumber(
+            oklch.c,
+          )}% ${formatOklchNumber(oklch.h)}deg)`;
     }
     default:
       return rgbToHex(color);
@@ -289,7 +312,7 @@ function hslToRgb(
   hsl: { h: number; s: number; l: number },
   alpha = 1,
 ): ColorValue {
-  const h = hsl.h / 360;
+  const h = normalizeHue(hsl.h) / 360;
   const s = hsl.s / 100;
   const l = hsl.l / 100;
 
@@ -335,6 +358,80 @@ function hslToRgb(
   };
 }
 
+interface OklchChannelValue {
+  c: number;
+  h: number;
+  l: number;
+}
+
+function rgbToOklchChannels(color: ColorValue): OklchChannelValue {
+  const oklch = rgbToOklchCssChannels(color);
+
+  return {
+    l: Math.round(oklch.l),
+    c: Math.round(oklch.c),
+    h: Math.round(oklch.h),
+  };
+}
+
+function rgbToOklchCssChannels(color: ColorValue): OklchChannelValue {
+  const oklch = convertToOklch(colorValueToCuloriRgb(color));
+
+  return {
+    l: clamp(oklch.l, 0, 1) * 100,
+    c: clamp(oklch.c / OKLCH_CHROMA_PERCENT_SCALE, 0, 1) * 100,
+    h: normalizeHue(oklch.h ?? 0),
+  };
+}
+
+function formatOklchNumber(value: number) {
+  return Number.parseFloat(value.toFixed(4)).toString();
+}
+
+function oklchChannelsToRgb(
+  channels: OklchChannelValue,
+  alpha = 1,
+): ColorValue {
+  const oklch: Oklch = {
+    mode: "oklch",
+    l: clamp(channels.l, 0, 100) / 100,
+    c:
+      (clamp(channels.c, 0, 100) * OKLCH_CHROMA_PERCENT_SCALE) /
+      100,
+    h: normalizeHue(channels.h),
+    alpha,
+  };
+  const clamped = clampChroma(oklch, "oklch");
+  return culoriRgbToColorValue(convertToRgb(clamped), alpha);
+}
+
+function colorValueToCuloriRgb(color: ColorValue): Rgb {
+  return {
+    mode: "rgb",
+    r: clamp(color.r, 0, 255) / 255,
+    g: clamp(color.g, 0, 255) / 255,
+    b: clamp(color.b, 0, 255) / 255,
+    alpha: color.a,
+  };
+}
+
+function culoriRgbToColorValue(color: Rgb, alpha = 1): ColorValue {
+  return {
+    r: Math.round(clamp(color.r, 0, 1) * 255),
+    g: Math.round(clamp(color.g, 0, 1) * 255),
+    b: Math.round(clamp(color.b, 0, 1) * 255),
+    a: color.alpha ?? alpha,
+  };
+}
+
+function normalizeHue(value: number) {
+  return ((value % 360) + 360) % 360;
+}
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
 function parseColorString(value: string): ColorValue | null {
   const trimmed = value.trim();
 
@@ -364,70 +461,27 @@ function parseColorString(value: string): ColorValue | null {
     };
   }
 
-  // Parse hsl/hsla colors
   const hslMatch = trimmed.match(
     /^hsla?\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*(?:,\s*([\d.]+))?\s*\)$/,
   );
   if (hslMatch) {
     const h = Number.parseInt(hslMatch[1] ?? "0", 10);
-    const s = Number.parseInt(hslMatch[2] ?? "0", 10) / 100;
-    const l = Number.parseInt(hslMatch[3] ?? "0", 10) / 100;
+    const s = Number.parseInt(hslMatch[2] ?? "0", 10);
+    const l = Number.parseInt(hslMatch[3] ?? "0", 10);
     const a = hslMatch[4] ? Number.parseFloat(hslMatch[4]) : 1;
-
-    // Convert HSL to RGB
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = l - c / 2;
-
-    let r = 0;
-    let g = 0;
-    let b = 0;
-
-    if (h >= 0 && h < 60) {
-      r = c;
-      g = x;
-      b = 0;
-    } else if (h >= 60 && h < 120) {
-      r = x;
-      g = c;
-      b = 0;
-    } else if (h >= 120 && h < 180) {
-      r = 0;
-      g = c;
-      b = x;
-    } else if (h >= 180 && h < 240) {
-      r = 0;
-      g = x;
-      b = c;
-    } else if (h >= 240 && h < 300) {
-      r = x;
-      g = 0;
-      b = c;
-    } else if (h >= 300 && h < 360) {
-      r = c;
-      g = 0;
-      b = x;
-    }
-
-    return {
-      r: Math.round((r + m) * 255),
-      g: Math.round((g + m) * 255),
-      b: Math.round((b + m) * 255),
-      a,
-    };
+    return hslToRgb({ h, s, l }, a);
   }
 
-  // Parse hsb/hsba colors
-  const hsbMatch = trimmed.match(
-    /^hsba?\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*(?:,\s*([\d.]+))?\s*\)$/,
+  const oklchMatch = trimmed.match(
+    /^oklch\(\s*([+-]?\d*\.?\d+)%\s+([+-]?\d*\.?\d+)%\s+([+-]?\d*\.?\d+)(?:deg)?(?:\s*\/\s*([\d.]+))?\s*\)$/i,
   );
-  if (hsbMatch) {
-    const h = Number.parseInt(hsbMatch[1] ?? "0", 10);
-    const s = Number.parseInt(hsbMatch[2] ?? "0", 10);
-    const v = Number.parseInt(hsbMatch[3] ?? "0", 10);
-    const a = hsbMatch[4] ? Number.parseFloat(hsbMatch[4]) : 1;
+  if (oklchMatch) {
+    const l = Number.parseFloat(oklchMatch[1] ?? "0");
+    const c = Number.parseFloat(oklchMatch[2] ?? "0");
+    const h = Number.parseFloat(oklchMatch[3] ?? "0");
+    const a = oklchMatch[4] ? Number.parseFloat(oklchMatch[4]) : 1;
 
-    return hsvToRgb({ h, s, v, a });
+    return oklchChannelsToRgb({ l, c, h }, a);
   }
 
   return null;
@@ -443,6 +497,7 @@ interface StoreState {
 }
 
 interface Store {
+  consumeControlledColorEcho: (value: ColorValue) => boolean;
   subscribe: (cb: () => void) => () => void;
   getState: () => StoreState;
   setColor: (value: ColorValue, options?: { emit?: boolean }) => void;
@@ -550,6 +605,7 @@ function ColorPicker(props: ColorPickerProps) {
       format: formatProp ?? defaultFormat,
     };
   });
+  const pendingControlledColorEchoRef = useLazyRef<ColorValue | null>(() => null);
 
   const propsRef = useAsRef({
     onValueChange,
@@ -563,6 +619,11 @@ function ColorPicker(props: ColorPickerProps) {
         listenersRef.current.add(cb);
         return () => listenersRef.current.delete(cb);
       },
+      consumeControlledColorEcho: (value: ColorValue) => {
+        const pendingEcho = pendingControlledColorEchoRef.current;
+        pendingControlledColorEchoRef.current = null;
+        return pendingEcho ? isSameColorValue(pendingEcho, value) : false;
+      },
       getState: () => stateRef.current,
       setColor: (value: ColorValue, options?: { emit?: boolean }) => {
         if (isSameColorValue(stateRef.current.color, value)) return;
@@ -572,6 +633,8 @@ function ColorPicker(props: ColorPickerProps) {
 
         if (options?.emit !== false && propsRef.current.onValueChange) {
           const colorString = colorToString(value, prevState.format);
+          pendingControlledColorEchoRef.current =
+            parseColorString(colorString) ?? value;
           propsRef.current.onValueChange(colorString);
         }
 
@@ -595,6 +658,8 @@ function ColorPicker(props: ColorPickerProps) {
 
         if (options?.emit !== false && propsRef.current.onValueChange) {
           const colorString = colorToString(color, prevState.format);
+          pendingControlledColorEchoRef.current =
+            parseColorString(colorString) ?? color;
           propsRef.current.onValueChange(colorString);
         }
 
@@ -609,6 +674,8 @@ function ColorPicker(props: ColorPickerProps) {
         if (options?.emit !== false && propsRef.current.onValueChange) {
           const colorValue = hsvToRgb(value);
           const colorString = colorToString(colorValue, prevState.format);
+          pendingControlledColorEchoRef.current =
+            parseColorString(colorString) ?? colorValue;
           propsRef.current.onValueChange(colorString);
         }
 
@@ -642,7 +709,7 @@ function ColorPicker(props: ColorPickerProps) {
         }
       },
     };
-  }, [listenersRef, stateRef, propsRef]);
+  }, [listenersRef, pendingControlledColorEchoRef, stateRef, propsRef]);
 
   return (
     <StoreContext.Provider value={store}>
@@ -703,6 +770,10 @@ function ColorPickerImpl(props: ColorPickerImplProps) {
     if (valueProp !== undefined) {
       const currentState = store.getState();
       const color = hexToRgb(valueProp, currentState.color.a);
+      if (store.consumeControlledColorEcho(color)) {
+        return;
+      }
+
       if (isSameColorValue(currentState.color, color)) {
         return;
       }
@@ -1213,13 +1284,13 @@ function ColorPickerFormatSelect(props: ColorPickerFormatSelectProps) {
         size={size ?? "sm"}
         className={cn(className)}
       >
-        <SelectValue />
+        <SelectValue>{getFormatTriggerLabel(format)}</SelectValue>
       </SelectTrigger>
       <SelectContent className={contentClassName}>
         <SelectGroup>
           {colorFormats.map((format) => (
             <SelectItem key={format} value={format} className={itemClassName}>
-              {format.toUpperCase()}
+              {getFormatMenuLabel(format)}
             </SelectItem>
           ))}
         </SelectGroup>
@@ -1242,7 +1313,6 @@ function ColorPickerInput(props: ColorPickerInputProps) {
 
   const color = useStore((state) => state.color);
   const format = useStore((state) => state.format);
-  const hsv = useStore((state) => state.hsv);
 
   const onColorChange = React.useCallback(
     (newColor: ColorValue) => {
@@ -1285,10 +1355,10 @@ function ColorPickerInput(props: ColorPickerInputProps) {
     );
   }
 
-  if (format === "hsb") {
+  if (format === "oklch") {
     return (
-      <HsbInput
-        hsv={hsv}
+      <OklchInput
+        color={color}
         onColorChange={onColorChange}
         context={context}
         {...props}
@@ -1313,14 +1383,28 @@ function isCompleteHexDraft(value: string) {
   return /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
-const inputGroupItemVariants = cva(
+const inputGroupItemLayoutVariants = cva("", {
+  variants: {
+    position: {
+      first: "",
+      middle: "-ms-px",
+      last: "-ms-px",
+      isolated: "",
+    },
+  },
+  defaultVariants: {
+    position: "isolated",
+  },
+});
+
+const inputGroupItemChromeVariants = cva(
   "h-6 px-1.5 text-left font-mono text-[13px] tabular-nums [-moz-appearance:textfield] focus-visible:z-10 focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-1 focus-visible:ring-ring/20 md:text-[13px] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none",
   {
     variants: {
       position: {
         first: "rounded-e-none",
-        middle: "-ms-px rounded-none border-l-0",
-        last: "-ms-px rounded-s-none border-l-0",
+        middle: "rounded-none border-l-0",
+        last: "rounded-s-none border-l-0",
         isolated: "",
       },
     },
@@ -1332,19 +1416,176 @@ const inputGroupItemVariants = cva(
 
 interface InputGroupItemProps
   extends React.ComponentProps<typeof Input>,
-    VariantProps<typeof inputGroupItemVariants> {}
+    VariantProps<typeof inputGroupItemChromeVariants> {
+  layout?: boolean;
+}
 
 function InputGroupItem({
   className,
+  layout = true,
   position,
   ...props
 }: InputGroupItemProps) {
   return (
     <Input
       data-slot="color-picker-input"
-      className={cn(inputGroupItemVariants({ position, className }))}
+      className={cn(
+        layout && inputGroupItemLayoutVariants({ position }),
+        inputGroupItemChromeVariants({ position, className }),
+      )}
       {...props}
     />
+  );
+}
+
+interface NumericChannelInputProps
+  extends Omit<InputGroupItemProps, "value" | "onChange"> {
+  max: number;
+  min?: number;
+  onValueCommit: (value: number) => void;
+  suffix?: string;
+  value: number;
+}
+
+function NumericChannelInput({
+  className,
+  max,
+  min = 0,
+  onBlur: onBlurProp,
+  onFocus: onFocusProp,
+  onKeyDown: onKeyDownProp,
+  onValueCommit,
+  suffix,
+  value,
+  position,
+  ...inputProps
+}: NumericChannelInputProps) {
+  const valueText = String(Math.round(value));
+  const isFocusedRef = React.useRef(false);
+  const skipBlurCommitRef = React.useRef(false);
+  const [draft, setDraft] = React.useState(valueText);
+
+  React.useEffect(() => {
+    if (!isFocusedRef.current) {
+      setDraft(valueText);
+    }
+  }, [valueText]);
+
+  const commitDraft = React.useCallback(
+    (nextDraft: string) => {
+      if (nextDraft === "") {
+        return false;
+      }
+
+      const numericValue = Number.parseInt(nextDraft, 10);
+      if (
+        Number.isNaN(numericValue) ||
+        numericValue < min ||
+        numericValue > max
+      ) {
+        return false;
+      }
+
+      onValueCommit(numericValue);
+      return true;
+    },
+    [max, min, onValueCommit],
+  );
+
+  const onChange = React.useCallback(
+    (event: React.ChangeEvent<InputElement>) => {
+      const nextDraft = event.target.value.replace(/\D/g, "").slice(0, 3);
+      setDraft(nextDraft);
+      commitDraft(nextDraft);
+    },
+    [commitDraft],
+  );
+
+  const onFocus = React.useCallback(
+    (event: React.FocusEvent<InputElement>) => {
+      isFocusedRef.current = true;
+      onFocusProp?.(event);
+    },
+    [onFocusProp],
+  );
+
+  const onBlur = React.useCallback(
+    (event: React.FocusEvent<InputElement>) => {
+      isFocusedRef.current = false;
+      if (skipBlurCommitRef.current) {
+        skipBlurCommitRef.current = false;
+        setDraft(valueText);
+        onBlurProp?.(event);
+        return;
+      }
+
+      const normalizedDraft = event.target.value.replace(/\D/g, "").slice(0, 3);
+      if (commitDraft(normalizedDraft)) {
+        setDraft(String(Number.parseInt(normalizedDraft, 10)));
+      } else {
+        setDraft(valueText);
+      }
+      onBlurProp?.(event);
+    },
+    [commitDraft, onBlurProp, valueText],
+  );
+
+  const onKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<InputElement>) => {
+      if (event.key === "Enter") {
+        if (!commitDraft(event.currentTarget.value)) {
+          setDraft(valueText);
+        }
+        event.currentTarget.blur();
+      } else if (event.key === "Escape") {
+        skipBlurCommitRef.current = true;
+        setDraft(valueText);
+        event.currentTarget.blur();
+      }
+      onKeyDownProp?.(event);
+    },
+    [commitDraft, onKeyDownProp, valueText],
+  );
+
+  const input = (
+    <InputGroupItem
+      {...inputProps}
+      layout={!suffix}
+      position={position}
+      className={cn(suffix ? "w-full pr-3" : className)}
+      inputMode="numeric"
+      pattern="[0-9]*"
+      maxLength={3}
+      min={min}
+      max={max}
+      value={draft}
+      onChange={onChange}
+      onBlur={onBlur}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
+    />
+  );
+
+  if (!suffix) {
+    return input;
+  }
+
+  return (
+    <div
+      className={cn(
+        inputGroupItemLayoutVariants({ position }),
+        "relative flex-none",
+        className,
+      )}
+    >
+      {input}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-1 flex items-center font-mono text-[11px] text-muted-foreground"
+      >
+        {suffix}
+      </span>
+    </div>
   );
 }
 
@@ -1484,7 +1725,7 @@ function HexInput(props: FormatInputProps) {
         pattern="[0-9]*"
         min="0"
         max="100"
-        className="w-14"
+        className={CHANNEL_INPUT_CLASS}
         value={alphaValue}
         onChange={onAlphaChange}
         onBlur={onBlurProp}
@@ -1510,15 +1751,11 @@ function RgbInput(props: FormatInputProps) {
   const bValue = Math.round(color?.b ?? 0);
   const alphaValue = Math.round((color?.a ?? 1) * 100);
 
-  const onChannelChange = React.useCallback(
-    (channel: "r" | "g" | "b" | "a", max: number, isAlpha = false) =>
-      (event: React.ChangeEvent<InputElement>) => {
-        const value = Number.parseInt(event.target.value, 10);
-        if (!Number.isNaN(value) && value >= 0 && value <= max) {
-          const newValue = isAlpha ? value / 100 : value;
-          onColorChange({ ...color, [channel]: newValue });
-        }
-      },
+  const onChannelCommit = React.useCallback(
+    (channel: "r" | "g" | "b" | "a", isAlpha = false) => (value: number) => {
+      const newValue = isAlpha ? value / 100 : value;
+      onColorChange({ ...color, [channel]: newValue });
+    },
     [color, onColorChange],
   );
 
@@ -1527,61 +1764,53 @@ function RgbInput(props: FormatInputProps) {
       data-slot="color-picker-input-wrapper"
       className={cn("flex items-center", className)}
     >
-      <InputGroupItem
+      <NumericChannelInput
+        {...inputProps}
         aria-label="Red color component (0-255)"
         position="first"
-        {...inputProps}
         placeholder="0"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min="0"
-        max="255"
-        className="w-14"
+        min={0}
+        max={255}
+        className={CHANNEL_INPUT_CLASS}
         value={rValue}
-        onChange={onChannelChange("r", 255)}
+        onValueCommit={onChannelCommit("r")}
         disabled={context.disabled}
       />
-      <InputGroupItem
+      <NumericChannelInput
+        {...inputProps}
         aria-label="Green color component (0-255)"
         position="middle"
-        {...inputProps}
         placeholder="0"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min="0"
-        max="255"
-        className="w-14"
+        min={0}
+        max={255}
+        className={CHANNEL_INPUT_CLASS}
         value={gValue}
-        onChange={onChannelChange("g", 255)}
+        onValueCommit={onChannelCommit("g")}
         disabled={context.disabled}
       />
-      <InputGroupItem
+      <NumericChannelInput
+        {...inputProps}
         aria-label="Blue color component (0-255)"
         position={withoutAlpha ? "last" : "middle"}
-        {...inputProps}
         placeholder="0"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min="0"
-        max="255"
-        className="w-14"
+        min={0}
+        max={255}
+        className={CHANNEL_INPUT_CLASS}
         value={bValue}
-        onChange={onChannelChange("b", 255)}
+        onValueCommit={onChannelCommit("b")}
         disabled={context.disabled}
       />
       {!withoutAlpha && (
-        <InputGroupItem
+        <NumericChannelInput
+          {...inputProps}
           aria-label="Alpha transparency percentage"
           position="last"
-          {...inputProps}
           placeholder="100"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          min="0"
-          max="100"
-          className="w-14"
+          min={0}
+          max={100}
+          className={CHANNEL_INPUT_CLASS}
           value={alphaValue}
-          onChange={onChannelChange("a", 100, true)}
+          onValueCommit={onChannelCommit("a", true)}
           disabled={context.disabled}
         />
       )}
@@ -1602,25 +1831,18 @@ function HslInput(props: FormatInputProps) {
   const hsl = React.useMemo(() => rgbToHsl(color), [color]);
   const alphaValue = Math.round((color?.a ?? 1) * 100);
 
-  const onHslChannelChange = React.useCallback(
-    (channel: "h" | "s" | "l", max: number) =>
-      (event: React.ChangeEvent<InputElement>) => {
-        const value = Number.parseInt(event.target.value, 10);
-        if (!Number.isNaN(value) && value >= 0 && value <= max) {
-          const newHsl = { ...hsl, [channel]: value };
-          const newColor = hslToRgb(newHsl, color?.a ?? 1);
-          onColorChange(newColor);
-        }
-      },
-    [hsl, color, onColorChange],
+  const onHslChannelCommit = React.useCallback(
+    (channel: "h" | "s" | "l") => (value: number) => {
+      const newHsl = { ...hsl, [channel]: value };
+      const newColor = hslToRgb(newHsl, color?.a ?? 1);
+      onColorChange(newColor);
+    },
+    [hsl, color?.a, onColorChange],
   );
 
-  const onAlphaChange = React.useCallback(
-    (event: React.ChangeEvent<InputElement>) => {
-      const value = Number.parseInt(event.target.value, 10);
-      if (!Number.isNaN(value) && value >= 0 && value <= 100) {
-        onColorChange({ ...color, a: value / 100 });
-      }
+  const onAlphaCommit = React.useCallback(
+    (value: number) => {
+      onColorChange({ ...color, a: value / 100 });
     },
     [color, onColorChange],
   );
@@ -1630,61 +1852,57 @@ function HslInput(props: FormatInputProps) {
       data-slot="color-picker-input-wrapper"
       className={cn("flex items-center", className)}
     >
-      <InputGroupItem
+      <NumericChannelInput
+        {...inputProps}
         aria-label="Hue degree (0-360)"
         position="first"
-        {...inputProps}
         placeholder="0"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min="0"
-        max="360"
-        className="w-14"
+        suffix="°"
+        min={0}
+        max={360}
+        className={CHANNEL_INPUT_CLASS}
         value={hsl.h}
-        onChange={onHslChannelChange("h", 360)}
+        onValueCommit={onHslChannelCommit("h")}
         disabled={context.disabled}
       />
-      <InputGroupItem
+      <NumericChannelInput
+        {...inputProps}
         aria-label="Saturation percentage (0-100)"
         position="middle"
-        {...inputProps}
         placeholder="0"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min="0"
-        max="100"
-        className="w-14"
+        suffix="%"
+        min={0}
+        max={100}
+        className={CHANNEL_INPUT_CLASS}
         value={hsl.s}
-        onChange={onHslChannelChange("s", 100)}
+        onValueCommit={onHslChannelCommit("s")}
         disabled={context.disabled}
       />
-      <InputGroupItem
+      <NumericChannelInput
+        {...inputProps}
         aria-label="Lightness percentage (0-100)"
         position={withoutAlpha ? "last" : "middle"}
-        {...inputProps}
         placeholder="0"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min="0"
-        max="100"
-        className="w-14"
+        suffix="%"
+        min={0}
+        max={100}
+        className={CHANNEL_INPUT_CLASS}
         value={hsl.l}
-        onChange={onHslChannelChange("l", 100)}
+        onValueCommit={onHslChannelCommit("l")}
         disabled={context.disabled}
       />
       {!withoutAlpha && (
-        <InputGroupItem
+        <NumericChannelInput
+          {...inputProps}
           aria-label="Alpha transparency percentage"
           position="last"
-          {...inputProps}
           placeholder="100"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          min="0"
-          max="100"
-          className="w-14"
+          suffix="%"
+          min={0}
+          max={100}
+          className={CHANNEL_INPUT_CLASS}
           value={alphaValue}
-          onChange={onAlphaChange}
+          onValueCommit={onAlphaCommit}
           disabled={context.disabled}
         />
       )}
@@ -1692,13 +1910,9 @@ function HslInput(props: FormatInputProps) {
   );
 }
 
-interface HsbInputProps extends Omit<FormatInputProps, "color"> {
-  hsv: HSVColorValue;
-}
-
-function HsbInput(props: HsbInputProps) {
+function OklchInput(props: FormatInputProps) {
   const {
-    hsv,
+    color,
     onColorChange,
     context,
     withoutAlpha,
@@ -1706,30 +1920,23 @@ function HsbInput(props: HsbInputProps) {
     ...inputProps
   } = props;
 
-  const alphaValue = Math.round((hsv?.a ?? 1) * 100);
+  const oklch = React.useMemo(() => rgbToOklchChannels(color), [color]);
+  const alphaValue = Math.round((color?.a ?? 1) * 100);
 
-  const onHsvChannelChange = React.useCallback(
-    (channel: "h" | "s" | "v", max: number) =>
-      (event: React.ChangeEvent<InputElement>) => {
-        const value = Number.parseInt(event.target.value, 10);
-        if (!Number.isNaN(value) && value >= 0 && value <= max) {
-          const newHsv = { ...hsv, [channel]: value };
-          const newColor = hsvToRgb(newHsv);
-          onColorChange(newColor);
-        }
-      },
-    [hsv, onColorChange],
+  const onOklchChannelCommit = React.useCallback(
+    (channel: keyof OklchChannelValue) => (value: number) => {
+      const newOklch = { ...oklch, [channel]: value };
+      const newColor = oklchChannelsToRgb(newOklch, color?.a ?? 1);
+      onColorChange(newColor);
+    },
+    [oklch, color?.a, onColorChange],
   );
 
-  const onAlphaChange = React.useCallback(
-    (event: React.ChangeEvent<InputElement>) => {
-      const value = Number.parseInt(event.target.value, 10);
-      if (!Number.isNaN(value) && value >= 0 && value <= 100) {
-        const currentColor = hsvToRgb(hsv);
-        onColorChange({ ...currentColor, a: value / 100 });
-      }
+  const onAlphaCommit = React.useCallback(
+    (value: number) => {
+      onColorChange({ ...color, a: value / 100 });
     },
-    [hsv, onColorChange],
+    [color, onColorChange],
   );
 
   return (
@@ -1737,61 +1944,57 @@ function HsbInput(props: HsbInputProps) {
       data-slot="color-picker-input-wrapper"
       className={cn("flex items-center", className)}
     >
-      <InputGroupItem
-        aria-label="Hue degree (0-360)"
+      <NumericChannelInput
+        {...inputProps}
+        aria-label="OKLCH lightness percentage (0-100)"
         position="first"
-        {...inputProps}
         placeholder="0"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min="0"
-        max="360"
-        className="w-14"
-        value={hsv?.h ?? 0}
-        onChange={onHsvChannelChange("h", 360)}
+        suffix="%"
+        min={0}
+        max={100}
+        className={CHANNEL_INPUT_CLASS}
+        value={oklch.l}
+        onValueCommit={onOklchChannelCommit("l")}
         disabled={context.disabled}
       />
-      <InputGroupItem
-        aria-label="Saturation percentage (0-100)"
+      <NumericChannelInput
+        {...inputProps}
+        aria-label="OKLCH chroma percentage (0-100)"
         position="middle"
-        {...inputProps}
         placeholder="0"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min="0"
-        max="100"
-        className="w-14"
-        value={hsv?.s ?? 0}
-        onChange={onHsvChannelChange("s", 100)}
+        suffix="%"
+        min={0}
+        max={100}
+        className={CHANNEL_INPUT_CLASS}
+        value={oklch.c}
+        onValueCommit={onOklchChannelCommit("c")}
         disabled={context.disabled}
       />
-      <InputGroupItem
-        aria-label="Brightness percentage (0-100)"
-        position={withoutAlpha ? "last" : "middle"}
+      <NumericChannelInput
         {...inputProps}
+        aria-label="OKLCH hue degree (0-360)"
+        position={withoutAlpha ? "last" : "middle"}
         placeholder="0"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        min="0"
-        max="100"
-        className="w-14"
-        value={hsv?.v ?? 0}
-        onChange={onHsvChannelChange("v", 100)}
+        suffix="°"
+        min={0}
+        max={360}
+        className={CHANNEL_INPUT_CLASS}
+        value={oklch.h}
+        onValueCommit={onOklchChannelCommit("h")}
         disabled={context.disabled}
       />
       {!withoutAlpha && (
-        <InputGroupItem
+        <NumericChannelInput
+          {...inputProps}
           aria-label="Alpha transparency percentage"
           position="last"
-          {...inputProps}
           placeholder="100"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          min="0"
-          max="100"
-          className="w-14"
+          suffix="%"
+          min={0}
+          max={100}
+          className={CHANNEL_INPUT_CLASS}
           value={alphaValue}
-          onChange={onAlphaChange}
+          onValueCommit={onAlphaCommit}
           disabled={context.disabled}
         />
       )}

@@ -1,4 +1,5 @@
 import { type ComponentProps, type CSSProperties, useState } from "react";
+import { clampChroma, formatHex, type Oklch } from "culori";
 
 import {
   ColorPicker,
@@ -14,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 import { TOOL_ICON_BUTTON_CLASS } from "../surface";
 
-type ColorFormat = "hex" | "rgb" | "hsl" | "hsb";
+type ColorFormat = "hex" | "rgb" | "hsl" | "oklch";
 
 const DEFAULT_HEX_COLOR = "#808080";
 const HEX_COLOR_PATTERN = /^#[\da-fA-F]{6}$/;
@@ -96,7 +97,7 @@ export function HexColorPicker({
         side={side}
         sideOffset={sideOffset}
         className={cn(
-          "w-[14.5rem] gap-2.5 rounded-xl p-2.5 duration-0",
+          "w-[15.5rem] gap-2.5 rounded-xl p-2.5 duration-0",
           contentClassName,
         )}
         onOpenAutoFocus={(event) => event.preventDefault()}
@@ -112,7 +113,7 @@ export function HexColorPicker({
         <div className="flex items-center gap-2">
           <ColorPickerFormatSelect
             className="!h-6 w-[4.5rem] !px-2 !py-0 text-[13px]"
-            contentClassName="!bg-background !text-foreground"
+            contentClassName="!bg-background !text-foreground data-[state=closed]:!animate-none data-[state=open]:!animate-none"
             itemClassName="min-h-6 py-0.5 text-[13px]"
           />
           <ColorPickerInput
@@ -170,14 +171,14 @@ function colorStringToHex(value: string) {
     );
   }
 
-  const hsbMatch = color.match(
-    /^hsba?\(\s*([-\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%(?:\s*,\s*[\d.]+)?\s*\)$/,
+  const oklchMatch = color.match(
+    /^oklch\(\s*([-\d.]+)%\s+([-\d.]+)%\s+([-\d.]+)(?:deg)?(?:\s*\/\s*[\d.]+)?\s*\)$/,
   );
-  if (hsbMatch) {
-    return hsbToHex(
-      Number.parseFloat(hsbMatch[1] ?? "0"),
-      Number.parseFloat(hsbMatch[2] ?? "0"),
-      Number.parseFloat(hsbMatch[3] ?? "0"),
+  if (oklchMatch) {
+    return oklchToHex(
+      Number.parseFloat(oklchMatch[1] ?? "0"),
+      Number.parseFloat(oklchMatch[2] ?? "0"),
+      Number.parseFloat(oklchMatch[3] ?? "0"),
     );
   }
 
@@ -205,16 +206,14 @@ function hslToHex(h: number, s: number, l: number) {
   return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
 }
 
-function hsbToHex(h: number, s: number, b: number) {
-  const hue = normalizeHue(h);
-  const saturation = clamp(s, 0, 100) / 100;
-  const brightness = clamp(b, 0, 100) / 100;
-  const chroma = brightness * saturation;
-  const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
-  const m = brightness - chroma;
-
-  const [r, g, blue] = hueToRgbChannels(hue, chroma, x);
-  return rgbToHex((r + m) * 255, (g + m) * 255, (blue + m) * 255);
+function oklchToHex(l: number, c: number, h: number) {
+  const color: Oklch = {
+    mode: "oklch",
+    l: clamp(l, 0, 100) / 100,
+    c: (clamp(c, 0, 100) * 0.4) / 100,
+    h: normalizeHue(h),
+  };
+  return formatHex(clampChroma(color, "oklch"));
 }
 
 function hueToRgbChannels(hue: number, chroma: number, x: number): [number, number, number] {
