@@ -122,6 +122,17 @@
     pointer-events: none;
   }
 
+  [data-inspector-sidebar-tabs][data-variant="line"] > [data-slot="tabs-trigger"] {
+    cursor: pointer;
+    transition: none !important;
+  }
+
+  [data-inspector-sidebar-tabs][data-variant="line"] > [data-slot="tabs-trigger"]::after {
+    inset-inline: -0.125rem !important;
+    bottom: -0.25rem !important;
+    transition: none !important;
+  }
+
   .tool-icon-button:hover,
   .tool-icon-button:focus-visible {
     border-color: rgb(40 40 40 / 10%) !important;

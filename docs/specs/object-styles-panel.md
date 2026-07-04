@@ -200,11 +200,12 @@ The global Display > Atoms control participates in effective visibility:
 
 - Turning Display > Atoms off makes every element and atom row read as
   invisible in Objects.
-- Turning every unit-cell atom invisible through Objects turns Display > Atoms
-  off automatically.
 - Turning Display > Atoms back on clears all object-level visibility overrides
   so every unit-cell atom becomes visible again.
 - This reset affects visibility only. Radius and color overrides remain intact.
+- Object-level visibility edits do not write back to Display > Atoms. Turning
+  every unit-cell atom invisible in Objects leaves Display > Atoms on, so users
+  can re-enable individual atoms from Objects without first visiting Display.
 
 ## Apply To All Atoms
 

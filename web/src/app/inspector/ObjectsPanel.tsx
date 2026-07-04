@@ -53,7 +53,6 @@ import {
   createCustomColormapFromStyle,
   elementColorOverridesForStyle,
   resolveAtomAppearance,
-  resolveAtomVisibleForStyle,
   setAtomOverrideProperty,
   setElementOverrideProperty,
   type StyleState,
@@ -100,7 +99,6 @@ export function ObjectsPanel({
   atomsVisible,
   onActiveTabChange,
   onAtomSelect,
-  onAtomsVisibleChange,
   onElementColorChange,
   onStyleChange,
   scene,
@@ -112,7 +110,6 @@ export function ObjectsPanel({
   atomsVisible: boolean;
   onActiveTabChange: (tab: ObjectsPanelTab) => void;
   onAtomSelect: (atomId: string) => void;
-  onAtomsVisibleChange: (atomsVisible: boolean) => void;
   onElementColorChange: (element: string, color: string) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   scene: SceneSpec;
@@ -148,7 +145,6 @@ export function ObjectsPanel({
           atomLocateRequest={atomLocateRequest}
           atomsVisible={atomsVisible}
           onAtomSelect={onAtomSelect}
-          onAtomsVisibleChange={onAtomsVisibleChange}
           onElementColorChange={onElementColorChange}
           onStyleChange={onStyleChange}
           scene={scene}
@@ -169,7 +165,6 @@ function ObjectsAtomsTable({
   atomLocateRequest,
   atomsVisible,
   onAtomSelect,
-  onAtomsVisibleChange,
   onElementColorChange,
   onStyleChange,
   scene,
@@ -179,7 +174,6 @@ function ObjectsAtomsTable({
   atomLocateRequest: AtomLocateRequest | null;
   atomsVisible: boolean;
   onAtomSelect: (atomId: string) => void;
-  onAtomsVisibleChange: (atomsVisible: boolean) => void;
   onElementColorChange: (element: string, color: string) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   scene: SceneSpec;
@@ -322,7 +316,6 @@ function ObjectsAtomsTable({
     };
 
     onStyleChange(nextStyle);
-    syncAtomsDisplayAfterVisibilityChange(nextStyle);
   }
 
   function setAtomVisible(atom: AtomSpec, visible: boolean) {
@@ -337,20 +330,6 @@ function ObjectsAtomsTable({
     };
 
     onStyleChange(nextStyle);
-    syncAtomsDisplayAfterVisibilityChange(nextStyle);
-  }
-
-  function syncAtomsDisplayAfterVisibilityChange(nextStyle: StyleState) {
-    if (!atomsVisible || objectAtoms.length === 0) {
-      return;
-    }
-
-    const hasVisibleAtom = objectAtoms.some((atom) =>
-      resolveAtomVisibleForStyle(atom, nextStyle.objectStyles),
-    );
-    if (!hasVisibleAtom) {
-      onAtomsVisibleChange(false);
-    }
   }
 
   function setAtomColor(atom: AtomSpec, color: string) {
@@ -411,7 +390,6 @@ function ObjectsAtomsTable({
     };
 
     onStyleChange(nextStyleWithObjectStyles);
-    syncAtomsDisplayAfterVisibilityChange(nextStyleWithObjectStyles);
     onElementColorChange(group.element, elementAppearance.color);
   }
 
@@ -570,7 +548,6 @@ function ObjectsAtomsTable({
       activeColorPickerId,
       handleColorPickerOpenChange,
       onElementColorChange,
-      onAtomsVisibleChange,
       atomsVisible,
       objectAtoms,
       style,

@@ -761,7 +761,7 @@ describe("App", () => {
     );
   });
 
-  test("shows unit-cell atoms in Objects and keeps Display atoms visibility in sync", async () => {
+  test("shows unit-cell atoms in Objects and keeps Display atoms visibility one-way", async () => {
     const user = userEvent.setup();
 
     await renderLoadedStructure(user);
@@ -866,16 +866,16 @@ describe("App", () => {
 
     await user.click(chlorineElementVisibility());
     await waitFor(() => {
-      expect(atomsCheckbox.getAttribute("aria-checked")).toBe("false");
+      expect(atomsCheckbox.getAttribute("aria-checked")).toBe("true");
       expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
       expect(chlorineElementVisibility().getAttribute("aria-pressed")).toBe("false");
     });
 
-    await user.click(atomsCheckbox);
+    await user.click(sodiumElementVisibility());
     await waitFor(() => {
       expect(atomsCheckbox.getAttribute("aria-checked")).toBe("true");
       expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("true");
-      expect(chlorineElementVisibility().getAttribute("aria-pressed")).toBe("true");
+      expect(chlorineElementVisibility().getAttribute("aria-pressed")).toBe("false");
     });
   });
 

@@ -373,17 +373,6 @@ export function App() {
     requestAtomLocateInObjects(atomId);
   }, [requestAtomLocateInObjects]);
 
-  const handleAtomsVisibleChange = useCallback((atomsVisible: boolean) => {
-    setComponentVisibility((currentVisibility) =>
-      currentVisibility.atoms === atomsVisible
-        ? currentVisibility
-        : {
-            ...currentVisibility,
-            atoms: atomsVisible,
-          },
-    );
-  }, []);
-
   const handleAtomRadiusModelChange = useCallback(
     (atomRadiusModel: AtomRadiusStyleModel) => {
       setStyle((currentStyle) => {
@@ -775,7 +764,6 @@ export function App() {
                   onActiveObjectsTabChange={setActiveObjectsTab}
                   onActiveTabChange={setActiveInspectorTab}
                   onAtomSelect={handleAtomInspect}
-                  onAtomsVisibleChange={handleAtomsVisibleChange}
                   onBondAlgorithmChange={(nextBondAlgorithm) => {
                     void handleBondAlgorithmChange(nextBondAlgorithm);
                   }}

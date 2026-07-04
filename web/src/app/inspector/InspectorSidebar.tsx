@@ -134,7 +134,6 @@ export function InspectorSidebar({
   onActiveObjectsTabChange,
   onActiveTabChange,
   onAtomSelect,
-  onAtomsVisibleChange,
   onBondAlgorithmChange,
   onDistinguishSimilarColorsChange,
   onDragSensitivityChange,
@@ -171,7 +170,6 @@ export function InspectorSidebar({
   onActiveObjectsTabChange: (tab: ObjectsPanelTab) => void;
   onActiveTabChange: (tab: InspectorSidebarTab) => void;
   onAtomSelect: (atomId: string) => void;
-  onAtomsVisibleChange: (atomsVisible: boolean) => void;
   onBondAlgorithmChange: (bondAlgorithm: BondAlgorithm) => void;
   onDistinguishSimilarColorsChange: (distinguishSimilarColors: boolean) => void;
   onDragSensitivityChange: (dragSensitivity: number) => void;
@@ -205,17 +203,18 @@ export function InspectorSidebar({
         <header className="flex h-16 shrink-0 items-start px-4 pt-4 pr-16">
           <TabsList
             variant="line"
+            data-inspector-sidebar-tabs=""
             className="h-8 w-full justify-start gap-5 rounded-none p-0"
           >
             <TabsTrigger
               value="settings"
-              className="h-8 flex-none px-0 text-[0.875rem] font-semibold after:-inset-x-2 after:bottom-[4px]"
+              className="h-8 flex-none px-0 text-[0.875rem] font-semibold"
             >
               Settings
             </TabsTrigger>
             <TabsTrigger
               value="objects"
-              className="h-8 flex-none px-0 text-[0.875rem] font-semibold after:-inset-x-2 after:bottom-[4px]"
+              className="h-8 flex-none px-0 text-[0.875rem] font-semibold"
             >
               Objects
             </TabsTrigger>
@@ -259,7 +258,6 @@ export function InspectorSidebar({
               atomsVisible={atomsVisible}
               onActiveTabChange={onActiveObjectsTabChange}
               onAtomSelect={onAtomSelect}
-              onAtomsVisibleChange={onAtomsVisibleChange}
               onElementColorChange={onElementColorChange}
               onStyleChange={onStyleChange}
               scene={scene}
