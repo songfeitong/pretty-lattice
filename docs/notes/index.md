@@ -21,6 +21,7 @@ Focused research notes and implementation references live here. Keep the root do
 
 - [Backend Architecture Scan](backend_architecture_scan_2026-06-27.md): pre-refactor scan of backend module boundaries, coupling risks, and a conservative one-shot refactor plan.
 - [Frontend Architecture Scan](frontend_architecture_scan_2026-06-27.md): pre-refactor scan of frontend module boundaries, highest-risk files, and a recommended first refactor slice.
+- [Objects Panel Large-List Performance](objects_panel_large_list_performance_2026-07-04.md): implementation note on virtualizing large atom groups, row-index locate, and avoiding DOM explosions in Objects > Atoms.
 - [Thermo-Nuclear Code Quality Review](thermo_nuclear_code_quality_review_2026-06-30.md): 严格中文审查报告，聚焦当前前端大文件、导出域、scene object、App 编排和合同漂移风险。
 - [Three.js Best Practices 100 Tips](threejs-best-practices-100-tips.md): external 2026 Three.js performance and quality checklist, with WebGPU, batching, disposal, profiling, and TSL guidance.
 - [Three.js Preview Performance Handoff](threejs_preview_performance_handoff_2026-06-27.md): 中文交接记录，说明 demand rendering 与 instanced atoms/bonds 这两个剩余预览性能问题。

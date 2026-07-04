@@ -16,6 +16,7 @@ import {
   type SetStateAction,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -55,6 +56,7 @@ import {
   resolveAtomAppearance,
   setAtomOverrideProperty,
   setElementOverrideProperty,
+  type AtomAppearance,
   type StyleState,
 } from "../../model";
 import { HexColorPicker, normalizeHexColor } from "../controls/HexColorPicker";
@@ -87,10 +89,24 @@ type ObjectsAtomRow =
       kind: "atom";
     };
 
+interface VirtualViewport {
+  height: number;
+  scrollTop: number;
+}
+
+interface VirtualRowRange {
+  endIndex: number;
+  startIndex: number;
+}
+
 const OBJECTS_BODY_TEXT_CLASS = "text-[13px]";
 const OBJECTS_HEADER_TEXT_CLASS =
   "text-[12px] font-medium leading-tight text-muted-foreground";
 const OBJECTS_CELL_CLASS = "h-8 px-1.5 py-0 align-middle";
+const OBJECTS_TABLE_HEADER_HEIGHT = 28;
+const OBJECTS_TABLE_ROW_HEIGHT = 32;
+const OBJECTS_TABLE_VIRTUAL_OVERSCAN = 8;
+const OBJECTS_TABLE_DEFAULT_VIEWPORT_HEIGHT = 640;
 const RADIUS_STEP = 0.01;
 
 export function ObjectsPanel({
@@ -182,11 +198,17 @@ function ObjectsAtomsTable({
 }) {
   const [expandedElements, setExpandedElements] = useState<Record<string, boolean>>({});
   const [activeColorPickerId, setActiveColorPickerId] = useState<string | null>(null);
-  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+  const [pendingLocateAtomId, setPendingLocateAtomId] = useState<string | null>(null);
+  const [virtualViewport, setVirtualViewport] = useState<VirtualViewport>(() => ({
+    height: OBJECTS_TABLE_DEFAULT_VIEWPORT_HEIGHT,
+    scrollTop: 0,
+  }));
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setExpandedElements({});
     setActiveColorPickerId(null);
+    setPendingLocateAtomId(null);
   }, [scene]);
 
   const objectAtoms = useMemo(
@@ -220,6 +242,53 @@ function ObjectsAtomsTable({
     () => rowsForElementGroups(elementGroups, expandedElements),
     [elementGroups, expandedElements],
   );
+  const rowIndexByAtomId = useMemo(() => rowIndexByAtomIdForRows(rows), [rows]);
+  const elementAppearanceByElement = useMemo(
+    () =>
+      elementAppearanceByElementForGroups(
+        elementGroups,
+        style,
+        colorScheme,
+        colorOverrides,
+        atomsVisible,
+      ),
+    [atomsVisible, colorOverrides, colorScheme, elementGroups, style],
+  );
+  const refreshVirtualViewport = useCallback(() => {
+    const tableContainer = tableContainerRef.current;
+    const scrollContainer = inspectorScrollContainerForTable(tableContainer);
+    if (!tableContainer || !scrollContainer) {
+      return;
+    }
+
+    const nextViewport = measureObjectsTableViewport(tableContainer, scrollContainer);
+    setVirtualViewport((currentViewport) =>
+      sameVirtualViewport(currentViewport, nextViewport)
+        ? currentViewport
+        : nextViewport,
+    );
+  }, []);
+
+  useLayoutEffect(() => {
+    refreshVirtualViewport();
+    const scrollContainer = inspectorScrollContainerForTable(tableContainerRef.current);
+    if (!scrollContainer) {
+      return;
+    }
+
+    scrollContainer.addEventListener("scroll", refreshVirtualViewport, {
+      passive: true,
+    });
+    window.addEventListener("resize", refreshVirtualViewport);
+    return () => {
+      scrollContainer.removeEventListener("scroll", refreshVirtualViewport);
+      window.removeEventListener("resize", refreshVirtualViewport);
+    };
+  }, [refreshVirtualViewport]);
+
+  useLayoutEffect(() => {
+    refreshVirtualViewport();
+  }, [refreshVirtualViewport, rows.length]);
 
   useEffect(() => {
     if (!atomLocateRequest) {
@@ -231,20 +300,33 @@ function ObjectsAtomsTable({
       return;
     }
 
-    setExpandedElements((currentExpandedElements) => ({
-      ...currentExpandedElements,
-      [atom.element]: true,
-    }));
-
-    const frame = window.requestAnimationFrame(() => {
-      const row = rowRefs.current.get(atom.id);
-      if (row) {
-        scrollRowIntoInspectorBody(row);
+    setExpandedElements((currentExpandedElements) => {
+      if (currentExpandedElements[atom.element] === true) {
+        return currentExpandedElements;
       }
-    });
 
-    return () => window.cancelAnimationFrame(frame);
+      return {
+        ...currentExpandedElements,
+        [atom.element]: true,
+      };
+    });
+    setPendingLocateAtomId(atom.id);
   }, [atomById, atomLocateRequest]);
+
+  useLayoutEffect(() => {
+    if (!pendingLocateAtomId) {
+      return;
+    }
+
+    const rowIndex = rowIndexByAtomId.get(pendingLocateAtomId);
+    if (rowIndex === undefined) {
+      return;
+    }
+
+    scrollRowIndexIntoInspectorBody(tableContainerRef.current, rowIndex);
+    refreshVirtualViewport();
+    setPendingLocateAtomId(null);
+  }, [pendingLocateAtomId, refreshVirtualViewport, rowIndexByAtomId]);
 
   const handleColorPickerOpenChange = useCallback((pickerId: string, open: boolean) => {
     setActiveColorPickerId((currentPickerId) => {
@@ -422,13 +504,15 @@ function ObjectsAtomsTable({
           const item = row.original;
           if (item.kind === "element") {
             const group = { atoms: item.atoms, element: item.element };
-            const appearance = elementRowAppearance(
-              group,
-              style,
-              colorScheme,
-              colorOverrides,
-              atomsVisible,
-            );
+            const appearance =
+              elementAppearanceByElement.get(item.element) ??
+              elementRowAppearance(
+                group,
+                style,
+                colorScheme,
+                colorOverrides,
+                atomsVisible,
+              );
             return (
               <RadiusCell
                 ariaLabel={`${item.element} radius`}
@@ -461,13 +545,15 @@ function ObjectsAtomsTable({
           const item = row.original;
           if (item.kind === "element") {
             const group = { atoms: item.atoms, element: item.element };
-            const appearance = elementRowAppearance(
-              group,
-              style,
-              colorScheme,
-              colorOverrides,
-              atomsVisible,
-            );
+            const appearance =
+              elementAppearanceByElement.get(item.element) ??
+              elementRowAppearance(
+                group,
+                style,
+                colorScheme,
+                colorOverrides,
+                atomsVisible,
+              );
             return (
               <ColorCell
                 active={activeColorPickerId === elementColorPickerId(item.element)}
@@ -510,13 +596,15 @@ function ObjectsAtomsTable({
           const item = row.original;
           if (item.kind === "element") {
             const group = { atoms: item.atoms, element: item.element };
-            const appearance = elementRowAppearance(
-              group,
-              style,
-              colorScheme,
-              colorOverrides,
-              atomsVisible,
-            );
+            const appearance =
+              elementAppearanceByElement.get(item.element) ??
+              elementRowAppearance(
+                group,
+                style,
+                colorScheme,
+                colorOverrides,
+                atomsVisible,
+              );
             return (
               <VisibilityCell
                 ariaLabel={`${item.element} visibility`}
@@ -549,6 +637,7 @@ function ObjectsAtomsTable({
       handleColorPickerOpenChange,
       onElementColorChange,
       atomsVisible,
+      elementAppearanceByElement,
       objectAtoms,
       style,
       colorOverrides,
@@ -562,9 +651,15 @@ function ObjectsAtomsTable({
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id,
   });
+  const tableRows = table.getRowModel().rows;
+  const virtualRange = virtualRowRangeForViewport(tableRows.length, virtualViewport);
+  const virtualRows = tableRows.slice(virtualRange.startIndex, virtualRange.endIndex);
+  const topSpacerHeight = virtualRange.startIndex * OBJECTS_TABLE_ROW_HEIGHT;
+  const bottomSpacerHeight =
+    (tableRows.length - virtualRange.endIndex) * OBJECTS_TABLE_ROW_HEIGHT;
 
   return (
-    <div className={cn("min-h-0", OBJECTS_BODY_TEXT_CLASS)}>
+    <div ref={tableContainerRef} className={cn("min-h-0", OBJECTS_BODY_TEXT_CLASS)}>
       <Table className="table-fixed border-separate border-spacing-0 text-[13px]">
         <colgroup>
           <col className="w-[45%]" />
@@ -599,23 +694,22 @@ function ObjectsAtomsTable({
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows.map((tableRow) => {
+          {topSpacerHeight > 0 ? (
+            <TableRow
+              aria-hidden="true"
+              className="border-0 hover:bg-transparent"
+              style={{ height: topSpacerHeight }}
+            >
+              <TableCell colSpan={4} className="h-0 border-0 p-0" />
+            </TableRow>
+          ) : null}
+          {virtualRows.map((tableRow) => {
             const item = tableRow.original;
             const selected =
               item.kind === "atom" && item.atom.id === selectedObjectAtomId;
             return (
               <TableRow
                 key={tableRow.id}
-                ref={(node) => {
-                  if (item.kind !== "atom") {
-                    return;
-                  }
-                  if (node) {
-                    rowRefs.current.set(item.atom.id, node);
-                    return;
-                  }
-                  rowRefs.current.delete(item.atom.id);
-                }}
                 data-state={selected ? "selected" : undefined}
                 className={cn(
                   "group border-border/45",
@@ -646,6 +740,15 @@ function ObjectsAtomsTable({
               </TableRow>
             );
           })}
+          {bottomSpacerHeight > 0 ? (
+            <TableRow
+              aria-hidden="true"
+              className="border-0 hover:bg-transparent"
+              style={{ height: bottomSpacerHeight }}
+            >
+              <TableCell colSpan={4} className="h-0 border-0 p-0" />
+            </TableRow>
+          ) : null}
         </TableBody>
       </Table>
     </div>
@@ -833,27 +936,6 @@ function ColorCell({
   );
 }
 
-function scrollRowIntoInspectorBody(row: HTMLTableRowElement) {
-  const scrollContainer = row.closest<HTMLElement>('[data-slot="inspector-body"]');
-  if (!scrollContainer) {
-    return;
-  }
-
-  const rowRect = row.getBoundingClientRect();
-  const containerRect = scrollContainer.getBoundingClientRect();
-  const topOverflow = rowRect.top - containerRect.top;
-  const bottomOverflow = rowRect.bottom - containerRect.bottom;
-
-  if (topOverflow < 0) {
-    scrollContainer.scrollTop += topOverflow - 8;
-    return;
-  }
-
-  if (bottomOverflow > 0) {
-    scrollContainer.scrollTop += bottomOverflow + 8;
-  }
-}
-
 function VisibilityCell({
   ariaLabel,
   onToggle,
@@ -893,6 +975,102 @@ function VisibilityCell({
       </TooltipContent>
     </Tooltip>
   );
+}
+
+function inspectorScrollContainerForTable(
+  tableContainer: HTMLElement | null,
+): HTMLElement | null {
+  return tableContainer?.closest<HTMLElement>('[data-slot="inspector-body"]') ?? null;
+}
+
+function measureObjectsTableViewport(
+  tableContainer: HTMLElement,
+  scrollContainer: HTMLElement,
+): VirtualViewport {
+  const tableRect = tableContainer.getBoundingClientRect();
+  const containerRect = scrollContainer.getBoundingClientRect();
+  const tableTop = tableRect.top - containerRect.top + scrollContainer.scrollTop;
+  const rowsTop = tableTop + OBJECTS_TABLE_HEADER_HEIGHT;
+  const height =
+    scrollContainer.clientHeight > 0
+      ? scrollContainer.clientHeight
+      : OBJECTS_TABLE_DEFAULT_VIEWPORT_HEIGHT;
+
+  return {
+    height,
+    scrollTop: Math.max(0, scrollContainer.scrollTop - rowsTop),
+  };
+}
+
+function sameVirtualViewport(left: VirtualViewport, right: VirtualViewport): boolean {
+  return left.height === right.height && left.scrollTop === right.scrollTop;
+}
+
+function virtualRowRangeForViewport(
+  rowCount: number,
+  viewport: VirtualViewport,
+): VirtualRowRange {
+  if (rowCount <= 0) {
+    return { endIndex: 0, startIndex: 0 };
+  }
+
+  const visibleStartIndex = Math.floor(viewport.scrollTop / OBJECTS_TABLE_ROW_HEIGHT);
+  const startIndex = Math.min(
+    rowCount - 1,
+    Math.max(0, visibleStartIndex - OBJECTS_TABLE_VIRTUAL_OVERSCAN),
+  );
+  const visibleRowCount = Math.ceil(viewport.height / OBJECTS_TABLE_ROW_HEIGHT);
+  const endIndex = Math.max(
+    startIndex + 1,
+    Math.min(
+      rowCount,
+      visibleStartIndex + visibleRowCount + OBJECTS_TABLE_VIRTUAL_OVERSCAN,
+    ),
+  );
+
+  return {
+    endIndex,
+    startIndex,
+  };
+}
+
+function scrollRowIndexIntoInspectorBody(
+  tableContainer: HTMLElement | null,
+  rowIndex: number,
+) {
+  const scrollContainer = inspectorScrollContainerForTable(tableContainer);
+  if (!tableContainer || !scrollContainer) {
+    return;
+  }
+
+  const tableRect = tableContainer.getBoundingClientRect();
+  const containerRect = scrollContainer.getBoundingClientRect();
+  const tableTop = tableRect.top - containerRect.top + scrollContainer.scrollTop;
+  const rowTop =
+    tableTop + OBJECTS_TABLE_HEADER_HEIGHT + rowIndex * OBJECTS_TABLE_ROW_HEIGHT;
+  const rowBottom = rowTop + OBJECTS_TABLE_ROW_HEIGHT;
+  const viewportTop = scrollContainer.scrollTop;
+  const viewportBottom =
+    viewportTop +
+    (scrollContainer.clientHeight > 0
+      ? scrollContainer.clientHeight
+      : OBJECTS_TABLE_DEFAULT_VIEWPORT_HEIGHT);
+
+  if (rowTop < viewportTop) {
+    scrollContainer.scrollTop = Math.max(0, rowTop - 8);
+    return;
+  }
+
+  if (rowBottom > viewportBottom) {
+    scrollContainer.scrollTop = Math.max(
+      0,
+      rowBottom -
+        (scrollContainer.clientHeight > 0
+          ? scrollContainer.clientHeight
+          : OBJECTS_TABLE_DEFAULT_VIEWPORT_HEIGHT) +
+        8,
+    );
+  }
 }
 
 function groupAtomsByElement(atoms: readonly AtomSpec[]): ElementGroup[] {
@@ -943,6 +1121,37 @@ function rowsForElementGroups(
   }
 
   return rows;
+}
+
+function rowIndexByAtomIdForRows(rows: readonly ObjectsAtomRow[]): Map<string, number> {
+  const rowIndexByAtomId = new Map<string, number>();
+
+  rows.forEach((row, rowIndex) => {
+    if (row.kind === "atom") {
+      rowIndexByAtomId.set(row.atom.id, rowIndex);
+    }
+  });
+
+  return rowIndexByAtomId;
+}
+
+function elementAppearanceByElementForGroups(
+  elementGroups: readonly ElementGroup[],
+  style: StyleState,
+  colorScheme: StyleState["colorScheme"],
+  colorOverrides: ReturnType<typeof elementColorOverridesForStyle>,
+  atomsVisible: boolean,
+): Map<string, AtomAppearance> {
+  const appearanceByElement = new Map<string, AtomAppearance>();
+
+  for (const group of elementGroups) {
+    appearanceByElement.set(
+      group.element,
+      elementRowAppearance(group, style, colorScheme, colorOverrides, atomsVisible),
+    );
+  }
+
+  return appearanceByElement;
 }
 
 function elementRowAppearance(

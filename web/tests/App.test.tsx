@@ -879,6 +879,32 @@ describe("App", () => {
     });
   });
 
+  test("virtualizes large Objects atom groups", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user, largeSodiumScene(2000));
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
+
+    const inspectorBody = sidebar.querySelector('[data-slot="inspector-body"]');
+    expect(inspectorBody).toBeInstanceOf(HTMLElement);
+    Object.defineProperty(inspectorBody, "clientHeight", {
+      configurable: true,
+      value: 320,
+    });
+
+    await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
+
+    await waitFor(() => {
+      expect(within(sidebar).getByText("Na:0").isConnected).toBe(true);
+    });
+    expect(within(sidebar).queryByText("Na:1999")).toBeNull();
+    const initialRenderedAtomLabels = within(sidebar).queryAllByText(/^Na:\d+$/);
+    expect(initialRenderedAtomLabels.length).toBeGreaterThan(0);
+    expect(initialRenderedAtomLabels.length).toBeLessThan(40);
+  });
+
   test("exports without carrying renderer state", async () => {
     const user = userEvent.setup();
 
@@ -2408,6 +2434,24 @@ function sceneWithPeriodicImages({
         spaceGroup: null,
         spaceGroupNumber: null,
       },
+    },
+  };
+}
+
+function largeSodiumScene(atomCount: number): SceneSpec {
+  const baseScene = sceneWithPeriodicImages({ atomCount, polyhedra: false });
+
+  return {
+    ...baseScene,
+    atoms: Array.from({ length: atomCount }, (_, atomIndex) =>
+      atom(`Na-${atomIndex}`, "Na", [0, 0, 0], [], []),
+    ),
+    bonds: [],
+    polyhedra: [],
+    summary: {
+      ...baseScene.summary,
+      atomCount,
+      formula: `Na${atomCount}`,
     },
   };
 }
