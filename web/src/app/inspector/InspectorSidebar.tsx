@@ -134,6 +134,7 @@ export function InspectorSidebar({
   unitCellLineStyle,
   onActiveObjectsTabChange,
   onActiveTabChange,
+  onAtomLocateRequestHandled,
   onAtomSelect,
   onBondAlgorithmChange,
   onDistinguishSimilarColorsChange,
@@ -172,6 +173,7 @@ export function InspectorSidebar({
   unitCellLineStyle: UnitCellLineStyle;
   onActiveObjectsTabChange: (tab: ObjectsPanelTab) => void;
   onActiveTabChange: (tab: InspectorSidebarTab) => void;
+  onAtomLocateRequestHandled: (token: number) => void;
   onAtomSelect: (atomId: string) => void;
   onBondAlgorithmChange: (bondAlgorithm: BondAlgorithm) => void;
   onDistinguishSimilarColorsChange: (distinguishSimilarColors: boolean) => void;
@@ -263,6 +265,7 @@ export function InspectorSidebar({
               atomLocateRequest={atomLocateRequest}
               atomsVisible={atomsVisible}
               onActiveTabChange={onActiveObjectsTabChange}
+              onAtomLocateRequestHandled={onAtomLocateRequestHandled}
               onAtomSelect={onAtomSelect}
               onElementColorChange={onElementColorChange}
               onStyleChange={onStyleChange}

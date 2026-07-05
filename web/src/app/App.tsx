@@ -148,6 +148,7 @@ function AppContent() {
     closeActiveColorPicker();
     setInspectedAtomId(null);
     setPulseAtom(null);
+    setAtomLocateRequest(null);
     setIsInspectorOpen(false);
     setIsStructureSummaryCollapsed(true);
   }, [closeActiveColorPicker]);
@@ -155,6 +156,7 @@ function AppContent() {
     closeActiveColorPicker();
     setInspectedAtomId(null);
     setPulseAtom(null);
+    setAtomLocateRequest(null);
     setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
     setUnitCellLineStyle(DEFAULT_UNIT_CELL_LINE_STYLE);
     setShowCrystalAxisLabels(DEFAULT_SHOW_CRYSTAL_AXIS_LABELS);
@@ -321,6 +323,7 @@ function AppContent() {
       resetExportState();
       setInspectedAtomId(null);
       setPulseAtom(null);
+      setAtomLocateRequest(null);
       if (!options.preserveInspectorOpen) {
         setIsInspectorOpen(false);
       }
@@ -407,6 +410,12 @@ function AppContent() {
       atomId,
       token: (currentRequest?.token ?? 0) + 1,
     }));
+  }, []);
+
+  const handleAtomLocateRequestHandled = useCallback((token: number) => {
+    setAtomLocateRequest((currentRequest) =>
+      currentRequest?.token === token ? null : currentRequest,
+    );
   }, []);
 
   const handleAtomInspect = useCallback((atomId: string | null) => {
@@ -828,6 +837,7 @@ function AppContent() {
                   onActiveObjectsTabChange={handleActiveObjectsTabChange}
                   onActiveTabChange={handleActiveInspectorTabChange}
                   onAtomSelect={handleAtomInspect}
+                  onAtomLocateRequestHandled={handleAtomLocateRequestHandled}
                   onBondAlgorithmChange={(nextBondAlgorithm) => {
                     void handleBondAlgorithmChange(nextBondAlgorithm);
                   }}

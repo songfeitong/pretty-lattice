@@ -130,6 +130,7 @@ export function ObjectsPanel({
   atomLocateRequest,
   atomsVisible,
   onActiveTabChange,
+  onAtomLocateRequestHandled,
   onAtomSelect,
   onElementColorChange,
   onStyleChange,
@@ -141,6 +142,7 @@ export function ObjectsPanel({
   atomLocateRequest: AtomLocateRequest | null;
   atomsVisible: boolean;
   onActiveTabChange: (tab: ObjectsPanelTab) => void;
+  onAtomLocateRequestHandled: (token: number) => void;
   onAtomSelect: (atomId: string) => void;
   onElementColorChange: (element: string, color: string) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
@@ -176,6 +178,7 @@ export function ObjectsPanel({
         <ObjectsAtomsTable
           atomLocateRequest={atomLocateRequest}
           atomsVisible={atomsVisible}
+          onAtomLocateRequestHandled={onAtomLocateRequestHandled}
           onAtomSelect={onAtomSelect}
           onElementColorChange={onElementColorChange}
           onStyleChange={onStyleChange}
@@ -196,6 +199,7 @@ export function ObjectsPanel({
 function ObjectsAtomsTable({
   atomLocateRequest,
   atomsVisible,
+  onAtomLocateRequestHandled,
   onAtomSelect,
   onElementColorChange,
   onStyleChange,
@@ -205,6 +209,7 @@ function ObjectsAtomsTable({
 }: {
   atomLocateRequest: AtomLocateRequest | null;
   atomsVisible: boolean;
+  onAtomLocateRequestHandled: (token: number) => void;
   onAtomSelect: (atomId: string) => void;
   onElementColorChange: (element: string, color: string) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
@@ -311,6 +316,7 @@ function ObjectsAtomsTable({
 
     const atom = atomById.get(atomLocateRequest.atomId);
     if (!atom) {
+      onAtomLocateRequestHandled(atomLocateRequest.token);
       return;
     }
 
@@ -325,7 +331,8 @@ function ObjectsAtomsTable({
       };
     });
     setPendingLocateAtomId(atom.id);
-  }, [atomById, atomLocateRequest]);
+    onAtomLocateRequestHandled(atomLocateRequest.token);
+  }, [atomById, atomLocateRequest, onAtomLocateRequestHandled]);
 
   useLayoutEffect(() => {
     if (!pendingLocateAtomId) {

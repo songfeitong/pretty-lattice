@@ -933,6 +933,13 @@ describe("App", () => {
     expect(within(atomInfo).getByText("Na:0").isConnected).toBe(true);
     expect(within(atomInfo).queryByText(/idx/)).toBeNull();
 
+    await user.click(within(sidebar).getByRole("button", { name: "Collapse Na" }));
+    expect(within(sidebar).queryByText("Na:0")).toBeNull();
+    await user.click(within(sidebar).getByRole("tab", { name: "Bonds" }));
+    await user.click(within(sidebar).getByRole("tab", { name: "Atoms" }));
+    expect(within(sidebar).queryByText("Na:0")).toBeNull();
+    await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
+
     const sodiumElementVisibility = () =>
       within(sidebar).getByRole("button", {
         name: "Na visibility",
