@@ -551,21 +551,26 @@ function AtomRadiusModelPopover({
     <Popover open={open} onOpenChange={setOpen}>
       <span className="inline-flex min-w-0 items-center gap-1">
         <span className="min-w-0 truncate">Atom</span>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label={`Atom radius model: ${selectedOption?.menuLabel ?? "Unknown"}`}
-            aria-haspopup="listbox"
-            className={cn(
-              TOOL_ICON_BUTTON_CLASS,
-              "size-5 rounded-[7px] border-input [&_svg]:size-3",
-            )}
-          >
-            <ChevronDown aria-hidden="true" />
-          </Button>
-        </PopoverTrigger>
+        <Tooltip delayDuration={300}>
+          <PopoverTrigger asChild>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Atom radius model: ${selectedOption?.menuLabel ?? "Unknown"}`}
+                aria-haspopup="listbox"
+                className={cn(
+                  TOOL_ICON_BUTTON_CLASS,
+                  "size-5 rounded-[7px] border-input hover:border-foreground/15 hover:bg-accent hover:text-accent-foreground hover:shadow-sm focus-visible:ring-[2px] focus-visible:ring-ring/25 [&_svg]:size-3",
+                )}
+              >
+                <ChevronDown aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+          </PopoverTrigger>
+          <TooltipContent side="top">Select atom radius model</TooltipContent>
+        </Tooltip>
       </span>
       <PopoverContent
         align="start"

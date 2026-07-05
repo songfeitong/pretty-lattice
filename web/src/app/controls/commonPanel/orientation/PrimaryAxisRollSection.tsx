@@ -67,7 +67,7 @@ export function PrimaryAxisRollSection({
           id="camera-axis-roll-label"
           className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "leading-tight text-muted-foreground")}
         >
-          Primary Axis
+          Primary axis
         </h2>
         <Button
           variant="ghost"

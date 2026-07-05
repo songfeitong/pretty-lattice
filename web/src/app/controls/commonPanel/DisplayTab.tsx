@@ -174,7 +174,7 @@ export function DisplayTabContent({
       <section aria-labelledby="image-components-label">
         <h2
           id="image-components-label"
-          className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "leading-tight text-muted-foreground")}
+          className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "px-1.5 leading-tight text-muted-foreground")}
         >
           Periodic images
         </h2>

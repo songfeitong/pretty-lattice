@@ -37,11 +37,12 @@ import {
   vectorEditorRows,
 } from "./vectorEditorModel";
 
-type ManualButtonFeedbackTarget = "apply" | "reset";
+type VectorEditorButtonFeedbackTarget = "apply" | "reset";
 
-const PRIMARY_AXIS_TOKEN_COLOR = "#505050";
+const PRIMARY_AXIS_LABEL_CLASS =
+  "inline-flex h-6 w-7 items-center justify-center px-0 text-xs font-bold italic leading-none";
 const VECTOR_AXIS_TOKEN_CLASS =
-  "inline-flex h-6 w-7 items-center justify-center rounded-md px-0 text-xs font-bold italic leading-none shadow-sm";
+  "inline-flex h-6 w-7 items-center justify-center rounded-md px-0 font-bold italic leading-none";
 
 export function VectorEditor({
   cameraState,
@@ -58,17 +59,17 @@ export function VectorEditor({
   const [draft, setDraft] = useState(currentDraft);
   const [isDirty, setIsDirty] = useState(false);
   const [buttonFeedbackPhase, setButtonFeedbackPhase] = useState<
-    Record<ManualButtonFeedbackTarget, ToolButtonFeedbackPhase>
+    Record<VectorEditorButtonFeedbackTarget, ToolButtonFeedbackPhase>
   >({
     apply: null,
     reset: null,
   });
-  const buttonFeedbackTickRef = useRef<Record<ManualButtonFeedbackTarget, number>>({
+  const buttonFeedbackTickRef = useRef<Record<VectorEditorButtonFeedbackTarget, number>>({
     apply: 0,
     reset: 0,
   });
   const buttonFeedbackTimeoutRef = useRef<
-    Record<ManualButtonFeedbackTarget, number | null>
+    Record<VectorEditorButtonFeedbackTarget, number | null>
   >({
     apply: null,
     reset: null,
@@ -90,7 +91,7 @@ export function VectorEditor({
     };
   }, []);
 
-  function triggerButtonFeedback(target: ManualButtonFeedbackTarget) {
+  function triggerButtonFeedback(target: VectorEditorButtonFeedbackTarget) {
     const currentTimeout = buttonFeedbackTimeoutRef.current[target];
     if (currentTimeout !== null) {
       window.clearTimeout(currentTimeout);
@@ -163,20 +164,20 @@ export function VectorEditor({
   }
 
   return (
-    <section aria-labelledby="camera-manual-label" className="mt-1 grid gap-1.5 px-1.5 pb-1">
+    <section aria-labelledby="camera-numerical-label" className="mt-1 grid gap-1.5 px-1.5 pb-1">
       <div className="flex h-7 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1">
           <h2
-            id="camera-manual-label"
+            id="camera-numerical-label"
             className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "leading-tight text-muted-foreground")}
           >
-            Manual input
+            Numerical input
           </h2>
           <Tooltip delayDuration={650}>
             <TooltipTrigger asChild>
               <button
                 type="button"
-                aria-label="Manual input rules"
+                aria-label="Numerical input rules"
                 className="inline-flex size-4 items-center justify-center rounded-md text-muted-foreground/75 outline-none transition-colors hover:text-foreground focus-visible:ring-[2px] focus-visible:ring-ring/30"
               >
                 <Info aria-hidden="true" className="size-3.5" />
@@ -271,12 +272,11 @@ function VectorEditorRow({
   const labelContent = isPrimaryAxis || !secondaryToggleOption || !nextSecondaryDirection ? (
     <span
       className={cn(
-        VECTOR_AXIS_TOKEN_CLASS,
+        isPrimaryAxis ? PRIMARY_AXIS_LABEL_CLASS : VECTOR_AXIS_TOKEN_CLASS,
         isPrimaryAxis
-          ? "text-white"
+          ? "text-muted-foreground"
           : "bg-muted text-muted-foreground",
       )}
-      style={isPrimaryAxis ? { backgroundColor: PRIMARY_AXIS_TOKEN_COLOR } : undefined}
     >
       {label}
     </span>
@@ -286,7 +286,7 @@ function VectorEditorRow({
       aria-label={`${secondaryToggleOption.letter} secondary axis`}
       className={cn(
         VECTOR_AXIS_TOKEN_CLASS,
-        "bg-muted text-muted-foreground transition-[background-color,color,box-shadow] hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-ring/25",
+        "border border-foreground/10 bg-background text-xs text-muted-foreground shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-[background-color,border-color,color,box-shadow] hover:border-foreground/15 hover:bg-accent/80 hover:text-foreground hover:shadow-[0_1px_3px_rgb(0_0_0/0.06)] focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-ring/25",
       )}
       onClick={() => onSecondaryChange(nextSecondaryDirection)}
     >
@@ -301,7 +301,7 @@ function VectorEditorRow({
       data-primary-axis={isPrimaryAxis ? "true" : undefined}
     >
       {labelContent}
-      <div className="grid min-w-0 grid-cols-[2.75rem_0.8rem_0.45rem_2.75rem_0.8rem_0.45rem_2.75rem_0.8rem] items-center gap-x-0.5">
+      <div className="grid min-w-0 -translate-x-2 grid-cols-[3rem_0.8rem_0.45rem_3rem_0.8rem_0.45rem_3rem_0.8rem] items-center gap-x-0.5">
         {basisLabels.map((basisLabel, index) => (
           <Fragment key={basisLabel}>
             <label className="contents">
@@ -372,7 +372,7 @@ function VectorCoefficientInput({
       inputMode="decimal"
       value={displayedValue}
       aria-label={accessibleLabel}
-      className="h-[22px] w-[2.75rem] min-w-0 px-1 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]"
+      className="h-[22px] w-[3rem] min-w-0 px-1 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]"
       onBlur={handleBlur}
       onChange={handleChange}
       onFocus={handleFocus}

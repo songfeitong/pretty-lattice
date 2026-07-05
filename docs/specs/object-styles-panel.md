@@ -110,7 +110,7 @@ Radius values are absolute display radii in Angstrom.
 The radius cell uses an inline numeric input. The input contains only the
 number. The unit appears only in the column header as `R (Å)`.
 
-The radius input follows the compact manual-input sizing used in the Pose
+The radius input follows the compact numerical-input sizing used in the Pose
 panel: 22px control height, small monospace numerals, and no unit inside the
 input.
 

@@ -172,8 +172,9 @@ function ScreenAxisOverlayLabel({
   return (
     <span
       aria-hidden="true"
+      data-screen-axis-label={direction}
       className={cn(
-        "pointer-events-none absolute z-[5] select-none text-xs font-semibold italic leading-none transition-colors",
+        "pointer-events-none absolute z-[5] select-none text-[11px] font-semibold italic leading-none transition-colors",
         isEmphasized ? "text-foreground" : "text-muted-foreground/55",
         className,
       )}

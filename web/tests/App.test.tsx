@@ -360,6 +360,9 @@ describe("App", () => {
     expect(within(commonControls).queryByRole("heading", { name: "Display" })).toBeNull();
     expect(within(commonControls).getByText("Periodic images").isConnected).toBe(true);
     expect(
+      within(commonControls).getByRole("heading", { name: "Periodic images" }).className,
+    ).toContain("px-1.5");
+    expect(
       commonControls.querySelector("[data-slot='common-controls-content']")?.className,
     ).not.toContain("h-[");
     const polyhedraCheckbox = within(commonControls).getByRole("checkbox", {
@@ -1269,6 +1272,10 @@ describe("App", () => {
     expect(bondThicknessInput.value).toBe("100");
     expect(commonControls.querySelectorAll(".opacity-slider-snap-marker")).toHaveLength(0);
     expect(within(commonControls).getByText("Atom").isConnected).toBe(true);
+    expect(atomRadiusModelButton.className).toContain("hover:bg-accent");
+    await user.hover(atomRadiusModelButton);
+    expect(await screen.findByRole("tooltip", { name: "Select atom radius model" })).toBeTruthy();
+    await user.unhover(atomRadiusModelButton);
     expect(materialSelect.textContent).toContain("Modern Matte");
     expect(bondStyleSelect.textContent).toContain("Bicolor");
     expect(within(commonControls).queryByRole("button", { name: "Bond color" })).toBeNull();
@@ -1542,7 +1549,7 @@ describe("App", () => {
       name: "XHigh 3D Mesh Quality",
     });
     const resetQualityButton = within(commonControls).getByRole("button", {
-      name: "Reset render settings",
+      name: "Reset Output Settings",
     }) as HTMLButtonElement;
     const formatSelect = within(commonControls).getByRole("combobox", {
       name: "Format",
@@ -1822,7 +1829,7 @@ describe("App", () => {
     ).toContain("common-controls-keepalive-tab");
   });
 
-  test("shows crystal camera controls with fixed manual vector editing", async () => {
+  test("shows crystal camera controls with fixed numerical vector editing", async () => {
     const user = userEvent.setup();
 
     await renderLoadedStructure(user);
@@ -1831,7 +1838,7 @@ describe("App", () => {
     await user.click(within(commonControls).getByRole("tab", { name: "Pose" }));
 
     expect(within(commonControls).queryByText("No controls")).toBeNull();
-    expect(within(commonControls).getByText("Primary Axis").isConnected).toBe(true);
+    expect(within(commonControls).getByText("Primary axis").isConnected).toBe(true);
     expect(within(commonControls).queryByText("Primary direction")).toBeNull();
     expect(
       within(commonControls).getByRole("button", { name: "Z Out" }).getAttribute("aria-pressed"),
@@ -1839,6 +1846,9 @@ describe("App", () => {
     expect(
       within(commonControls).getByRole("button", { name: "X Right" }).getAttribute("aria-pressed"),
     ).toBe("false");
+    expect(
+      commonControls.querySelector("[data-screen-axis-label='outward']")?.className,
+    ).toContain("text-[11px]");
     expect(within(commonControls).getByRole("slider", { name: "Roll" }).getAttribute("aria-valuenow"))
       .toBe("344");
     expect(within(commonControls).getByRole("slider", { name: "Roll" }).getAttribute("aria-valuemin"))
@@ -1857,9 +1867,9 @@ describe("App", () => {
       rollSlider.querySelector("[data-slot='angle-slider-thumb']")?.className,
     ).toContain("group-focus-visible:ring-[2px]");
 
-    expect(within(commonControls).getByText("Manual input").isConnected).toBe(true);
+    expect(within(commonControls).getByText("Numerical input").isConnected).toBe(true);
     expect(
-      within(commonControls).getByRole("button", { name: "Manual input rules" }).isConnected,
+      within(commonControls).getByRole("button", { name: "Numerical input rules" }).isConnected,
     ).toBe(true);
     expect(
       within(commonControls)
@@ -1878,6 +1888,23 @@ describe("App", () => {
       within(commonControls).getByRole("textbox", { name: "Z a" }),
     ).toHaveProperty("value", "1.00");
     expect(
+      within(commonControls).getByRole("textbox", { name: "Z a" }).className,
+    ).toContain("w-[3rem]");
+    expect(
+      within(commonControls)
+        .getByRole("textbox", { name: "Z a" })
+        .closest('[data-camera-vector-row="z"]')
+        ?.querySelector(".grid.min-w-0")
+        ?.className,
+    ).toContain("grid-cols-[3rem_0.8rem_0.45rem_3rem_0.8rem_0.45rem_3rem_0.8rem]");
+    expect(
+      within(commonControls)
+        .getByRole("textbox", { name: "Z a" })
+        .closest('[data-camera-vector-row="z"]')
+        ?.querySelector(".grid.min-w-0")
+        ?.className,
+    ).toContain("-translate-x-2");
+    expect(
       within(commonControls).getByRole("textbox", { name: "Z b" }),
     ).toHaveProperty("value", "0.33");
     expect(
@@ -1893,11 +1920,44 @@ describe("App", () => {
       within(commonControls).getByRole("button", { name: "Y secondary axis" }).textContent,
     ).toBe("Y");
     expect(
+      within(commonControls).getByRole("button", { name: "Y secondary axis" }).className,
+    ).toContain("bg-background");
+    expect(
+      within(commonControls).getByRole("button", { name: "Y secondary axis" }).className,
+    ).toContain("border-foreground/10");
+    expect(
+      within(commonControls).getByRole("button", { name: "Y secondary axis" }).className,
+    ).toContain("shadow-[0_1px_2px_rgb(0_0_0/0.04)]");
+    expect(
+      within(commonControls).getByRole("button", { name: "Y secondary axis" }).className,
+    ).toContain("hover:bg-accent/80");
+    expect(
       within(commonControls)
         .getByRole("textbox", { name: "Z a" })
         .closest('[data-camera-vector-row="z"]')
         ?.getAttribute("data-primary-axis"),
     ).toBe("true");
+    expect(
+      within(commonControls)
+        .getByRole("textbox", { name: "Z a" })
+        .closest('[data-camera-vector-row="z"]')
+        ?.querySelector("span")
+        ?.className,
+    ).toContain("text-xs");
+    expect(
+      within(commonControls)
+        .getByRole("textbox", { name: "Z a" })
+        .closest('[data-camera-vector-row="z"]')
+        ?.querySelector("span")
+        ?.className,
+    ).not.toContain("bg-");
+    expect(
+      within(commonControls)
+        .getByRole("textbox", { name: "Z a" })
+        .closest('[data-camera-vector-row="z"]')
+        ?.querySelector("span")
+        ?.className,
+    ).toContain("text-muted-foreground");
     expect(
       within(commonControls)
         .getByRole("textbox", { name: "Y a*" })

@@ -59,7 +59,7 @@ $$
 
 independent of the cell angles.
 
-For manual input, the primary screen direction is kept fixed. We first normalize
+For numerical input, the primary screen direction is kept fixed. We first normalize
 it,
 
 $$

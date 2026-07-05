@@ -216,7 +216,7 @@ export function ExportTabContent({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Reset render settings"
+                  aria-label="Reset Output Settings"
                   className={cn(
                     TOOL_ICON_BUTTON_CLASS,
                     resetFeedbackPhase === "a" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS : null,
@@ -228,7 +228,7 @@ export function ExportTabContent({
                 </Button>
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top">Reset render settings</TooltipContent>
+            <TooltipContent side="top">Reset Output Settings</TooltipContent>
           </Tooltip>
         </div>
 

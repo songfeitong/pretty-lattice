@@ -670,7 +670,7 @@ The frontend SHALL use a shared alert component for fatal parse errors and non-f
 
 ### Requirement: Camera tab provides crystal-aware direction controls
 
-The frontend SHALL replace the reserved `Camera` tab content with crystal-aware camera controls after a valid structure scene is loaded. The tab SHALL expose a `Fixed-axis rotation` section with a `Primary Axis` tab control for `Outward` and `Upward`, SHALL default to `Outward`, SHALL expose a live Roll control with a `Reset roll` action, and SHALL expose precise vector input inside a fixed `Manual input` section. The controls SHALL use the existing common-controls panel styling, including tab-like segmented controls and existing numeric input styling.
+The frontend SHALL replace the reserved `Camera` tab content with crystal-aware camera controls after a valid structure scene is loaded. The tab SHALL expose a `Fixed-axis rotation` section with a `Primary axis` tab control for `Outward` and `Upward`, SHALL default to `Outward`, SHALL expose a live Roll control with a `Reset roll` action, and SHALL expose precise vector input inside a fixed `Numerical input` section. The controls SHALL use the existing common-controls panel styling, including tab-like segmented controls and existing numeric input styling.
 
 #### Scenario: Show implemented Camera tab controls
 
@@ -679,7 +679,7 @@ The frontend SHALL replace the reserved `Camera` tab content with crystal-aware 
 - **AND** the tab shows a `Primary Axis` control with `Outward` and `Upward`
 - **AND** `Outward` is selected by default
 - **AND** the tab shows a Roll control and `Reset roll` action
-- **AND** the tab shows a fixed `Manual input` section
+- **AND** the tab shows a fixed `Numerical input` section
 - **AND** the tab does not show a reserved-state message
 
 #### Scenario: Switch Primary Axis without rotating the preview
@@ -724,11 +724,11 @@ The frontend SHALL define Roll around the current primary direct-lattice directi
 - **AND** the primary direct direction remains fixed
 - **AND** the secondary reciprocal direction changes according to the Roll angle
 
-### Requirement: Manual input editor batch-applies direct and reciprocal coefficients
+### Requirement: Numerical input editor batch-applies direct and reciprocal coefficients
 
-The `Manual input` section SHALL remain visible in the Camera tab. It SHALL show `Outward` and `Upward` semantic rows in that order. The row matching the selected `Primary Axis` SHALL use direct basis labels `a`, `b`, and `c`; the other row SHALL use reciprocal basis labels `a*`, `b*`, and `c*`. Switching `Primary Axis` SHALL keep the row order fixed, swap the direct and reciprocal basis labels, and visually highlight the selected primary row. Editing vector fields SHALL create a draft that does not rotate the preview until the user applies all vector fields together.
+The `Numerical input` section SHALL remain visible in the Camera tab. It SHALL show `Outward` and `Upward` semantic rows in that order. The row matching the selected `Primary axis` SHALL use direct basis labels `a`, `b`, and `c`; the other row SHALL use reciprocal basis labels `a*`, `b*`, and `c*`. Switching `Primary axis` SHALL keep the row order fixed, swap the direct and reciprocal basis labels, and visually highlight the selected primary row. Editing vector fields SHALL create a draft that does not rotate the preview until the user applies all vector fields together.
 
-#### Scenario: Show Manual input in Upward primary mode
+#### Scenario: Show Numerical input in Upward primary mode
 
 - **GIVEN** `Primary Axis` is `Upward`
 - **WHEN** the user opens `Camera`
@@ -737,7 +737,7 @@ The `Manual input` section SHALL remain visible in the Camera tab. It SHALL show
 - **AND** the `Outward` row remains first
 - **AND** the `Upward` row is visually highlighted
 
-#### Scenario: Show Manual input in Outward primary mode
+#### Scenario: Show Numerical input in Outward primary mode
 
 - **GIVEN** `Primary Axis` is `Outward`
 - **WHEN** the user opens `Camera`
