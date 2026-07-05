@@ -122,6 +122,10 @@
     pointer-events: none;
   }
 
+  .stable-scrollbar-gutter {
+    scrollbar-gutter: stable;
+  }
+
   [data-inspector-sidebar-tabs][data-variant="line"] > [data-slot="tabs-trigger"] {
     cursor: pointer;
     transition: none !important;

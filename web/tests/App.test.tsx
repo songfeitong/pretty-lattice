@@ -1014,6 +1014,7 @@ describe("App", () => {
 
     const inspectorBody = sidebar.querySelector('[data-slot="inspector-body"]');
     expect(inspectorBody).toBeInstanceOf(HTMLElement);
+    expect(inspectorBody?.classList.contains("stable-scrollbar-gutter")).toBe(true);
     Object.defineProperty(inspectorBody, "clientHeight", {
       configurable: true,
       value: 320,

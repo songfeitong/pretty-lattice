@@ -229,7 +229,7 @@ export function InspectorSidebar({
 
         <div
           data-slot="inspector-body"
-          className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
+          className="stable-scrollbar-gutter min-h-0 flex-1 overflow-y-auto px-4 py-4"
         >
           <TabsContent value="settings" className="m-0">
             <SettingsPanel
