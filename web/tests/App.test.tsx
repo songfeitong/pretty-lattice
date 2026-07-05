@@ -1364,6 +1364,9 @@ describe("App", () => {
     await user.click(atomRadiusModelButton);
     expect(await screen.findByRole("listbox", { name: "Atom radius model" })).toBeTruthy();
     await user.click(await screen.findByRole("option", { name: "Van der Waals" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("tooltip", { name: "Select atom radius model" })).toBeNull(),
+    );
 
     expect(fetchCalls).toHaveLength(1);
     expect(atomRadiusModelButton.getAttribute("aria-label")).toBe(

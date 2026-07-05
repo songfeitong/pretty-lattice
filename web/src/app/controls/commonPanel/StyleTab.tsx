@@ -545,13 +545,40 @@ function AtomRadiusModelPopover({
   value: AtomRadiusStyleModel;
 }) {
   const [open, setOpen] = useState(false);
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+  const [tooltipSuppressed, setTooltipSuppressed] = useState(false);
   const selectedOption = ATOM_RADIUS_MODEL_OPTIONS.find((option) => option.value === value);
 
+  function handlePopoverOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+    if (nextOpen) {
+      setTooltipOpen(false);
+      setTooltipSuppressed(true);
+    }
+  }
+
+  function handleTooltipOpenChange(nextOpen: boolean) {
+    if (nextOpen && (open || tooltipSuppressed)) {
+      return;
+    }
+
+    setTooltipOpen(nextOpen);
+  }
+
+  function restoreTooltipHover() {
+    setTooltipSuppressed(false);
+    setTooltipOpen(false);
+  }
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handlePopoverOpenChange}>
       <span className="inline-flex min-w-0 items-center gap-1">
         <span className="min-w-0 truncate">Atom</span>
-        <Tooltip delayDuration={300}>
+        <Tooltip
+          delayDuration={300}
+          open={tooltipOpen}
+          onOpenChange={handleTooltipOpenChange}
+        >
           <PopoverTrigger asChild>
             <TooltipTrigger asChild>
               <Button
@@ -564,6 +591,8 @@ function AtomRadiusModelPopover({
                   TOOL_ICON_BUTTON_CLASS,
                   "size-5 rounded-[7px] border-input hover:border-foreground/15 hover:bg-accent hover:text-accent-foreground hover:shadow-sm focus-visible:ring-[2px] focus-visible:ring-ring/25 [&_svg]:size-3",
                 )}
+                onBlur={restoreTooltipHover}
+                onPointerLeave={restoreTooltipHover}
               >
                 <ChevronDown aria-hidden="true" />
               </Button>
@@ -600,6 +629,8 @@ function AtomRadiusModelPopover({
                   : "text-foreground",
               )}
               onClick={() => {
+                setTooltipOpen(false);
+                setTooltipSuppressed(true);
                 onValueChange(option.value);
                 setOpen(false);
               }}
