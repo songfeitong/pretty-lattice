@@ -49,7 +49,7 @@ export function AboutPrettyLatticeDialog() {
           </DialogTitle>
 
           <DialogDescription className="mt-2.5 max-w-[20rem] text-[0.9rem] leading-5 text-foreground/76">
-            A crystal visualization tool for creating pretty figures.
+            A crystal visualization tool for creating beautiful figures.
           </DialogDescription>
 
           <p className="mt-4 text-sm leading-5 text-muted-foreground">
@@ -57,9 +57,8 @@ export function AboutPrettyLatticeDialog() {
           </p>
         </div>
 
-        <div className="mt-auto flex flex-col gap-1 pt-5 text-[0.82rem] leading-5 text-muted-foreground">
-          <p>© 2026 Feitong Song.</p>
-          <p>Released under the MIT License.</p>
+        <div className="mt-auto pt-5 text-[0.82rem] leading-5 text-muted-foreground">
+          <p>© 2026 Feitong Song · MIT License</p>
         </div>
       </div>
     </DialogContent>

@@ -307,8 +307,7 @@ describe("App", () => {
         .getAttribute("href"),
     ).toBe("https://github.com/songfeitong/pretty-lattice");
     expect(within(aboutDialog).getByText(`Version ${readPrettyLatticeVersion()}`)).toBeTruthy();
-    expect(within(aboutDialog).getByText("© 2026 Feitong Song.")).toBeTruthy();
-    expect(within(aboutDialog).getByText("Released under the MIT License.")).toBeTruthy();
+    expect(within(aboutDialog).getByText("© 2026 Feitong Song · MIT License")).toBeTruthy();
   });
 
   test("uploads a structure and renders the summary, legend, and view controls", async () => {
