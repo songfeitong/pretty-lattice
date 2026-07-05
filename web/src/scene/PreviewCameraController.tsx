@@ -42,6 +42,10 @@ const CAMERA_CONTROLS_STATE_TOUCH_ROTATE = 3;
 const CAMERA_CONTROLS_STATE_ORBIT_TOUCH_DOLLY_ROTATE = 6;
 const VIEW_SCALE_SYNC_EPSILON = 0.0005;
 const FRUSTUM_SYNC_EPSILON = 0.000001;
+const TRACKBALL_ZOOM_SPEED = 1.2;
+const TRACKBALL_DYNAMIC_DAMPING_FACTOR = 0.2;
+const TRACKBALL_NO_INERTIA_ROTATE_RESPONSE_MULTIPLIER = 1.6;
+const TRACKBALL_NO_INERTIA_ZOOM_RESPONSE_MULTIPLIER = 4;
 
 type CameraControls = OrbitControls | TrackballControls;
 
@@ -68,6 +72,7 @@ export function PreviewCameraController({
   interactionMode,
   dragSensitivity,
   layout,
+  mouseInertia,
   onCameraCommandAnimationActiveChange,
   onCameraControlsInteractionActiveChange,
   resetCounter,
@@ -82,6 +87,7 @@ export function PreviewCameraController({
   interactionMode: InteractionMode;
   dragSensitivity: number;
   layout: SceneLayout;
+  mouseInertia: boolean;
   onCameraCommandAnimationActiveChange?: (isActive: boolean) => void;
   onCameraControlsInteractionActiveChange?: (
     isActive: boolean,
@@ -113,6 +119,8 @@ export function PreviewCameraController({
   const lastLayoutSpanRef = useRef(layout.span);
   const lastResetCounterRef = useRef(resetCounter);
   const syncedViewScaleRef = useRef(cameraInteractionStore.getViewScaleSnapshot());
+  const trackballDirectFlushPendingRef = useRef(false);
+  const trackballInertiaPendingRef = useRef(false);
   cameraPoseRef.current = cameraPose;
   const effectiveSafeArea = useMemo(
     () => previewSafeAreaForViewport(safeArea, size.width),
@@ -252,6 +260,9 @@ export function PreviewCameraController({
     lastLayoutSpanRef.current = layout.span;
     hasAppliedInitialPoseRef.current = true;
 
+    trackballDirectFlushPendingRef.current = false;
+    trackballInertiaPendingRef.current = false;
+
     if (shouldAnimate) {
       cameraAnimationRef.current = createCameraPoseAnimation(camera, cameraPoseRef.current, layout.span);
       setCameraAnimationActive(true);
@@ -345,6 +356,8 @@ export function PreviewCameraController({
         layout.span,
       );
       controlsRef.current?.target.copy(CAMERA_TARGET);
+      trackballDirectFlushPendingRef.current = false;
+      trackballInertiaPendingRef.current = false;
       controlsRef.current?.update();
       requestFrame();
     });
@@ -375,13 +388,22 @@ export function PreviewCameraController({
       requestFrame();
     }
     const activePointerIds = new Set<number>();
+    function markTrackballEventFlushed() {
+      if (!mouseInertia && controls instanceof TrackballControls) {
+        trackballDirectFlushPendingRef.current = true;
+      }
+    }
     function handlePointerDown(event: PointerEvent) {
       activePointerIds.add(event.pointerId);
       requestFrame();
     }
     function handlePointerMove() {
       if (activePointerIds.size > 0) {
-        requestFrame();
+        if (!mouseInertia && controls instanceof TrackballControls) {
+          flushTrackballControlsAfterPointerMove();
+        } else {
+          requestFrame();
+        }
       }
     }
     function handlePointerEnd(event: PointerEvent) {
@@ -393,7 +415,36 @@ export function PreviewCameraController({
       requestFrame();
     }
     function handleWheel() {
+      if (!mouseInertia) {
+        flushTrackballControlsAfterWheel();
+      }
       requestFrame();
+    }
+    function flushTrackballControlsAfterPointerMove() {
+      if (!(controls instanceof TrackballControls)) {
+        return;
+      }
+
+      queueMicrotask(() => {
+        if (controlsRef.current !== controls || activePointerIds.size === 0) {
+          return;
+        }
+
+        // Trackball adds its active pointermove listener after ours, on
+        // pointerdown. Queueing lets Trackball record this event's latest
+        // delta before the no-inertia direct flush.
+        controls.update();
+        markTrackballEventFlushed();
+        requestFrame();
+      });
+    }
+    function flushTrackballControlsAfterWheel() {
+      if (!(controls instanceof TrackballControls)) {
+        return;
+      }
+
+      controls.update();
+      markTrackballEventFlushed();
     }
 
     configureCameraControls(
@@ -402,7 +453,10 @@ export function PreviewCameraController({
       interactionLocked,
       fitZoom,
       dragSensitivity,
+      mouseInertia,
     );
+    trackballDirectFlushPendingRef.current = false;
+    trackballInertiaPendingRef.current = false;
     controls.target.copy(CAMERA_TARGET);
     resizeCameraControls(controls);
     controls.addEventListener("start", handleControlsStart);
@@ -438,6 +492,7 @@ export function PreviewCameraController({
     gl.domElement,
     dragSensitivity,
     interactionMode,
+    mouseInertia,
     requestFrame,
     requestCameraControlsInteractionFinish,
     resetCounter,
@@ -461,7 +516,10 @@ export function PreviewCameraController({
       interactionLocked,
       fitZoom,
       dragSensitivity,
+      mouseInertia,
     );
+    trackballDirectFlushPendingRef.current = false;
+    trackballInertiaPendingRef.current = false;
     controls.target.copy(CAMERA_TARGET);
     controls.update();
     requestFrame();
@@ -470,6 +528,7 @@ export function PreviewCameraController({
     fitZoom,
     interactionLocked,
     interactionMode,
+    mouseInertia,
     requestFrame,
     resetCounter,
   ]);
@@ -519,6 +578,7 @@ export function PreviewCameraController({
     );
     const previousFrameZoom = getCameraZoomSnapshot();
     const animation = cameraAnimationRef.current;
+    let controlsUpdated = false;
     if (animation) {
       const isComplete = applyCameraPoseAnimationFrame(camera, animation, performance.now());
       if (isComplete) {
@@ -526,9 +586,15 @@ export function PreviewCameraController({
         setCameraAnimationActive(false);
       }
       controlsRef.current?.target.copy(CAMERA_TARGET);
+      trackballDirectFlushPendingRef.current = false;
+      trackballInertiaPendingRef.current = false;
       controlsRef.current?.update();
+      controlsUpdated = true;
     } else {
-      controlsRef.current?.update();
+      controlsUpdated = updateCameraControlsForFrame(
+        controlsRef.current,
+        trackballDirectFlushPendingRef,
+      );
     }
 
     if (camera instanceof OrthographicCamera) {
@@ -549,7 +615,17 @@ export function PreviewCameraController({
         CAMERA_CONTROLS_IDLE_EPSILON_RADIANS ||
       Math.abs(getCameraZoomSnapshot() - previousFrameZoom) >
         CAMERA_CONTROLS_IDLE_ZOOM_EPSILON;
-    if (cameraMoved || cameraAnimationRef.current) {
+    const hasPendingTrackballInertia =
+      mouseInertia &&
+      controlsRef.current instanceof TrackballControls &&
+      trackballInertiaPendingRef.current;
+    if (hasPendingTrackballInertia && controlsUpdated && !cameraMoved) {
+      trackballInertiaPendingRef.current = false;
+    }
+    if (cameraMoved) {
+      trackballInertiaPendingRef.current = true;
+    }
+    if (cameraMoved || cameraAnimationRef.current || hasPendingTrackballInertia) {
       requestFrame();
     }
   });
@@ -675,13 +751,24 @@ function configureCameraControls(
   interactionLocked: boolean,
   fitZoom: number,
   dragSensitivity: number,
+  mouseInertia: boolean,
 ) {
   controls.enabled = !interactionLocked;
   controls.minZoom = fitZoom * MIN_VIEW_SCALE;
   controls.maxZoom = fitZoom * MAX_VIEW_SCALE;
 
   if (interactionMode === "trackball" && controls instanceof TrackballControls) {
-    controls.rotateSpeed = BASE_TRACKBALL_DRAG_SENSITIVITY * dragSensitivity;
+    const rotateResponseMultiplier = mouseInertia
+      ? 1
+      : TRACKBALL_NO_INERTIA_ROTATE_RESPONSE_MULTIPLIER;
+    const zoomResponseMultiplier = mouseInertia
+      ? 1
+      : TRACKBALL_NO_INERTIA_ZOOM_RESPONSE_MULTIPLIER;
+    controls.rotateSpeed =
+      BASE_TRACKBALL_DRAG_SENSITIVITY * dragSensitivity * rotateResponseMultiplier;
+    controls.zoomSpeed = TRACKBALL_ZOOM_SPEED * zoomResponseMultiplier;
+    controls.dynamicDampingFactor = TRACKBALL_DYNAMIC_DAMPING_FACTOR;
+    controls.staticMoving = !mouseInertia;
     controls.noPan = true;
     controls.noZoom = interactionLocked;
     controls.noRotate = interactionLocked;
@@ -703,6 +790,24 @@ function configureCameraControls(
     controls.touches.ONE = TOUCH.ROTATE;
     controls.touches.TWO = TOUCH.DOLLY_ROTATE;
   }
+}
+
+function updateCameraControlsForFrame(
+  controls: CameraControls | null,
+  trackballDirectFlushPendingRef: { current: boolean },
+) {
+  if (!controls) {
+    return false;
+  }
+
+  if (controls instanceof TrackballControls && trackballDirectFlushPendingRef.current) {
+    trackballDirectFlushPendingRef.current = false;
+    return false;
+  }
+
+  trackballDirectFlushPendingRef.current = false;
+  controls.update();
+  return true;
 }
 
 function resizeCameraControls(controls: CameraControls | null) {

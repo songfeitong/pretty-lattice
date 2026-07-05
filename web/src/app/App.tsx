@@ -208,6 +208,7 @@ function AppContent() {
     handleInteractionLockedChange,
     handleInteractionModeChange,
     handleLightStrengthChange,
+    handleMouseInertiaChange,
     handleResetView,
     handleShowFpsOverlayChange,
     isCameraCommandAnimationActive,
@@ -642,6 +643,7 @@ function AppContent() {
                 }
                 interactionLocked={viewState.interactionLocked}
                 interactionMode={viewState.interactionMode}
+                mouseInertia={viewState.mouseInertia}
                 layoutScene={scene ?? visibleScene}
                 resetCounter={viewState.resetCounter}
                 safeArea={previewSafeArea}
@@ -810,6 +812,7 @@ function AppContent() {
                   dragSensitivity={viewState.dragSensitivity}
                   interactionMode={viewState.interactionMode}
                   lightStrength={viewState.lightStrength}
+                  mouseInertia={viewState.mouseInertia}
                   isCustomColorScheme={style.colorSchemeMode === "custom"}
                   isOpen={isInspectorOpen}
                   isSceneLoading={previewStatus === "loading"}
@@ -831,6 +834,7 @@ function AppContent() {
                   onDragSensitivityChange={handleDragSensitivityChange}
                   onInteractionModeChange={handleInteractionModeChange}
                   onLightStrengthChange={handleLightStrengthChange}
+                  onMouseInertiaChange={handleMouseInertiaChange}
                   onPreviewMeshQualityChange={handlePreviewMeshQualityChange}
                   onFogAffectsUnitCellChange={handleFogAffectsUnitCellChange}
                   onDistinguishSimilarColorsChange={handleDistinguishSimilarColorsChange}

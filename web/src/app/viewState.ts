@@ -14,6 +14,7 @@ export {
   BASE_TRACKBALL_DRAG_SENSITIVITY,
   DEFAULT_DRAG_SENSITIVITY,
   DEFAULT_LIGHT_STRENGTH,
+  DEFAULT_MOUSE_INERTIA,
   DEFAULT_VIEW_SCALE,
   DRAG_SENSITIVITY_SLIDER_SNAP_POSITION,
   DRAG_SENSITIVITY_SLIDER_SNAP_THRESHOLD,
@@ -52,6 +53,7 @@ import {
   clampDragSensitivity,
   DEFAULT_DRAG_SENSITIVITY,
   clampLightStrength,
+  DEFAULT_MOUSE_INERTIA,
   DEFAULT_LIGHT_STRENGTH,
 } from "../model/viewState";
 
@@ -61,6 +63,7 @@ export interface PreviewViewState {
   interactionLocked: boolean;
   interactionMode: InteractionMode;
   lightStrength: number;
+  mouseInertia: boolean;
   resetCounter: number;
   showFpsOverlay: boolean;
 }
@@ -72,6 +75,7 @@ export function createPreviewViewState(cellVectors: VectorTuple[] = []): Preview
     interactionLocked: false,
     interactionMode: "trackball",
     lightStrength: DEFAULT_LIGHT_STRENGTH,
+    mouseInertia: DEFAULT_MOUSE_INERTIA,
     resetCounter: 0,
     showFpsOverlay: false,
   };
@@ -144,6 +148,16 @@ export function setPreviewDragSensitivity(
   return {
     ...state,
     dragSensitivity: clampDragSensitivity(dragSensitivity),
+  };
+}
+
+export function setPreviewMouseInertia(
+  state: PreviewViewState,
+  mouseInertia: boolean,
+): PreviewViewState {
+  return {
+    ...state,
+    mouseInertia,
   };
 }
 

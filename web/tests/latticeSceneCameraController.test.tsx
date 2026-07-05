@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 import { Children, isValidElement, type ReactNode } from "react";
 import { OrthographicCamera, Vector3 } from "three";
@@ -14,11 +14,14 @@ class MockControls {
   noPan = false;
   noRotate = false;
   noZoom = false;
+  dynamicDampingFactor = 0.2;
   rotateSpeed = 1;
   state = -1;
+  staticMoving = false;
   target = new Vector3();
   touches: Record<string, unknown> = {};
   updateCalls = 0;
+  zoomSpeed = 1.2;
   private listeners = new Map<string, Set<() => void>>();
 
   constructor() {
@@ -57,7 +60,7 @@ class MockTrackballControls extends MockControls {}
 let mockCamera = new OrthographicCamera();
 let mockDomElement = document.createElement("canvas");
 let invalidateCalls = 0;
-let latestFrameCallback: (() => void) | null = null;
+let latestFrameCallback: ((state?: unknown, delta?: number) => void) | null = null;
 let latestCanvasCameraProps: unknown = null;
 let latestCanvasFrameloop: unknown = null;
 let latestControls: MockControls | null = null;
@@ -99,7 +102,7 @@ mock.module("@react-three/fiber", () => ({
         </div>
       );
     })(),
-  useFrame: (callback: () => void) => {
+  useFrame: (callback: (state?: unknown, delta?: number) => void) => {
     latestFrameCallback = callback;
   },
   useThree: (selector?: (state: {
@@ -225,6 +228,8 @@ describe("LatticeScene camera commands", () => {
 
     expect(latestControls).toBeInstanceOf(MockTrackballControls);
     expect(latestControls?.rotateSpeed).toBe(4);
+    expect(latestControls?.staticMoving).toBe(false);
+    expect(latestControls?.zoomSpeed).toBe(1.2);
 
     rerender(
       <LatticeScene
@@ -243,6 +248,63 @@ describe("LatticeScene camera commands", () => {
 
     expect(latestControls).toBeInstanceOf(MockOrbitControls);
     expect(latestControls?.rotateSpeed).toBe(0.375);
+  });
+
+  test("boosts direct trackball response when mouse inertia is disabled", () => {
+    const scene = orthogonalScene();
+
+    render(
+      <LatticeScene
+        cameraCommandVersion={0}
+        cameraInteractionStore={createCameraInteractionStore()}
+        cameraState={createDefaultCrystalCameraState(scene.cell.vectors)}
+        componentOpacity={createDefaultComponentOpacity()}
+        dragSensitivity={2}
+        interactionLocked={false}
+        interactionMode="trackball"
+        mouseInertia={false}
+        resetCounter={0}
+        scene={scene}
+        style={createDefaultStyle()}
+      />,
+    );
+
+    expect(latestControls).toBeInstanceOf(MockTrackballControls);
+    expect(latestControls?.staticMoving).toBe(true);
+    expect(latestControls?.rotateSpeed).toBeCloseTo(6.4);
+    expect(latestControls?.zoomSpeed).toBeCloseTo(4.8);
+  });
+
+  test("advances trackball inertia on every requested frame", () => {
+    const scene = orthogonalScene();
+
+    render(
+      <LatticeScene
+        cameraCommandVersion={0}
+        cameraInteractionStore={createCameraInteractionStore()}
+        cameraState={createDefaultCrystalCameraState(scene.cell.vectors)}
+        componentOpacity={createDefaultComponentOpacity()}
+        interactionLocked={false}
+        interactionMode="trackball"
+        mouseInertia={true}
+        resetCounter={0}
+        scene={scene}
+        style={createDefaultStyle()}
+      />,
+    );
+
+    const controls = latestControls;
+    expect(controls).toBeInstanceOf(MockTrackballControls);
+    if (!controls) {
+      return;
+    }
+
+    controls.updateCalls = 0;
+    act(() => latestFrameCallback?.({}, 1 / 120));
+    expect(controls.updateCalls).toBe(1);
+
+    act(() => latestFrameCallback?.({}, 1 / 120));
+    expect(controls.updateCalls).toBe(2);
   });
 
   test("does not request another demand frame when the camera is static", () => {
@@ -289,6 +351,126 @@ describe("LatticeScene camera commands", () => {
     act(() => latestControls?.dispatchTestEvent("change"));
 
     expect(invalidateCalls).toBeGreaterThan(0);
+  });
+
+  test("flushes no-inertia trackball pointer moves before the next demand frame", async () => {
+    const scene = orthogonalScene();
+
+    render(
+      <LatticeScene
+        cameraCommandVersion={0}
+        cameraInteractionStore={createCameraInteractionStore()}
+        cameraState={createDefaultCrystalCameraState(scene.cell.vectors)}
+        componentOpacity={createDefaultComponentOpacity()}
+        interactionLocked={false}
+        interactionMode="trackball"
+        mouseInertia={false}
+        resetCounter={0}
+        scene={scene}
+        style={createDefaultStyle()}
+      />,
+    );
+
+    const controls = latestControls;
+    expect(controls).toBeInstanceOf(MockTrackballControls);
+    if (!controls) {
+      return;
+    }
+
+    await act(async () => {
+      fireEvent.pointerDown(mockDomElement, { pointerId: 1 });
+    });
+    controls.updateCalls = 0;
+    invalidateCalls = 0;
+
+    await act(async () => {
+      fireEvent.pointerMove(mockDomElement, { pointerId: 1 });
+      await Promise.resolve();
+    });
+    expect(controls.updateCalls).toBe(1);
+    expect(invalidateCalls).toBe(1);
+
+    await act(async () => {
+      fireEvent.pointerMove(mockDomElement, { pointerId: 1 });
+      await Promise.resolve();
+    });
+    expect(controls.updateCalls).toBe(2);
+  });
+
+  test("skips redundant trackball frame updates after no-inertia event flushes", async () => {
+    const scene = orthogonalScene();
+
+    render(
+      <LatticeScene
+        cameraCommandVersion={0}
+        cameraInteractionStore={createCameraInteractionStore()}
+        cameraState={createDefaultCrystalCameraState(scene.cell.vectors)}
+        componentOpacity={createDefaultComponentOpacity()}
+        interactionLocked={false}
+        interactionMode="trackball"
+        mouseInertia={false}
+        resetCounter={0}
+        scene={scene}
+        style={createDefaultStyle()}
+      />,
+    );
+
+    const controls = latestControls;
+    expect(controls).toBeInstanceOf(MockTrackballControls);
+    if (!controls) {
+      return;
+    }
+
+    await act(async () => {
+      fireEvent.pointerDown(mockDomElement, { pointerId: 1 });
+    });
+    controls.updateCalls = 0;
+
+    await act(async () => {
+      fireEvent.pointerMove(mockDomElement, { pointerId: 1 });
+      await Promise.resolve();
+    });
+    expect(controls.updateCalls).toBe(1);
+
+    act(() => latestFrameCallback?.({}, 1 / 60));
+    expect(controls.updateCalls).toBe(1);
+  });
+
+  test("flushes no-inertia trackball wheel events before the next demand frame", () => {
+    const scene = orthogonalScene();
+
+    render(
+      <LatticeScene
+        cameraCommandVersion={0}
+        cameraInteractionStore={createCameraInteractionStore()}
+        cameraState={createDefaultCrystalCameraState(scene.cell.vectors)}
+        componentOpacity={createDefaultComponentOpacity()}
+        interactionLocked={false}
+        interactionMode="trackball"
+        mouseInertia={false}
+        resetCounter={0}
+        scene={scene}
+        style={createDefaultStyle()}
+      />,
+    );
+
+    const controls = latestControls;
+    expect(controls).toBeInstanceOf(MockTrackballControls);
+    if (!controls) {
+      return;
+    }
+
+    controls.updateCalls = 0;
+    invalidateCalls = 0;
+
+    act(() => {
+      fireEvent.wheel(mockDomElement, { deltaY: 120 });
+    });
+    expect(controls.updateCalls).toBe(1);
+    expect(invalidateCalls).toBe(1);
+
+    act(() => latestFrameCallback?.({}, 1 / 60));
+    expect(controls.updateCalls).toBe(1);
   });
 
   test("requests a demand frame when preview render props change", () => {
@@ -611,7 +793,7 @@ describe("LatticeScene camera commands", () => {
     );
   });
 
-  test("keeps user camera interaction active until inertia settles", () => {
+  test("keeps user camera interaction active until controls settle", () => {
     const scene = orthogonalScene();
     const defaultCamera = createDefaultCrystalCameraState(scene.cell.vectors);
     const interactionChanges: {

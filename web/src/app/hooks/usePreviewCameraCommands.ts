@@ -32,6 +32,7 @@ import {
   setPreviewInteractionLocked,
   setPreviewInteractionMode,
   setPreviewLightStrength,
+  setPreviewMouseInertia,
   setPreviewShowFpsOverlay,
   type InteractionMode,
 } from "../viewState";
@@ -154,6 +155,12 @@ export function usePreviewCameraCommands({
   const handleDragSensitivityChange = useCallback((dragSensitivity: number) => {
     setViewState((currentViewState) =>
       setPreviewDragSensitivity(currentViewState, dragSensitivity),
+    );
+  }, []);
+
+  const handleMouseInertiaChange = useCallback((mouseInertia: boolean) => {
+    setViewState((currentViewState) =>
+      setPreviewMouseInertia(currentViewState, mouseInertia),
     );
   }, []);
 
@@ -398,6 +405,7 @@ export function usePreviewCameraCommands({
     handleInteractionLockedChange,
     handleInteractionModeChange,
     handleLightStrengthChange,
+    handleMouseInertiaChange,
     handleResetView,
     handleShowFpsOverlayChange,
     isCameraCommandAnimationActive,

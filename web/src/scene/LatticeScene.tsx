@@ -7,6 +7,7 @@ import type { CameraInteractionStore } from "../model/cameraInteractionStore";
 import type { PreviewSafeArea } from "../model/layout";
 import {
   DEFAULT_DRAG_SENSITIVITY,
+  DEFAULT_MOUSE_INERTIA,
   DEFAULT_PREVIEW_MESH_QUALITY,
   type ComponentOpacityState,
   type MeshQuality,
@@ -93,6 +94,7 @@ export function LatticeScene({
   interactionMode,
   layoutScene,
   lightStrength = 1,
+  mouseInertia = DEFAULT_MOUSE_INERTIA,
   onCameraCommandAnimationActiveChange,
   onCameraControlsInteractionActiveChange,
   onCameraOrientationFrame,
@@ -126,6 +128,7 @@ export function LatticeScene({
   interactionMode: InteractionMode;
   layoutScene?: SceneSpec;
   lightStrength?: number;
+  mouseInertia?: boolean;
   onCameraCommandAnimationActiveChange?: (isActive: boolean) => void;
   onCameraControlsInteractionActiveChange?: (
     isActive: boolean,
@@ -213,6 +216,7 @@ export function LatticeScene({
         dragSensitivity={dragSensitivity}
         interactionLocked={interactionLocked}
         interactionMode={interactionMode}
+        mouseInertia={mouseInertia}
         layout={layout}
         onCameraCommandAnimationActiveChange={onCameraCommandAnimationActiveChange}
         onCameraControlsInteractionActiveChange={onCameraControlsInteractionActiveChange}

@@ -15,7 +15,10 @@ import {
   createZipBlob as actualCreateZipBlob,
 } from "../src/app/exportFigure";
 import {
+  DEFAULT_DRAG_SENSITIVITY,
   STRUCTURE_ATOM_COUNT_THRESHOLD,
+  dragSensitivityToSliderPosition,
+  formatDragSensitivityPercent,
   type ExportFormat,
 } from "../src/model";
 import { MATERIAL_PRESET_OPTIONS } from "../src/model/materialPresets";
@@ -147,6 +150,12 @@ let exportRequests: CreateFigureExportOptions[] = [];
 let exportDirectDownloads: { file: FigureExportFile; sourceFileName: string | null }[] = [];
 let exportZipDownloads: { files: FigureExportFile[]; sourceFileName: string | null }[] = [];
 let exportFailure: Error | null = null;
+const DEFAULT_DRAG_SENSITIVITY_PERCENT = formatDragSensitivityPercent(
+  DEFAULT_DRAG_SENSITIVITY,
+);
+const DEFAULT_DRAG_SENSITIVITY_SLIDER_VALUE = String(
+  Math.round(dragSensitivityToSliderPosition(DEFAULT_DRAG_SENSITIVITY) * 1000),
+);
 
 async function createFigureExportFilesMock(
   options: CreateFigureExportOptions,
@@ -603,9 +612,15 @@ describe("App", () => {
     await user.click(within(commonControls).getByRole("combobox", { name: "Color scheme" }));
     await user.click(await screen.findByRole("option", { name: "Jmol" }));
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const inspector = screen.getByRole("complementary", { name: "Sidebar" });
+    const mouseInertiaSwitch = within(inspector).getByRole("switch", {
+      name: "Mouse inertia",
+    });
+    expect(mouseInertiaSwitch.getAttribute("aria-checked")).toBe("true");
+    await user.click(mouseInertiaSwitch);
+    expect(mouseInertiaSwitch.getAttribute("aria-checked")).toBe("false");
     await user.click(screen.getByRole("combobox", { name: "Mouse control" }));
     await user.click(await screen.findByRole("option", { name: "Orbit" }));
-    const inspector = screen.getByRole("complementary", { name: "Sidebar" });
     fireEvent.change(within(inspector).getByRole("slider", { name: "Drag sensitivity" }), {
       target: { value: "1000" },
     });
@@ -650,10 +665,15 @@ describe("App", () => {
       within(resetInspector).getByRole("combobox", { name: "Mouse control" }).textContent,
     ).toContain("Trackball");
     expect(
+      within(resetInspector).getByRole("switch", { name: "Mouse inertia" }).getAttribute(
+        "aria-checked",
+      ),
+    ).toBe("true");
+    expect(
       within(resetInspector).getByRole("slider", { name: "Drag sensitivity" }).getAttribute(
         "value",
       ),
-    ).toBe("500");
+    ).toBe(DEFAULT_DRAG_SENSITIVITY_SLIDER_VALUE);
   });
 
   test("shows a compact spinner while a structure is loading", async () => {
@@ -762,20 +782,33 @@ describe("App", () => {
 
     const interactionSelect = within(inspector).getByRole("combobox", { name: "Mouse control" });
     expect(interactionSelect.textContent).toContain("Trackball");
+    expect(
+      within(inspector).getByRole("switch", { name: "Mouse inertia" }).getAttribute(
+        "aria-checked",
+      ),
+    ).toBe("true");
     const dragSensitivitySlider = within(inspector).getByRole("slider", {
       name: "Drag sensitivity",
     });
     expect(dragSensitivitySlider.getAttribute("min")).toBe("0");
     expect(dragSensitivitySlider.getAttribute("max")).toBe("1000");
-    expect(dragSensitivitySlider.getAttribute("value")).toBe("500");
+    expect(dragSensitivitySlider.getAttribute("value")).toBe(
+      DEFAULT_DRAG_SENSITIVITY_SLIDER_VALUE,
+    );
     expect(dragSensitivitySlider.getAttribute("aria-valuemin")).toBe("50");
     expect(dragSensitivitySlider.getAttribute("aria-valuemax")).toBe("200");
-    expect(dragSensitivitySlider.getAttribute("aria-valuenow")).toBe("100");
-    expect(dragSensitivitySlider.getAttribute("aria-valuetext")).toBe("100%");
+    expect(dragSensitivitySlider.getAttribute("aria-valuenow")).toBe(
+      DEFAULT_DRAG_SENSITIVITY_PERCENT,
+    );
+    expect(dragSensitivitySlider.getAttribute("aria-valuetext")).toBe(
+      `${DEFAULT_DRAG_SENSITIVITY_PERCENT}%`,
+    );
     const dragSensitivityValueInput = within(inspector).getByRole("textbox", {
       name: "Drag sensitivity value",
     });
-    expect(dragSensitivityValueInput.getAttribute("value")).toBe("100");
+    expect(dragSensitivityValueInput.getAttribute("value")).toBe(
+      DEFAULT_DRAG_SENSITIVITY_PERCENT,
+    );
 
     const lightStrengthSlider = within(inspector).getByRole("slider", {
       name: "Light strength",

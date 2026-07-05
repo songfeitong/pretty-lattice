@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   DEFAULT_DRAG_SENSITIVITY,
   DEFAULT_LIGHT_STRENGTH,
+  DEFAULT_MOUSE_INERTIA,
   clampDragSensitivity,
   clampLightStrength,
   clampViewScale,
@@ -20,6 +21,7 @@ import {
   setPreviewInteractionLocked,
   setPreviewInteractionMode,
   setPreviewLightStrength,
+  setPreviewMouseInertia,
   setPreviewShowFpsOverlay,
   sliderPositionToDragSensitivity,
   sliderPositionToLightStrength,
@@ -33,12 +35,15 @@ import { createDefaultCrystalCameraState } from "../src/scene/crystalCamera";
 
 describe("preview view state", () => {
   test("defaults to Trackball at fitted zoom with unlocked interaction", () => {
+    expect(DEFAULT_DRAG_SENSITIVITY).toBe(1);
+    expect(DEFAULT_MOUSE_INERTIA).toBe(true);
     expect(createPreviewViewState()).toEqual({
       camera: createDefaultCrystalCameraState(),
       dragSensitivity: DEFAULT_DRAG_SENSITIVITY,
       interactionLocked: false,
       interactionMode: "trackball",
       lightStrength: DEFAULT_LIGHT_STRENGTH,
+      mouseInertia: DEFAULT_MOUSE_INERTIA,
       resetCounter: 0,
       showFpsOverlay: false,
     });
@@ -46,12 +51,15 @@ describe("preview view state", () => {
 
   test("emits a reset signal without changing persistent view options", () => {
     const state = setPreviewShowFpsOverlay(
-      setPreviewDragSensitivity(
-        setPreviewInteractionLocked(
-          setPreviewInteractionMode(createPreviewViewState(), "orbit"),
-          true,
+      setPreviewMouseInertia(
+        setPreviewDragSensitivity(
+          setPreviewInteractionLocked(
+            setPreviewInteractionMode(createPreviewViewState(), "orbit"),
+            true,
+          ),
+          2,
         ),
-        2,
+        false,
       ),
       true,
     );
@@ -62,6 +70,7 @@ describe("preview view state", () => {
       interactionLocked: true,
       interactionMode: "orbit",
       lightStrength: DEFAULT_LIGHT_STRENGTH,
+      mouseInertia: false,
       resetCounter: 1,
       showFpsOverlay: true,
     });

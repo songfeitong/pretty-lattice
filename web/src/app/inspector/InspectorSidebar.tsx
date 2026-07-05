@@ -121,6 +121,7 @@ export function InspectorSidebar({
   isCustomColorScheme,
   interactionMode,
   lightStrength,
+  mouseInertia,
   isOpen,
   isSceneLoading,
   previewMeshQuality,
@@ -139,6 +140,7 @@ export function InspectorSidebar({
   onDragSensitivityChange,
   onInteractionModeChange,
   onLightStrengthChange,
+  onMouseInertiaChange,
   onPreviewMeshQualityChange,
   onFogAffectsUnitCellChange,
   onShowFpsOverlayChange,
@@ -157,6 +159,7 @@ export function InspectorSidebar({
   isCustomColorScheme: boolean;
   interactionMode: InteractionMode;
   lightStrength: number;
+  mouseInertia: boolean;
   isOpen: boolean;
   isSceneLoading: boolean;
   previewMeshQuality: MeshQuality;
@@ -175,6 +178,7 @@ export function InspectorSidebar({
   onDragSensitivityChange: (dragSensitivity: number) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
   onLightStrengthChange: (lightStrength: number) => void;
+  onMouseInertiaChange: (mouseInertia: boolean) => void;
   onPreviewMeshQualityChange: (meshQuality: MeshQuality) => void;
   onFogAffectsUnitCellChange: (fogAffectsUnitCell: boolean) => void;
   onShowFpsOverlayChange: (showFpsOverlay: boolean) => void;
@@ -233,6 +237,7 @@ export function InspectorSidebar({
               isCustomColorScheme={isCustomColorScheme}
               interactionMode={interactionMode}
               lightStrength={lightStrength}
+              mouseInertia={mouseInertia}
               isSceneLoading={isSceneLoading}
               previewMeshQuality={previewMeshQuality}
               fogAffectsUnitCell={fogAffectsUnitCell}
@@ -244,6 +249,7 @@ export function InspectorSidebar({
               onDragSensitivityChange={onDragSensitivityChange}
               onInteractionModeChange={onInteractionModeChange}
               onLightStrengthChange={onLightStrengthChange}
+              onMouseInertiaChange={onMouseInertiaChange}
               onPreviewMeshQualityChange={onPreviewMeshQualityChange}
               onFogAffectsUnitCellChange={onFogAffectsUnitCellChange}
               onShowFpsOverlayChange={onShowFpsOverlayChange}
@@ -278,6 +284,7 @@ function SettingsPanel({
   isCustomColorScheme,
   interactionMode,
   lightStrength,
+  mouseInertia,
   isSceneLoading,
   previewMeshQuality,
   fogAffectsUnitCell,
@@ -289,6 +296,7 @@ function SettingsPanel({
   onDragSensitivityChange,
   onInteractionModeChange,
   onLightStrengthChange,
+  onMouseInertiaChange,
   onPreviewMeshQualityChange,
   onFogAffectsUnitCellChange,
   onShowFpsOverlayChange,
@@ -301,6 +309,7 @@ function SettingsPanel({
   isCustomColorScheme: boolean;
   interactionMode: InteractionMode;
   lightStrength: number;
+  mouseInertia: boolean;
   isSceneLoading: boolean;
   previewMeshQuality: MeshQuality;
   fogAffectsUnitCell: boolean;
@@ -312,6 +321,7 @@ function SettingsPanel({
   onDragSensitivityChange: (dragSensitivity: number) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
   onLightStrengthChange: (lightStrength: number) => void;
+  onMouseInertiaChange: (mouseInertia: boolean) => void;
   onPreviewMeshQualityChange: (meshQuality: MeshQuality) => void;
   onFogAffectsUnitCellChange: (fogAffectsUnitCell: boolean) => void;
   onShowFpsOverlayChange: (showFpsOverlay: boolean) => void;
@@ -448,6 +458,13 @@ function SettingsPanel({
             </SelectContent>
           </Select>
         </InspectorSelectRow>
+
+        <InspectorSwitchRow
+          checked={mouseInertia}
+          disabled={interactionMode !== "trackball"}
+          label="Mouse inertia"
+          onCheckedChange={onMouseInertiaChange}
+        />
 
         <InspectorRangeRow
           label="Drag sensitivity"
