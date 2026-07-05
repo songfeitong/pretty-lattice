@@ -495,7 +495,7 @@ function AxisLabel({
           <spriteMaterial
             alphaMap={outlineTexture}
             color={labelHaloColor}
-            depthTest={false}
+            depthTest
             depthWrite={false}
             alphaTest={0.18}
             transparent
@@ -509,7 +509,7 @@ function AxisLabel({
         <spriteMaterial
           alphaMap={fillTexture}
           color={fillColor}
-          depthTest={false}
+          depthTest
           depthWrite={false}
           alphaTest={0.08}
           transparent
