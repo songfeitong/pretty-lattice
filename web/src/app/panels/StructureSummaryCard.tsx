@@ -3,6 +3,7 @@ import { useId, useMemo, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,8 @@ import {
 import { summarizeScene, type PreviewStatus } from "../previewState";
 import { GLASS_SURFACE_CLASS, TOOL_ICON_BUTTON_CLASS } from "../surface";
 import { COMMON_PANEL_BODY_TEXT_CLASS } from "../controls/commonPanel/styles";
+import { AboutPrettyLatticeDialog } from "./AboutPrettyLatticeDialog";
+import { PrettyLatticeLogo } from "./PrettyLatticeLogo";
 
 export function StructureSummaryCard({
   isCollapsed,
@@ -39,6 +42,8 @@ export function StructureSummaryCard({
 }) {
   const summary = useMemo(() => summarizeScene(scene), [scene]);
   const expandableContentId = useId();
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
   const [dismissedWarnings, setDismissedWarnings] = useState<{
     codes: Set<string>;
     scene: SceneSpec | null;
@@ -61,11 +66,33 @@ export function StructureSummaryCard({
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
-          <img
-            src="/favicon.svg"
-            alt=""
-            className="size-7 shrink-0"
-          />
+          <Dialog open={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen}>
+            <TooltipProvider delayDuration={500}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="About Pretty Lattice"
+                    className="grid size-7 shrink-0 place-items-center rounded-[8px] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+                    onBlur={() => setIsLogoHovered(false)}
+                    onClick={() => {
+                      setIsLogoHovered(false);
+                      setIsAboutDialogOpen(true);
+                    }}
+                    onPointerEnter={() => setIsLogoHovered(true)}
+                    onPointerLeave={() => setIsLogoHovered(false)}
+                  >
+                    <PrettyLatticeLogo
+                      className="size-7"
+                      isHovered={isLogoHovered}
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">About</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <AboutPrettyLatticeDialog />
+          </Dialog>
           <div className="flex min-w-0 items-center gap-1">
             <h1 className="truncate text-[0.95rem] font-semibold leading-tight">Pretty Lattice</h1>
             {hasExpandableContent ? (

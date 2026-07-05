@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { ReactNode } from "react";
 import { Quaternion, Vector3 } from "three";
 
+import { readPrettyLatticeVersion } from "../projectMetadata";
 import type { AtomSpec, SceneSpec } from "../src/api/scene";
 import type {
   CreateFigureExportOptions,
@@ -280,6 +281,34 @@ describe("App", () => {
     expect(within(structureCard).queryByText("File")).toBeNull();
     expect(within(structureCard).queryByText("No file selected")).toBeNull();
     expect(structureCard.querySelector("[data-slot='separator']")).toBeNull();
+  });
+
+  test("opens the blank about dialog from the logo", async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const structureCard = screen.getByRole("complementary", { name: "Current structure" });
+    const aboutButton = within(structureCard).getByRole("button", {
+      name: "About Pretty Lattice",
+    });
+
+    await user.hover(aboutButton);
+    expect(await screen.findByRole("tooltip", { name: "About" })).toBeTruthy();
+
+    await user.click(aboutButton);
+
+    const aboutDialog = await screen.findByRole("dialog", { name: "About Pretty Lattice" });
+    expect(
+      within(aboutDialog).queryByRole("button", { name: "Close About Pretty Lattice" }),
+    ).toBeNull();
+    expect(
+      within(aboutDialog).getByRole("link", { name: "Open Pretty Lattice on GitHub" })
+        .getAttribute("href"),
+    ).toBe("https://github.com/songfeitong/pretty-lattice");
+    expect(within(aboutDialog).getByText(`Version ${readPrettyLatticeVersion()}`)).toBeTruthy();
+    expect(within(aboutDialog).getByText("© 2026 Feitong Song.")).toBeTruthy();
+    expect(within(aboutDialog).getByText("Released under the MIT License.")).toBeTruthy();
   });
 
   test("uploads a structure and renders the summary, legend, and view controls", async () => {

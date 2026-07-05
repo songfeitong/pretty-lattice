@@ -1,0 +1,1 @@
+export const PRETTY_LATTICE_VERSION = import.meta.env.VITE_PRETTY_LATTICE_VERSION;
