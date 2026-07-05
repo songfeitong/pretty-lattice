@@ -54,7 +54,7 @@ export function AtomInspectorCard({
         "absolute right-16 top-4 z-30 w-[300px] rounded-xl border px-3 py-2.5 font-mono text-xs shadow-xl shadow-foreground/10",
         "transition-[right] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
         "max-[760px]:right-4 max-[760px]:top-14 max-[760px]:w-[calc(100vw-2rem)]",
-        isInspectorOpen ? "min-[761px]:right-[376px]" : null,
+        isInspectorOpen ? "min-[761px]:right-[388px]" : null,
         GLASS_SURFACE_CLASS,
       )}
     >

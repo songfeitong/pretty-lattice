@@ -196,7 +196,7 @@ export function InspectorSidebar({
       aria-hidden={!isOpen}
       inert={!isOpen}
       className={cn(
-        "absolute inset-y-0 right-0 z-20 flex w-[360px] max-w-[calc(100vw-1rem)] flex-col border-l border-border bg-[#fdfdfd] text-foreground",
+        "absolute inset-y-0 right-0 z-20 flex w-[372px] max-w-[calc(100vw-1rem)] flex-col border-l border-border bg-[#fdfdfd] text-foreground",
         "transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
         isOpen ? "translate-x-0" : "translate-x-full",
       )}
@@ -206,11 +206,11 @@ export function InspectorSidebar({
         onValueChange={(value) => onActiveTabChange(value as InspectorSidebarTab)}
         className="flex min-h-0 flex-1 flex-col gap-0"
       >
-        <header className="flex h-16 shrink-0 items-start px-4 pt-4 pr-16">
+        <header className="flex h-[60px] shrink-0 items-start px-4 pt-3 pr-16">
           <TabsList
             variant="line"
             data-inspector-sidebar-tabs=""
-            className="h-8 w-full justify-start gap-5 rounded-none p-0"
+            className="h-8 w-full justify-start gap-4 rounded-none p-0"
           >
             <TabsTrigger
               value="settings"
@@ -259,7 +259,7 @@ export function InspectorSidebar({
               onUnitCellLineStyleChange={onUnitCellLineStyleChange}
             />
           </TabsContent>
-          <TabsContent value="objects" className="m-0 min-h-0">
+          <TabsContent value="objects" className="-mt-2 min-h-0">
             <ObjectsPanel
               activeTab={activeObjectsTab}
               atomLocateRequest={atomLocateRequest}
