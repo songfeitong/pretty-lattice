@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="80.767 91.585 1008.466 1162.83" role="img" aria-labelledby="title desc">
+  <title id="title">Pretty Lattice development logo</title>
+  <desc id="desc">A development favicon with pink outer and green inner hexagons.</desc>
+  <defs>
+    <style>
+      .outer { fill: #d29fa9; }
+      .inner { fill: #c4dfad; }
+    </style>
+  </defs>
+
+  <g transform="rotate(30 585 673)">
+    <polygon class="outer" points="299,176 871,176 1158,673 871,1170 299,1170 12,673" />
+    <polygon class="inner" points="585,341 871,508 871,839 585,1005 299,839 299,508" />
+  </g>
+
+</svg>
