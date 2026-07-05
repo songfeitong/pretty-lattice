@@ -191,71 +191,73 @@ export function StructureSummaryCard({
           <div
             data-slot="structure-summary-details-body"
             aria-hidden={isCollapsed ? "true" : undefined}
-            className={cn("min-h-0", isCollapsed ? "pt-0" : "pt-2.5")}
+            className="min-h-0 overflow-hidden"
           >
-            {scene ? (
-              <div className="flex flex-col gap-2.5 max-[760px]:hidden">
-                <Separator />
-                <div>
-                  <span className="block text-xs font-bold text-muted-foreground">Symmetry</span>
-                  {summary.symmetry?.available ? (
-                    <dl className={cn("mt-1.5 flex flex-col gap-1", COMMON_PANEL_BODY_TEXT_CLASS)}>
-                      <SymmetryMetric
-                        label="Space group"
-                        value={renderSpaceGroup(
-                          summary.symmetry.spaceGroup,
-                          summary.symmetry.spaceGroupNumber,
-                        )}
-                        title={formatSpaceGroupTitle(
-                          summary.symmetry.spaceGroup,
-                          summary.symmetry.spaceGroupNumber,
-                        )}
-                      />
-                      <SymmetryMetric
-                        label="Point group"
-                        value={renderPointGroup(
-                          summary.symmetry.pointGroup,
-                          summary.symmetry.pointGroupSchoenflies,
-                        )}
-                        title={formatPointGroupTitle(
-                          summary.symmetry.pointGroup,
-                          summary.symmetry.pointGroupSchoenflies,
-                        )}
-                      />
-                      <SymmetryMetric
-                        label="Crystal system"
-                        value={summary.symmetry.crystalSystem ?? "-"}
-                      />
-                    </dl>
-                  ) : (
-                    <dl className={cn("mt-1.5 flex flex-col gap-1", COMMON_PANEL_BODY_TEXT_CLASS)}>
-                      <SymmetryMetric label="Space group" value="N/A" />
-                      <SymmetryMetric label="Point group" value="N/A" />
-                      <SymmetryMetric label="Crystal system" value="N/A" />
-                    </dl>
-                  )}
-                </div>
-
-                {summary.cell ? (
-                  <>
-                    <Separator />
-                    <div>
-                      <span className="block text-xs font-bold text-muted-foreground">
-                        Lattice Parameters
-                      </span>
-                      <dl className={cn("mt-1.5 grid grid-cols-3 gap-x-3 gap-y-1 font-mono", COMMON_PANEL_BODY_TEXT_CLASS)}>
-                        <CellMetric label="a" value={summary.cell.a} unit="Å" />
-                        <CellMetric label="b" value={summary.cell.b} unit="Å" />
-                        <CellMetric label="c" value={summary.cell.c} unit="Å" />
-                        <CellMetric label="α" value={summary.cell.alpha} unit="°" />
-                        <CellMetric label="β" value={summary.cell.beta} unit="°" />
-                        <CellMetric label="γ" value={summary.cell.gamma} unit="°" />
+            <div data-slot="structure-summary-details-content" className="pt-2.5">
+              {scene ? (
+                <div className="flex flex-col gap-2.5 max-[760px]:hidden">
+                  <Separator data-structure-summary-details-separator />
+                  <div>
+                    <span className="block text-xs font-bold text-muted-foreground">Symmetry</span>
+                    {summary.symmetry?.available ? (
+                      <dl className={cn("mt-1.5 flex flex-col gap-1", COMMON_PANEL_BODY_TEXT_CLASS)}>
+                        <SymmetryMetric
+                          label="Space group"
+                          value={renderSpaceGroup(
+                            summary.symmetry.spaceGroup,
+                            summary.symmetry.spaceGroupNumber,
+                          )}
+                          title={formatSpaceGroupTitle(
+                            summary.symmetry.spaceGroup,
+                            summary.symmetry.spaceGroupNumber,
+                          )}
+                        />
+                        <SymmetryMetric
+                          label="Point group"
+                          value={renderPointGroup(
+                            summary.symmetry.pointGroup,
+                            summary.symmetry.pointGroupSchoenflies,
+                          )}
+                          title={formatPointGroupTitle(
+                            summary.symmetry.pointGroup,
+                            summary.symmetry.pointGroupSchoenflies,
+                          )}
+                        />
+                        <SymmetryMetric
+                          label="Crystal system"
+                          value={summary.symmetry.crystalSystem ?? "-"}
+                        />
                       </dl>
-                    </div>
-                  </>
-                ) : null}
-              </div>
-            ) : null}
+                    ) : (
+                      <dl className={cn("mt-1.5 flex flex-col gap-1", COMMON_PANEL_BODY_TEXT_CLASS)}>
+                        <SymmetryMetric label="Space group" value="N/A" />
+                        <SymmetryMetric label="Point group" value="N/A" />
+                        <SymmetryMetric label="Crystal system" value="N/A" />
+                      </dl>
+                    )}
+                  </div>
+
+                  {summary.cell ? (
+                    <>
+                      <Separator />
+                      <div>
+                        <span className="block text-xs font-bold text-muted-foreground">
+                          Lattice Parameters
+                        </span>
+                        <dl className={cn("mt-1.5 grid grid-cols-3 gap-x-3 gap-y-1 font-mono", COMMON_PANEL_BODY_TEXT_CLASS)}>
+                          <CellMetric label="a" value={summary.cell.a} unit="Å" />
+                          <CellMetric label="b" value={summary.cell.b} unit="Å" />
+                          <CellMetric label="c" value={summary.cell.c} unit="Å" />
+                          <CellMetric label="α" value={summary.cell.alpha} unit="°" />
+                          <CellMetric label="β" value={summary.cell.beta} unit="°" />
+                          <CellMetric label="γ" value={summary.cell.gamma} unit="°" />
+                        </dl>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}

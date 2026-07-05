@@ -2112,6 +2112,11 @@ describe("App", () => {
     const detailsBody = structureCard.querySelector(
       "[data-slot='structure-summary-details-body']",
     ) as HTMLElement | null;
+    const detailsContent = structureCard.querySelector(
+      "[data-slot='structure-summary-details-content']",
+    ) as HTMLElement | null;
+    const detailsSeparator = () =>
+      structureCard.querySelector("[data-structure-summary-details-separator]") as HTMLElement | null;
     const expandButton = within(structureCard).getByRole("button", {
       name: "Expand details",
     });
@@ -2119,7 +2124,10 @@ describe("App", () => {
     expect(expandButton.getAttribute("aria-expanded")).toBe("false");
     expect(detailsRegion?.className).toContain("transition-[grid-template-rows]");
     expect(detailsRegion?.className).toContain("grid-rows-[0fr]");
-    expect(detailsBody?.className).toContain("pt-0");
+    expect(detailsBody?.className).toContain("overflow-hidden");
+    expect(detailsBody?.className).not.toContain("pt-0");
+    expect(detailsContent?.className).toContain("pt-2.5");
+    expect(detailsSeparator()).not.toBeNull();
 
     await user.click(expandButton);
 
@@ -2128,7 +2136,9 @@ describe("App", () => {
     });
     expect(collapseButton.getAttribute("aria-expanded")).toBe("true");
     expect(detailsRegion?.className).toContain("grid-rows-[1fr]");
-    expect(detailsBody?.className).toContain("pt-2.5");
+    expect(detailsBody?.className).toContain("overflow-hidden");
+    expect(detailsContent?.className).toContain("pt-2.5");
+    expect(detailsSeparator()).not.toBeNull();
 
     await user.click(collapseButton);
 
@@ -2138,7 +2148,9 @@ describe("App", () => {
         .getAttribute("aria-expanded"),
     ).toBe("false");
     expect(detailsRegion?.className).toContain("grid-rows-[0fr]");
-    expect(detailsBody?.className).toContain("pt-0");
+    expect(detailsBody?.className).toContain("overflow-hidden");
+    expect(detailsContent?.className).toContain("pt-2.5");
+    expect(detailsSeparator()).not.toBeNull();
   });
 
   test("keeps manually expanded structure details open when controls overflow the viewport", async () => {
