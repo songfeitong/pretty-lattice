@@ -40,12 +40,12 @@ flowchart LR
 
 ```
 
-Users install a Python package and launch a local GUI via the command `prl gui`. This starts a local Python server and opens a browser page. The browser runs the bundled web app and uses Three.js/WebGL for rendering.
+Users install a Python package and launch a local GUI via the command `prl`. This starts a local Python server and opens a browser page. The browser runs the bundled web app and uses Three.js/WebGL for rendering.
 
 ```mermaid
 flowchart LR
     D[User installs pretty-lattice]
-    D --> E[prl gui]
+    D --> E[prl]
     E --> F[Local browser GUI]
 ```
 

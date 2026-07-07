@@ -158,9 +158,9 @@ def _mount_missing_web_page(app: FastAPI) -> None:
                     <code>cd web
 bun run build
 cd ..
-uv run prl gui</code>
+uv run prl</code>
                     <p>For live frontend development, run the Python API and Vite separately:</p>
-                    <code>uv run prl gui --no-open
+                    <code>uv run prl --no-open
 cd web && bun run dev</code>
                   </section>
                 </main>

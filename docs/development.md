@@ -5,15 +5,15 @@
 Run the local GUI server:
 
 ```bash
-uv run prl gui
+uv run prl
 ```
 
 Useful development options:
 
 ```bash
-uv run prl gui --no-open
-uv run prl gui --reload
-uv run prl gui -p 0
+uv run prl --no-open
+uv run prl --reload
+uv run prl -p 0
 ```
 
 Run checks:
@@ -51,7 +51,7 @@ bun run build
 For now, run the Python server and Vite server separately:
 
 ```bash
-uv run prl gui --no-open
+uv run prl --no-open
 cd web && bun run dev
 ```
 

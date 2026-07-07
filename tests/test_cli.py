@@ -22,6 +22,69 @@ def test_choose_free_port() -> None:
     assert port > 0
 
 
+def test_root_command_starts_gui(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def run_gui(**kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr(cli, "_run_gui", run_gui)
+
+    result = runner.invoke(cli.app, [])
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "host": "127.0.0.1",
+            "port": 8765,
+            "no_open": False,
+            "reload": False,
+        }
+    ]
+
+
+def test_root_command_accepts_gui_options(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def run_gui(**kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr(cli, "_run_gui", run_gui)
+
+    result = runner.invoke(cli.app, ["--host", "0.0.0.0", "-p", "0", "--no-open", "--reload"])
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "host": "0.0.0.0",
+            "port": 0,
+            "no_open": True,
+            "reload": True,
+        }
+    ]
+
+
+def test_gui_command_remains_compatibility_alias(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def run_gui(**kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr(cli, "_run_gui", run_gui)
+
+    result = runner.invoke(cli.app, ["gui", "--no-open"])
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "host": "127.0.0.1",
+            "port": 8765,
+            "no_open": True,
+            "reload": False,
+        }
+    ]
+
+
 def test_gui_help_shows_port_short_option() -> None:
     command = typer.main.get_command(cli.app).commands["gui"]
     port_option = next(param for param in command.params if param.name == "port")
@@ -63,7 +126,8 @@ def test_help_accepts_short_option() -> None:
 
     assert root_result.exit_code == 0
     assert gui_result.exit_code == 0
-    assert "Pretty Lattice command line tools." in root_result.output
+    assert "Start the Pretty Lattice local GUI." in root_result.output
+    assert "gui" not in root_result.output
     assert "Start the local Pretty Lattice GUI server." in gui_result.output
 
 

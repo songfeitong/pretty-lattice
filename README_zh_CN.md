@@ -60,7 +60,7 @@ uv tool install pretty-lattice
 安装后，启动本地图形界面：
 
 ```shell
-prl gui
+prl
 ```
 
 Pretty Lattice 会启动一个本地服务，并自动打开浏览器。
@@ -68,15 +68,17 @@ Pretty Lattice 会启动一个本地服务，并自动打开浏览器。
 也可以不安装，临时运行：
 
 ```shell
-uvx --from pretty-lattice prl gui
+uvx --from pretty-lattice prl
 ```
 
 常用启动选项：
 
 ```shell
-prl gui --no-open     # 只启动服务，不自动打开浏览器
-prl gui -p 0          # 自动选择可用端口
+prl --no-open     # 只启动服务，不自动打开浏览器
+prl -p 0          # 自动选择可用端口
 ```
+
+`prl gui` 会保留为兼容入口，效果和 `prl` 相同。
 
 ## 示例
 

@@ -59,7 +59,7 @@ Requirements:
 After installation, start the local GUI:
 
 ```shell
-prl gui
+prl
 ```
 
 Pretty Lattice starts a local server and opens your browser automatically.
@@ -67,15 +67,17 @@ Pretty Lattice starts a local server and opens your browser automatically.
 Run once without installing:
 
 ```shell
-uvx --from pretty-lattice prl gui
+uvx --from pretty-lattice prl
 ```
 
 Useful launch options:
 
 ```shell
-prl gui --no-open     # start the server without opening a browser
-prl gui -p 0          # choose any available port automatically
+prl --no-open     # start the server without opening a browser
+prl -p 0          # choose any available port automatically
 ```
+
+`prl gui` is kept as a compatibility alias for the same GUI launcher.
 
 ## Examples
 

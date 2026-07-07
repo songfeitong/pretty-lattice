@@ -16,6 +16,23 @@ from pretty_lattice.server.app import create_app
 
 HELP_OPTION_NAMES = ["-h", "--help"]
 PACKAGE_NAME = "pretty-lattice"
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 8765
+
+HostOption = Annotated[str, typer.Option(help="Host address for the local GUI server.")]
+PortOption = Annotated[
+    int,
+    typer.Option(
+        "--port",
+        "-p",
+        help="Port for the local GUI server. Use 0 for any free port.",
+    ),
+]
+NoOpenOption = Annotated[
+    bool,
+    typer.Option("--no-open", help="Do not open the browser automatically."),
+]
+ReloadOption = Annotated[bool, typer.Option(help="Reload the server when Python files change.")]
 
 
 def _current_version() -> str:
@@ -32,13 +49,15 @@ def _print_version(show_version: bool) -> None:
 
 
 app = typer.Typer(
-    help="Pretty Lattice command line tools.",
+    help="Start the Pretty Lattice local GUI.",
     context_settings={"help_option_names": HELP_OPTION_NAMES},
+    subcommand_metavar="",
 )
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
+    ctx: typer.Context,
     version: Annotated[
         bool,
         typer.Option(
@@ -49,8 +68,14 @@ def main(
             is_eager=True,
         ),
     ] = False,
+    host: HostOption = DEFAULT_HOST,
+    port: PortOption = DEFAULT_PORT,
+    no_open: NoOpenOption = False,
+    reload: ReloadOption = False,
 ) -> None:
-    """Pretty Lattice command line tools."""
+    """Start the Pretty Lattice local GUI."""
+    if ctx.invoked_subcommand is None:
+        _run_gui(host=host, port=port, no_open=no_open, reload=reload)
 
 
 def _choose_port(host: str, requested_port: int) -> int:
@@ -88,19 +113,7 @@ def _start_browser_opener(url: str, host: str, port: int) -> None:
     ).start()
 
 
-@app.command(context_settings={"help_option_names": HELP_OPTION_NAMES})
-def gui(
-    host: str = typer.Option("127.0.0.1", help="Host address for the local GUI server."),
-    port: int = typer.Option(
-        8765,
-        "--port",
-        "-p",
-        help="Port for the local GUI server. Use 0 for any free port.",
-    ),
-    no_open: bool = typer.Option(False, "--no-open", help="Do not open the browser automatically."),
-    reload: bool = typer.Option(False, help="Reload the server when Python files change."),
-) -> None:
-    """Start the local Pretty Lattice GUI server."""
+def _run_gui(host: str, port: int, no_open: bool, reload: bool) -> None:
     selected_port = _choose_port(host, port)
     url = f"http://{host}:{selected_port}"
 
@@ -119,3 +132,17 @@ def gui(
         return
 
     uvicorn.run(create_app(), host=host, port=selected_port)
+
+
+@app.command(context_settings={"help_option_names": HELP_OPTION_NAMES}, hidden=True)
+def gui(
+    host: HostOption = DEFAULT_HOST,
+    port: PortOption = DEFAULT_PORT,
+    no_open: NoOpenOption = False,
+    reload: ReloadOption = False,
+) -> None:
+    """Start the local Pretty Lattice GUI server.
+
+    Kept as a compatibility alias for `prl`.
+    """
+    _run_gui(host=host, port=port, no_open=no_open, reload=reload)
