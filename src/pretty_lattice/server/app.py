@@ -19,7 +19,7 @@ def create_app(
     prewarm_structure_stack: bool = True,
 ) -> FastAPI:
     lifespan = _lifespan if prewarm_structure_stack else None
-    app = FastAPI(title="Pretty Lattice", version="0.1.3", lifespan=lifespan)
+    app = FastAPI(title="Pretty Lattice", version="0.1.4", lifespan=lifespan)
     app.include_router(router, prefix="/api")
     _mount_static_web(app, static_root=static_root, dev_static_fallback=dev_static_fallback)
     return app
