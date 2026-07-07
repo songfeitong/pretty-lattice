@@ -107,11 +107,11 @@ def test_run_gui_prints_compact_startup_banner(monkeypatch) -> None:
         "\n"
         f"Pretty Lattice  v{__version__}\n"
         "\n"
-        "➜  Local server:  http://127.0.0.1:8765/\n"
-        "➜  press ctrl + c to quit\n"
+        "›  Local server:  http://127.0.0.1:8765/\n"
+        "›  press ctrl + c to quit\n"
         "\n"
         "\n"
-        "➜  Pretty Lattice stopped.\n"
+        "›  Pretty Lattice stopped.\n"
     )
     assert uvicorn_calls == [
         {
@@ -170,7 +170,7 @@ def test_run_gui_prints_shutdown_banner_after_keyboard_interrupt(monkeypatch) ->
     result = runner.invoke(cli.app, ["--no-open"])
 
     assert result.exit_code == 0
-    assert "➜  Pretty Lattice stopped.\n" in result.output
+    assert "›  Pretty Lattice stopped.\n" in result.output
     assert "KeyboardInterrupt" not in result.output
 
 

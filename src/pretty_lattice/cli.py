@@ -22,6 +22,7 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
 LOGO_PRETTY_COLOR = "#9772c0"
 LOGO_LATTICE_COLOR = LOGO_PRETTY_COLOR
+PROMPT_SYMBOL = "›"
 
 HostOption = Annotated[str, typer.Option(help="Host address for the local GUI server.")]
 PortOption = Annotated[
@@ -145,12 +146,12 @@ def _print_startup_banner(url: str) -> None:
     console.print(_startup_title(), highlight=False)
     console.print()
     console.print(
-        f"[green]➜[/green]  [bold]Local server:[/bold]  [cyan]{url}[/cyan]",
+        f"[green]{PROMPT_SYMBOL}[/green]  [bold]Local server:[/bold]  [cyan]{url}[/cyan]",
         highlight=False,
     )
     console.print(
         Text.assemble(
-            ("➜", "green"),
+            (PROMPT_SYMBOL, "green"),
             "  ",
             ("press ", "dim"),
             ("ctrl + c", "bold"),
@@ -164,7 +165,9 @@ def _print_startup_banner(url: str) -> None:
 def _print_shutdown_banner() -> None:
     console = Console()
     console.print()
-    console.print(Text.assemble(("➜", "green"), "  ", ("Pretty Lattice stopped.", "dim")))
+    console.print(
+        Text.assemble((PROMPT_SYMBOL, "green"), "  ", ("Pretty Lattice stopped.", "dim"))
+    )
 
 
 def _run_uvicorn(*args: object, **kwargs: object) -> None:
