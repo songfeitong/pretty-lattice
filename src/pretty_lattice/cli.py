@@ -9,12 +9,10 @@ from importlib.metadata import version as metadata_version
 from typing import Annotated
 
 import typer
-import uvicorn
 from rich.console import Console
 from rich.text import Text
 
 from pretty_lattice import __version__
-from pretty_lattice.server.app import create_app
 
 HELP_OPTION_NAMES = ["-h", "--help"]
 PACKAGE_NAME = "pretty-lattice"
@@ -170,9 +168,16 @@ def _print_shutdown_banner() -> None:
     )
 
 
+def _load_uvicorn_run():
+    from uvicorn import run
+
+    return run
+
+
 def _run_uvicorn(*args: object, **kwargs: object) -> None:
+    uvicorn_run = _load_uvicorn_run()
     try:
-        uvicorn.run(*args, **kwargs)
+        uvicorn_run(*args, **kwargs)
     except KeyboardInterrupt:
         pass
     _print_shutdown_banner()
@@ -197,6 +202,8 @@ def _run_gui(host: str, port: int, no_open: bool, reload: bool, verbose: bool) -
             **log_options,
         )
         return
+
+    from pretty_lattice.server.app import create_app
 
     _run_uvicorn(create_app(), host=host, port=selected_port, **log_options)
 

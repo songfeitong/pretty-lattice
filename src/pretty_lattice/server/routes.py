@@ -4,8 +4,6 @@ from urllib.parse import unquote
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from pretty_lattice.structures.readers import StructureReadError, read_structure_bytes
-from pretty_lattice.structures.scene_builder import build_scene_response
 from pretty_lattice.structures.schema import (
     UnsupportedBondAlgorithmError,
     normalize_bond_algorithm,
@@ -32,8 +30,11 @@ async def create_structure_preview(
     except UnsupportedBondAlgorithmError as exc:
         raise HTTPException(status_code=400, detail={"message": str(exc)}) from exc
 
+    payload = await _uploaded_payload(request)
+    StructureReadError, read_structure_bytes, build_scene_response = (
+        _structure_preview_dependencies()
+    )
     try:
-        payload = await _uploaded_payload(request)
         structure = read_structure_bytes(payload, filename=filename)
         return build_scene_response(structure, bond_algorithm=normalized_bond_algorithm)
     except StructureReadError as exc:
@@ -64,3 +65,10 @@ def _uploaded_filename(request: Request) -> str:
     if encoded_name:
         return unquote(encoded_name)
     return "uploaded structure"
+
+
+def _structure_preview_dependencies():
+    from pretty_lattice.structures.readers import StructureReadError, read_structure_bytes
+    from pretty_lattice.structures.scene_builder import build_scene_response
+
+    return StructureReadError, read_structure_bytes, build_scene_response

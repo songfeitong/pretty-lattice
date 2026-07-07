@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import socket
+import subprocess
+import sys
 
 import typer.main
 from typer.testing import CliRunner
@@ -20,6 +22,25 @@ def test_choose_free_port() -> None:
     port = _choose_port("127.0.0.1", 0)
 
     assert port > 0
+
+
+def test_cli_import_defers_server_app() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import sys; "
+                "import pretty_lattice.cli; "
+                "print('pretty_lattice.server.app' in sys.modules)"
+            ),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.stdout.strip() == "False"
 
 
 def test_root_command_starts_gui(monkeypatch) -> None:
@@ -98,7 +119,7 @@ def test_run_gui_prints_compact_startup_banner(monkeypatch) -> None:
         uvicorn_calls.append(kwargs)
 
     monkeypatch.setattr(cli, "metadata_version", lambda package_name: __version__)
-    monkeypatch.setattr(cli.uvicorn, "run", run_uvicorn)
+    monkeypatch.setattr(cli, "_load_uvicorn_run", lambda: run_uvicorn)
 
     result = runner.invoke(cli.app, ["--no-open"])
 
@@ -146,7 +167,7 @@ def test_run_gui_verbose_enables_server_logs(monkeypatch) -> None:
     def run_uvicorn(*_args: object, **kwargs: object) -> None:
         uvicorn_calls.append(kwargs)
 
-    monkeypatch.setattr(cli.uvicorn, "run", run_uvicorn)
+    monkeypatch.setattr(cli, "_load_uvicorn_run", lambda: run_uvicorn)
 
     result = runner.invoke(cli.app, ["--no-open", "--verbose"])
 
@@ -165,7 +186,7 @@ def test_run_gui_prints_shutdown_banner_after_keyboard_interrupt(monkeypatch) ->
     def run_uvicorn(*_args: object, **_kwargs: object) -> None:
         raise KeyboardInterrupt
 
-    monkeypatch.setattr(cli.uvicorn, "run", run_uvicorn)
+    monkeypatch.setattr(cli, "_load_uvicorn_run", lambda: run_uvicorn)
 
     result = runner.invoke(cli.app, ["--no-open"])
 

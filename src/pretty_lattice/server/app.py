@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from importlib import resources
 from pathlib import Path
 
@@ -7,14 +9,26 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from pretty_lattice.server.prewarm import start_structure_preview_prewarm
 from pretty_lattice.server.routes import router
 
 
-def create_app(static_root: Path | None = None, dev_static_fallback: bool = True) -> FastAPI:
-    app = FastAPI(title="Pretty Lattice", version="0.1.3")
+def create_app(
+    static_root: Path | None = None,
+    dev_static_fallback: bool = True,
+    prewarm_structure_stack: bool = True,
+) -> FastAPI:
+    lifespan = _lifespan if prewarm_structure_stack else None
+    app = FastAPI(title="Pretty Lattice", version="0.1.3", lifespan=lifespan)
     app.include_router(router, prefix="/api")
     _mount_static_web(app, static_root=static_root, dev_static_fallback=dev_static_fallback)
     return app
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    start_structure_preview_prewarm()
+    yield
 
 
 def _mount_static_web(

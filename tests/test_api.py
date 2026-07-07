@@ -1,8 +1,12 @@
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+import pretty_lattice.server.app as app_module
+import pretty_lattice.server.prewarm as prewarm_module
 import pretty_lattice.structures.connectivity as connectivity_module
 from pretty_lattice.server.app import create_app
 
@@ -18,6 +22,60 @@ async def test_health_endpoint() -> None:
 
         assert response.status_code == 200
         assert response.json() == {"status": "ok"}
+
+
+def test_routes_import_defers_structure_preview_stack() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import sys; "
+                "import pretty_lattice.server.routes; "
+                "print('pretty_lattice.structures.readers' in sys.modules); "
+                "print('pretty_lattice.structures.scene_builder' in sys.modules)"
+            ),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.stdout.splitlines() == ["False", "False"]
+
+
+def test_structure_prewarm_imports_preview_modules(monkeypatch) -> None:
+    imported_modules: list[str] = []
+
+    def import_module(module_name: str) -> object:
+        imported_modules.append(module_name)
+        return object()
+
+    monkeypatch.setattr(prewarm_module.importlib, "import_module", import_module)
+
+    prewarm_module.prewarm_structure_preview_dependencies()
+
+    assert imported_modules == list(prewarm_module.STRUCTURE_PREWARM_MODULES)
+
+
+@pytest.mark.anyio
+async def test_app_lifespan_starts_structure_prewarm(monkeypatch, tmp_path) -> None:
+    calls: list[str] = []
+
+    def start_structure_preview_prewarm() -> None:
+        calls.append("prewarm")
+
+    monkeypatch.setattr(
+        app_module,
+        "start_structure_preview_prewarm",
+        start_structure_preview_prewarm,
+    )
+    app = create_app(static_root=tmp_path, dev_static_fallback=False)
+
+    async with app.router.lifespan_context(app):
+        pass
+
+    assert calls == ["prewarm"]
 
 
 @pytest.mark.anyio
