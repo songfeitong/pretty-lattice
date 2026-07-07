@@ -39,6 +39,7 @@ def test_root_command_starts_gui(monkeypatch) -> None:
             "port": 8765,
             "no_open": False,
             "reload": False,
+            "verbose": False,
         }
     ]
 
@@ -51,7 +52,10 @@ def test_root_command_accepts_gui_options(monkeypatch) -> None:
 
     monkeypatch.setattr(cli, "_run_gui", run_gui)
 
-    result = runner.invoke(cli.app, ["--host", "0.0.0.0", "-p", "0", "--no-open", "--reload"])
+    result = runner.invoke(
+        cli.app,
+        ["--host", "0.0.0.0", "-p", "0", "--no-open", "--reload", "--verbose"],
+    )
 
     assert result.exit_code == 0
     assert calls == [
@@ -60,6 +64,7 @@ def test_root_command_accepts_gui_options(monkeypatch) -> None:
             "port": 0,
             "no_open": True,
             "reload": True,
+            "verbose": True,
         }
     ]
 
@@ -81,8 +86,92 @@ def test_gui_command_remains_compatibility_alias(monkeypatch) -> None:
             "port": 8765,
             "no_open": True,
             "reload": False,
+            "verbose": False,
         }
     ]
+
+
+def test_run_gui_prints_compact_startup_banner(monkeypatch) -> None:
+    uvicorn_calls: list[dict[str, object]] = []
+
+    def run_uvicorn(*_args: object, **kwargs: object) -> None:
+        uvicorn_calls.append(kwargs)
+
+    monkeypatch.setattr(cli, "metadata_version", lambda package_name: __version__)
+    monkeypatch.setattr(cli.uvicorn, "run", run_uvicorn)
+
+    result = runner.invoke(cli.app, ["--no-open"])
+
+    assert result.exit_code == 0
+    assert result.output == (
+        "\n"
+        f"Pretty Lattice  v{__version__}\n"
+        "\n"
+        "➜  Local server:  http://127.0.0.1:8765/\n"
+        "➜  press ctrl + c to quit\n"
+        "\n"
+        "\n"
+        "➜  Pretty Lattice stopped.\n"
+    )
+    assert uvicorn_calls == [
+        {
+            "host": "127.0.0.1",
+            "port": 8765,
+            "access_log": False,
+            "log_level": "warning",
+        }
+    ]
+
+
+def test_startup_banner_does_not_clear_terminal(monkeypatch) -> None:
+    console_calls: list[str] = []
+
+    class FakeConsole:
+        def clear(self) -> None:
+            console_calls.append("clear")
+
+        def print(self, *_args: object, **_kwargs: object) -> None:
+            console_calls.append("print")
+
+    monkeypatch.setattr(cli, "Console", FakeConsole)
+
+    cli._print_startup_banner("http://127.0.0.1:8765/")
+
+    assert "clear" not in console_calls
+
+
+def test_run_gui_verbose_enables_server_logs(monkeypatch) -> None:
+    uvicorn_calls: list[dict[str, object]] = []
+
+    def run_uvicorn(*_args: object, **kwargs: object) -> None:
+        uvicorn_calls.append(kwargs)
+
+    monkeypatch.setattr(cli.uvicorn, "run", run_uvicorn)
+
+    result = runner.invoke(cli.app, ["--no-open", "--verbose"])
+
+    assert result.exit_code == 0
+    assert uvicorn_calls == [
+        {
+            "host": "127.0.0.1",
+            "port": 8765,
+            "access_log": True,
+            "log_level": "info",
+        }
+    ]
+
+
+def test_run_gui_prints_shutdown_banner_after_keyboard_interrupt(monkeypatch) -> None:
+    def run_uvicorn(*_args: object, **_kwargs: object) -> None:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(cli.uvicorn, "run", run_uvicorn)
+
+    result = runner.invoke(cli.app, ["--no-open"])
+
+    assert result.exit_code == 0
+    assert "➜  Pretty Lattice stopped.\n" in result.output
+    assert "KeyboardInterrupt" not in result.output
 
 
 def test_gui_help_shows_port_short_option() -> None:

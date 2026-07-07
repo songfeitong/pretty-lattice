@@ -10,6 +10,8 @@ from typing import Annotated
 
 import typer
 import uvicorn
+from rich.console import Console
+from rich.text import Text
 
 from pretty_lattice import __version__
 from pretty_lattice.server.app import create_app
@@ -18,6 +20,8 @@ HELP_OPTION_NAMES = ["-h", "--help"]
 PACKAGE_NAME = "pretty-lattice"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
+LOGO_PRETTY_COLOR = "#9772c0"
+LOGO_LATTICE_COLOR = LOGO_PRETTY_COLOR
 
 HostOption = Annotated[str, typer.Option(help="Host address for the local GUI server.")]
 PortOption = Annotated[
@@ -33,6 +37,10 @@ NoOpenOption = Annotated[
     typer.Option("--no-open", help="Do not open the browser automatically."),
 ]
 ReloadOption = Annotated[bool, typer.Option(help="Reload the server when Python files change.")]
+VerboseOption = Annotated[
+    bool,
+    typer.Option("--verbose", help="Show server startup and request logs."),
+]
 
 
 def _current_version() -> str:
@@ -72,10 +80,11 @@ def main(
     port: PortOption = DEFAULT_PORT,
     no_open: NoOpenOption = False,
     reload: ReloadOption = False,
+    verbose: VerboseOption = False,
 ) -> None:
     """Start the Pretty Lattice local GUI."""
     if ctx.invoked_subcommand is None:
-        _run_gui(host=host, port=port, no_open=no_open, reload=reload)
+        _run_gui(host=host, port=port, no_open=no_open, reload=reload, verbose=verbose)
 
 
 def _choose_port(host: str, requested_port: int) -> int:
@@ -113,25 +122,80 @@ def _start_browser_opener(url: str, host: str, port: int) -> None:
     ).start()
 
 
-def _run_gui(host: str, port: int, no_open: bool, reload: bool) -> None:
-    selected_port = _choose_port(host, port)
-    url = f"http://{host}:{selected_port}"
+def _uvicorn_log_options(verbose: bool) -> dict[str, object]:
+    return {
+        "access_log": verbose,
+        "log_level": "info" if verbose else "warning",
+    }
 
-    typer.echo(f"Starting Pretty Lattice GUI at {url}")
+
+def _startup_title() -> Text:
+    return Text.assemble(
+        ("Pretty", f"bold {LOGO_PRETTY_COLOR}"),
+        " ",
+        ("Lattice", f"bold {LOGO_LATTICE_COLOR}"),
+        "  ",
+        (f"v{_current_version()}", "dim"),
+    )
+
+
+def _print_startup_banner(url: str) -> None:
+    console = Console()
+    console.print()
+    console.print(_startup_title(), highlight=False)
+    console.print()
+    console.print(
+        f"[green]➜[/green]  [bold]Local server:[/bold]  [cyan]{url}[/cyan]",
+        highlight=False,
+    )
+    console.print(
+        Text.assemble(
+            ("➜", "green"),
+            "  ",
+            ("press ", "dim"),
+            ("ctrl + c", "bold"),
+            (" to quit", "dim"),
+        ),
+        highlight=False,
+    )
+    console.print()
+
+
+def _print_shutdown_banner() -> None:
+    console = Console()
+    console.print()
+    console.print(Text.assemble(("➜", "green"), "  ", ("Pretty Lattice stopped.", "dim")))
+
+
+def _run_uvicorn(*args: object, **kwargs: object) -> None:
+    try:
+        uvicorn.run(*args, **kwargs)
+    except KeyboardInterrupt:
+        pass
+    _print_shutdown_banner()
+
+
+def _run_gui(host: str, port: int, no_open: bool, reload: bool, verbose: bool) -> None:
+    selected_port = _choose_port(host, port)
+    url = f"http://{host}:{selected_port}/"
+
+    _print_startup_banner(url)
     if not no_open:
         _start_browser_opener(url, host, selected_port)
 
+    log_options = _uvicorn_log_options(verbose)
     if reload:
-        uvicorn.run(
+        _run_uvicorn(
             "pretty_lattice.server.app:create_app",
             host=host,
             port=selected_port,
             factory=True,
             reload=True,
+            **log_options,
         )
         return
 
-    uvicorn.run(create_app(), host=host, port=selected_port)
+    _run_uvicorn(create_app(), host=host, port=selected_port, **log_options)
 
 
 @app.command(context_settings={"help_option_names": HELP_OPTION_NAMES}, hidden=True)
@@ -140,9 +204,10 @@ def gui(
     port: PortOption = DEFAULT_PORT,
     no_open: NoOpenOption = False,
     reload: ReloadOption = False,
+    verbose: VerboseOption = False,
 ) -> None:
     """Start the local Pretty Lattice GUI server.
 
     Kept as a compatibility alias for `prl`.
     """
-    _run_gui(host=host, port=port, no_open=no_open, reload=reload)
+    _run_gui(host=host, port=port, no_open=no_open, reload=reload, verbose=verbose)

@@ -20,6 +20,7 @@ from pretty_lattice.structures.summary import (
     build_structure_summary,
     has_valid_3d_periodic_cell,
 )
+from pretty_lattice.structures.warning_policy import suppress_third_party_structure_warnings
 
 
 def build_scene_response(
@@ -31,6 +32,15 @@ def build_scene_response(
 
 
 def build_scene_spec(
+    structure: Structure,
+    *,
+    bond_algorithm: str | None = None,
+) -> SceneSpec:
+    with suppress_third_party_structure_warnings():
+        return _build_scene_spec(structure, bond_algorithm=bond_algorithm)
+
+
+def _build_scene_spec(
     structure: Structure,
     *,
     bond_algorithm: str | None = None,

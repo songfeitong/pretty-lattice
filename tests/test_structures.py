@@ -1,5 +1,6 @@
 import ast
 import tomllib
+import warnings
 from math import dist
 from pathlib import Path
 
@@ -25,6 +26,7 @@ from pretty_lattice.structures.symmetry import (
     POINT_GROUP_SCHOENFLIES,
     point_group_schoenflies_symbol,
 )
+from pretty_lattice.structures.warning_policy import THIRD_PARTY_STRUCTURE_WARNING_PACKAGE_NAMES
 
 PROJECT_ROOT = Path(__file__).parents[1]
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "structures"
@@ -309,6 +311,24 @@ def test_scene_response_supports_selected_bond_algorithms() -> None:
     assert "warnings" not in crystal_scene
     assert "warnings" not in minimum_distance_scene
     assert "warnings" not in cutoff_dict_scene
+
+
+def test_third_party_structure_warnings_are_suppressed() -> None:
+    structure_path = FIXTURE_DIR / "MoS2.cif"
+
+    with warnings.catch_warnings(record=True) as captured_warnings:
+        warnings.simplefilter("always")
+        structure = read_structure(structure_path)
+        scene = build_scene_response(structure, bond_algorithm="crystal-nn")
+
+    leaked_third_party_warnings = [
+        warning
+        for warning in captured_warnings
+        if _is_third_party_structure_warning(warning.filename)
+    ]
+
+    assert scene["bonds"]
+    assert leaked_third_party_warnings == []
 
 
 @pytest.mark.parametrize(
@@ -708,3 +728,11 @@ def _imported_roots(source: str) -> set[str]:
         elif isinstance(node, ast.ImportFrom) and node.module:
             roots.add(node.module.split(".", maxsplit=1)[0])
     return roots
+
+
+def _is_third_party_structure_warning(filename: str) -> bool:
+    path_parts = set(Path(filename).parts)
+    return any(
+        package_name in path_parts
+        for package_name in THIRD_PARTY_STRUCTURE_WARNING_PACKAGE_NAMES
+    )

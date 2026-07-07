@@ -14,6 +14,7 @@ Useful development options:
 uv run prl --no-open
 uv run prl --reload
 uv run prl -p 0
+uv run prl --verbose
 ```
 
 Run checks:

@@ -5,6 +5,8 @@ from tempfile import TemporaryDirectory
 
 from pymatgen.core import Structure
 
+from pretty_lattice.structures.warning_policy import suppress_third_party_structure_warnings
+
 
 class StructureReadError(ValueError):
     """Raised when a structure file cannot be parsed for preview."""
@@ -14,7 +16,8 @@ def read_structure(path: str | Path) -> Structure:
     """Read a periodic crystal structure with pymatgen."""
     structure_path = Path(path)
     try:
-        structure = Structure.from_file(structure_path)
+        with suppress_third_party_structure_warnings():
+            structure = Structure.from_file(structure_path)
     except Exception as exc:
         raise StructureReadError(
             f"Could not parse structure file {structure_path.name}: {exc}"
@@ -33,7 +36,8 @@ def read_structure_bytes(payload: bytes, filename: str | None = None) -> Structu
         with TemporaryDirectory(prefix="pretty-lattice-structure-") as temp_dir:
             structure_path = Path(temp_dir) / safe_name
             structure_path.write_bytes(payload)
-            structure = Structure.from_file(structure_path)
+            with suppress_third_party_structure_warnings():
+                structure = Structure.from_file(structure_path)
     except Exception as exc:
         raise StructureReadError(f"Could not parse {display_name}: {exc}") from exc
 
