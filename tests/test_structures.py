@@ -10,6 +10,7 @@ from pymatgen.core import Lattice, Structure
 import pretty_lattice.structures.connectivity as connectivity_module
 import pretty_lattice.structures.polyhedra as polyhedra_module
 import pretty_lattice.structures.summary as summary_module
+from pretty_lattice.structures.normalization import normalize_structure_for_preview
 from pretty_lattice.structures.readers import (
     StructureReadError,
     read_structure,
@@ -294,6 +295,36 @@ def test_non_periodic_structure_keeps_only_canonical_atom_instances() -> None:
     assert scene["summary"]["atomCount"] == 1
 
 
+def test_preview_normalization_folds_periodic_sites_without_sanitizing() -> None:
+    structure = Structure(
+        Lattice.from_parameters(2.0, 3.0, 4.0, 80.0, 90.0, 100.0),
+        ["O", "C"],
+        [[1.2, -0.1, 0.5], [0.25, 0.25, 0.25]],
+        charge=1,
+        site_properties={"magmom": [2.0, 1.0]},
+        labels=["O-outside", "C-inside"],
+        properties={"source": "normalization-test"},
+        to_unit_cell=False,
+    )
+
+    normalized = normalize_structure_for_preview(structure)
+
+    assert [[float(value) for value in site.frac_coords] for site in structure] == [
+        [1.2, -0.1, 0.5],
+        [0.25, 0.25, 0.25],
+    ]
+    assert [[float(value) for value in site.frac_coords] for site in normalized] == [
+        [pytest.approx(0.2), pytest.approx(0.9), 0.5],
+        [0.25, 0.25, 0.25],
+    ]
+    assert [site.species_string for site in normalized] == ["O", "C"]
+    assert normalized.lattice == structure.lattice
+    assert normalized.site_properties == {"magmom": [2.0, 1.0]}
+    assert normalized.labels == ["O-outside", "C-inside"]
+    assert normalized.properties == {"source": "normalization-test"}
+    assert normalized._charge == 1
+
+
 def test_scene_response_supports_selected_bond_algorithms() -> None:
     structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
 
@@ -407,6 +438,67 @@ def test_cutoff_dict_bonding_keeps_boundary_bonds_local_after_canonicalizing_sit
     assert bond_lengths
     assert max(bond_lengths) == pytest.approx(2.76669762905849)
     assert all(length < 3.0 for length in bond_lengths)
+
+
+@pytest.mark.parametrize("bond_algorithm", ["crystal-nn", "minimum-distance", "cut-off-dict"])
+def test_scene_response_normalizes_out_of_cell_sites_before_bonding(
+    bond_algorithm: str,
+) -> None:
+    structure = Structure(
+        Lattice.cubic(10.0),
+        ["C", "C"],
+        [[-0.1, 0.5, 0.5], [0.0, 0.5, 0.5]],
+        coords_are_cartesian=False,
+        to_unit_cell=False,
+    )
+
+    scene = build_scene_response(structure, bond_algorithm=bond_algorithm)
+    atoms = scene["atoms"]
+    bond_lengths = [
+        dist(
+            atoms[bond["startAtomIndex"]]["position"],
+            atoms[bond["endAtomIndex"]]["position"],
+        )
+        for bond in scene["bonds"]
+    ]
+
+    assert [[float(value) for value in site.frac_coords] for site in structure] == [
+        [-0.1, 0.5, 0.5],
+        [0.0, 0.5, 0.5],
+    ]
+    assert bond_lengths
+    assert max(bond_lengths) == pytest.approx(1.0)
+    assert all(length < 2.0 for length in bond_lengths)
+
+
+def test_normalized_boundary_bonded_images_keep_independent_visibility_groups() -> None:
+    structure = Structure(
+        Lattice.cubic(10.0),
+        ["C", "C"],
+        [[-0.1, 0.5, 0.5], [0.0, 0.5, 0.5]],
+        coords_are_cartesian=False,
+        to_unit_cell=False,
+    )
+
+    scene = build_scene_response(structure, bond_algorithm="cut-off-dict")
+    atoms = scene["atoms"]
+    boundary_bonded_atom = next(
+        atom for atom in atoms if atom["imageReasons"] == ["boundary", "bonded"]
+    )
+    boundary_bonded_bond = next(
+        bond
+        for bond in scene["bonds"]
+        if bond["visibilityDependencyGroups"] == [["boundaryAtoms"], ["oneHopBondedAtoms"]]
+    )
+
+    assert boundary_bonded_atom["visibilityDependencyGroups"] == [
+        ["boundaryAtoms"],
+        ["oneHopBondedAtoms"],
+    ]
+    assert (
+        "boundary" in atoms[boundary_bonded_bond["startAtomIndex"]]["imageReasons"]
+        or "boundary" in atoms[boundary_bonded_bond["endAtomIndex"]]["imageReasons"]
+    )
 
 
 def test_scene_response_generates_polyhedra_for_complete_coordination_environment() -> None:

@@ -4,6 +4,7 @@ from pymatgen.core import Structure
 
 import pretty_lattice.structures.connectivity as connectivity_module
 import pretty_lattice.structures.polyhedra as polyhedra_module
+from pretty_lattice.structures.normalization import normalize_structure_for_preview
 from pretty_lattice.structures.periodic_images import (
     atom_record_to_spec,
     build_atom_records,
@@ -45,6 +46,7 @@ def _build_scene_spec(
     *,
     bond_algorithm: str | None = None,
 ) -> SceneSpec:
+    structure = normalize_structure_for_preview(structure)
     normalized_bond_algorithm = normalize_bond_algorithm(bond_algorithm)
     selected_bond_algorithm = normalized_bond_algorithm or default_bond_algorithm_for_atom_count(
         len(structure)
