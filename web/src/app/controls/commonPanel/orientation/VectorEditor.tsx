@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +56,7 @@ export function VectorEditor({
   onCameraSecondaryChange: (secondary: CrystalCameraScreenDirection) => void;
   onCameraStateChange: (cameraState: CrystalCameraState) => void;
 }) {
+  const { t } = useTranslation();
   const currentDraft = useMemo(() => resetVectorEditorDraft(cameraState), [cameraState]);
   const [draft, setDraft] = useState(currentDraft);
   const [isDirty, setIsDirty] = useState(false);
@@ -171,21 +173,20 @@ export function VectorEditor({
             id="camera-numerical-label"
             className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "leading-tight text-muted-foreground")}
           >
-            Numerical input
+            {t("orientation.numericalInput")}
           </h2>
           <Tooltip delayDuration={650}>
             <TooltipTrigger asChild>
               <button
                 type="button"
-                aria-label="Numerical input rules"
+                aria-label={t("orientation.numericalInputRules")}
                 className="inline-flex size-4 items-center justify-center rounded-md text-muted-foreground/75 outline-none transition-colors hover:text-foreground focus-visible:ring-[2px] focus-visible:ring-ring/30"
               >
                 <Info aria-hidden="true" className="size-3.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-56">
-              The two vectors should be orthogonal. If not, primary is kept and secondary is
-              orthogonalized.
+              {t("orientation.directVectorRule")}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -193,7 +194,7 @@ export function VectorEditor({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Reset vectors draft"
+            aria-label={t("actions.resetVectorsDraft")}
             className={cn(
               TOOL_ICON_BUTTON_CLASS,
               buttonFeedbackPhase.reset === "a" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS : null,
@@ -206,7 +207,7 @@ export function VectorEditor({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Apply vectors"
+            aria-label={t("actions.applyVectors")}
             className={cn(
               TOOL_ICON_BUTTON_CLASS,
               buttonFeedbackPhase.apply === "a" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS : null,
@@ -263,6 +264,7 @@ function VectorEditorRow({
   onValueChange: (index: number, value: string) => void;
   values: readonly string[];
 }) {
+  const { t } = useTranslation();
   const secondaryToggleOption = secondaryOptions?.find(
     (option) => option.direction === secondaryValue,
   );
@@ -283,7 +285,9 @@ function VectorEditorRow({
   ) : (
     <button
       type="button"
-      aria-label={`${secondaryToggleOption.letter} secondary axis`}
+      aria-label={t("orientation.secondaryAxis", {
+        axis: secondaryToggleOption.letter,
+      })}
       className={cn(
         VECTOR_AXIS_TOKEN_CLASS,
         "border border-foreground/10 bg-background text-xs text-muted-foreground shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-[background-color,border-color,color,box-shadow] hover:border-foreground/15 hover:bg-accent/80 hover:text-foreground hover:shadow-[0_1px_3px_rgb(0_0_0/0.06)] focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-ring/25",

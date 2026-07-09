@@ -13,6 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -46,13 +47,13 @@ interface TabIndicatorRect {
 
 const COMMON_PANEL_TABS: {
   Icon: LucideIcon;
-  label: string;
+  labelKey: "nav.display" | "nav.pose" | "nav.style" | "nav.export";
   value: CommonPanelTab;
 }[] = [
-  { Icon: DisplayIcon, label: "Display", value: "display" },
-  { Icon: CameraIcon, label: "Pose", value: "camera" },
-  { Icon: Palette, label: "Style", value: "style" },
-  { Icon: ImageDown, label: "Export", value: "export" },
+  { Icon: DisplayIcon, labelKey: "nav.display", value: "display" },
+  { Icon: CameraIcon, labelKey: "nav.pose", value: "camera" },
+  { Icon: Palette, labelKey: "nav.style", value: "style" },
+  { Icon: ImageDown, labelKey: "nav.export", value: "export" },
 ];
 
 export function CommonControlsPanel({
@@ -106,6 +107,7 @@ export function CommonControlsPanel({
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   style: StyleState;
 }) {
+  const { t } = useTranslation();
   const tabTriggerRefs = useRef<Record<CommonPanelTab, HTMLButtonElement | null>>({
     camera: null,
     display: null,
@@ -237,7 +239,7 @@ export function CommonControlsPanel({
   return (
     <TooltipProvider>
       <aside
-        aria-label="Common controls"
+        aria-label={t("nav.commonControls")}
         className={cn(
           "rounded-xl border px-3 py-2 shadow-xl shadow-foreground/10",
           GLASS_SURFACE_CLASS,
@@ -263,8 +265,9 @@ export function CommonControlsPanel({
                 }}
               />
             ) : null}
-            {COMMON_PANEL_TABS.map(({ Icon, label, value }) => {
+            {COMMON_PANEL_TABS.map(({ Icon, labelKey, value }) => {
               const isActive = value === activeTab;
+              const label = t(labelKey);
               const trigger = (
                 <TabsTrigger
                   ref={(node) => {

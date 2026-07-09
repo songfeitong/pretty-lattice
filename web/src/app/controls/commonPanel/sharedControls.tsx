@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ export function PercentSliderRow({
   value: number;
   valueLabel?: string;
 }) {
+  const { t } = useTranslation();
   const [valueText, setValueText] = useState(formatPercentValue(value));
   const sliderBlur = useAutoBlurSlider();
   const sliderPosition = percentValueToLinearSliderPosition(value, min, max);
@@ -100,7 +102,7 @@ export function PercentSliderRow({
           max={max}
           step={1}
           value={clampPercentValue(value, min, max)}
-          aria-label={`${accessibleLabel} ${valueLabel}`}
+          aria-label={t("style.value", { target: accessibleLabel, valueLabel })}
           aria-valuetext={`${formatPercentValue(value)}%`}
           className="opacity-slider absolute inset-0 z-10 h-full w-full"
           disabled={disabled}
@@ -123,12 +125,14 @@ export function PercentSliderRow({
         className="opacity-value-control group flex h-[22px] items-baseline justify-center gap-0 rounded-md border px-0.5 transition-[background-color,border-color,box-shadow] duration-150"
         data-disabled={disabled ? "true" : "false"}
       >
-        <span className="sr-only">{accessibleLabel} {valueLabel} value</span>
+        <span className="sr-only">
+          {t("style.valueInput", { target: accessibleLabel, valueLabel })}
+        </span>
         <input
           type="text"
           inputMode="numeric"
           value={valueText}
-          aria-label={`${accessibleLabel} ${valueLabel} value`}
+          aria-label={t("style.valueInput", { target: accessibleLabel, valueLabel })}
           className="opacity-value-input h-full w-[1.35rem] border-0 bg-transparent px-0 text-center font-mono text-[0.68rem] leading-none tabular-nums outline-none"
           disabled={disabled}
           onBlur={commitValueText}

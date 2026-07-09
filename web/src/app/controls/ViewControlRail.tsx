@@ -7,6 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -56,6 +57,7 @@ export function ViewControlRail({
   previewFpsStore: PreviewFpsStore;
   showFps?: boolean;
 }) {
+  const { t } = useTranslation();
   const viewScale = useSyncExternalStore(
     cameraInteractionStore.subscribeViewScale,
     cameraInteractionStore.getViewScaleSnapshot,
@@ -199,7 +201,7 @@ export function ViewControlRail({
   return (
     <TooltipProvider>
       <aside
-        aria-label="View controls"
+        aria-label={t("nav.viewControls")}
         className={cn(
           "absolute left-[328px] top-4 flex w-[42px] flex-col items-center max-[760px]:bottom-[8.5rem] max-[760px]:left-auto max-[760px]:right-4 max-[760px]:top-auto",
           className,
@@ -225,7 +227,7 @@ export function ViewControlRail({
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Reset view"
+                aria-label={t("actions.resetView")}
                 className={cn(
                   TOOL_ICON_BUTTON_CLASS,
                   resetFeedbackPhase === "a" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS : null,
@@ -236,7 +238,7 @@ export function ViewControlRail({
                 <RotateCcw aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Reset view</TooltipContent>
+            <TooltipContent side="right">{t("actions.resetView")}</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -246,7 +248,7 @@ export function ViewControlRail({
                 size="icon"
                 aria-pressed={interactionLocked}
                 aria-label={
-                  interactionLocked ? "Unlock mouse interaction" : "Lock mouse interaction"
+                  interactionLocked ? t("view.unlockMouseInteraction") : t("view.lockMouseInteraction")
                 }
                 className={cn(
                   TOOL_ICON_BUTTON_CLASS,
@@ -262,7 +264,7 @@ export function ViewControlRail({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              {interactionLocked ? "Unlock mouse interaction" : "Lock mouse interaction"}
+              {interactionLocked ? t("view.unlockMouseInteraction") : t("view.lockMouseInteraction")}
             </TooltipContent>
           </Tooltip>
 
@@ -274,7 +276,7 @@ export function ViewControlRail({
               max={1000}
               step={1}
               value={sliderValue}
-              aria-label="Zoom percentage"
+              aria-label={t("view.zoomPercentage")}
               aria-valuetext={`${formatZoomPercent(viewScale)}%`}
               className="zoom-slider absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
               data-testid="zoom-slider"
@@ -311,12 +313,12 @@ export function ViewControlRail({
           </div>
 
           <label className="zoom-percent-control group -mt-1 flex h-[22px] w-[34px] items-baseline justify-center gap-0 rounded-md border px-0.5 transition-[background-color,border-color,box-shadow] duration-150">
-            <span className="sr-only">Zoom percentage</span>
+            <span className="sr-only">{t("view.zoomPercentage")}</span>
             <input
               type="text"
               inputMode="decimal"
               value={zoomText}
-              aria-label="Zoom percentage input"
+              aria-label={t("view.zoomPercentageInput")}
               className="zoom-percent-input h-full w-[1.35rem] border-0 bg-transparent px-0 text-center font-mono text-[0.68rem] leading-none tabular-nums outline-none"
               data-testid="zoom-input"
               onBlur={commitZoomText}

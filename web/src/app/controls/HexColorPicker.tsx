@@ -1,4 +1,5 @@
 import { type ComponentProps, type CSSProperties, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { clampChroma, formatHex, type Oklch } from "culori";
 
 import {
@@ -58,6 +59,7 @@ export function HexColorPicker({
   triggerClassName?: string;
   value: string;
 }) {
+  const { t } = useTranslation();
   const [format, setFormat] = useState<ColorFormat>("hex");
   const colorPickerRegistry = useOptionalColorPickerRegistry();
   const hexValue = normalizeHexColor(value, fallbackValue);
@@ -161,7 +163,7 @@ export function HexColorPicker({
         <ColorPickerArea className="h-40 rounded-xl" />
         <div className="flex items-center gap-2">
           <ColorPickerEyeDropper
-            aria-label="Pick color from screen"
+            aria-label={t("colorPicker.pickFromScreen")}
             className={cn(TOOL_ICON_BUTTON_CLASS, "border-input")}
           />
           <ColorPickerHueSlider className="flex-1" />

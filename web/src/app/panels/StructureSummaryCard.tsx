@@ -1,5 +1,6 @@
 import { AlertTriangleIcon, ChevronDown, ChevronUp, FolderOpen } from "lucide-react";
 import { useId, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ export function StructureSummaryCard({
   scene: SceneSpec | null;
   selectedFileName: string | null;
 }) {
+  const { t } = useTranslation();
   const summary = useMemo(() => summarizeScene(scene), [scene]);
   const expandableContentId = useId();
   const [isLogoHovered, setIsLogoHovered] = useState(false);
@@ -54,7 +56,9 @@ export function StructureSummaryCard({
       dismissedWarnings.scene === scene ? dismissedWarnings.codes : null;
     return scene?.warnings?.filter((warning) => !dismissedWarningCodes?.has(warning.code)) ?? [];
   }, [dismissedWarnings, scene]);
-  const toggleDetailsLabel = isCollapsed ? "Expand details" : "Collapse details";
+  const toggleDetailsLabel = isCollapsed
+    ? t("summary.expandDetails")
+    : t("summary.collapseDetails");
 
   return (
     <aside
@@ -62,7 +66,7 @@ export function StructureSummaryCard({
         "rounded-xl border px-3 py-3.5 shadow-xl shadow-foreground/10",
         GLASS_SURFACE_CLASS,
       )}
-      aria-label="Current structure"
+      aria-label={t("summary.currentStructure")}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
@@ -72,7 +76,7 @@ export function StructureSummaryCard({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    aria-label="About Pretty Lattice"
+                    aria-label={t("app.aboutPrettyLattice")}
                     className="grid size-7 shrink-0 place-items-center rounded-[8px] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
                     onBlur={() => setIsLogoHovered(false)}
                     onClick={() => {
@@ -88,13 +92,15 @@ export function StructureSummaryCard({
                     />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top">About</TooltipContent>
+                <TooltipContent side="top">{t("app.about")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <AboutPrettyLatticeDialog />
           </Dialog>
           <div className="flex min-w-0 items-center gap-1">
-            <h1 className="truncate text-[0.95rem] font-semibold leading-tight">Pretty Lattice</h1>
+            <h1 className="truncate text-[0.95rem] font-semibold leading-tight">
+              {t("app.prettyLattice")}
+            </h1>
             {hasExpandableContent ? (
               <TooltipProvider delayDuration={500}>
                 <Tooltip>
@@ -120,13 +126,13 @@ export function StructureSummaryCard({
 
         <Button
           size="sm"
-          aria-label="Open structure"
+          aria-label={t("actions.openStructure")}
           className="h-7 gap-1.5 rounded-full px-2.5 text-xs transition-[background-color,transform] duration-100 ease-out active:translate-y-[0.5px] active:bg-primary/80 [&_svg]:size-3.5"
           disabled={previewStatus === "loading"}
           onClick={onOpenStructure}
         >
           <FolderOpen data-icon="inline-start" aria-hidden="true" />
-          <span>Open</span>
+          <span>{t("actions.open")}</span>
         </Button>
       </div>
 
@@ -135,7 +141,7 @@ export function StructureSummaryCard({
       <div className="flex flex-col gap-1">
         {selectedFileName ? (
           <SummaryRow
-            label="File"
+            label={t("summary.file")}
             value={selectedFileName}
             title={selectedFileName}
           />
@@ -144,11 +150,11 @@ export function StructureSummaryCard({
         {scene ? (
           <>
             <SummaryRow
-              label="Formula"
+              label={t("summary.formula")}
               value={renderFormula(summary.formula)}
               mono={false}
             />
-            <SummaryRow label="Atoms" value={summary.atomCount} />
+            <SummaryRow label={t("summary.atoms")} value={summary.atomCount} />
           </>
         ) : null}
       </div>
@@ -198,11 +204,13 @@ export function StructureSummaryCard({
                 <div className="flex flex-col gap-2.5 max-[760px]:hidden">
                   <Separator data-structure-summary-details-separator />
                   <div>
-                    <span className="block text-xs font-bold text-muted-foreground">Symmetry</span>
+                    <span className="block text-xs font-bold text-muted-foreground">
+                      {t("summary.symmetry")}
+                    </span>
                     {summary.symmetry?.available ? (
                       <dl className={cn("mt-1.5 flex flex-col gap-1", COMMON_PANEL_BODY_TEXT_CLASS)}>
                         <SymmetryMetric
-                          label="Space group"
+                          label={t("summary.spaceGroup")}
                           value={renderSpaceGroup(
                             summary.symmetry.spaceGroup,
                             summary.symmetry.spaceGroupNumber,
@@ -213,7 +221,7 @@ export function StructureSummaryCard({
                           )}
                         />
                         <SymmetryMetric
-                          label="Point group"
+                          label={t("summary.pointGroup")}
                           value={renderPointGroup(
                             summary.symmetry.pointGroup,
                             summary.symmetry.pointGroupSchoenflies,
@@ -224,15 +232,15 @@ export function StructureSummaryCard({
                           )}
                         />
                         <SymmetryMetric
-                          label="Crystal system"
+                          label={t("summary.crystalSystem")}
                           value={summary.symmetry.crystalSystem ?? "-"}
                         />
                       </dl>
                     ) : (
                       <dl className={cn("mt-1.5 flex flex-col gap-1", COMMON_PANEL_BODY_TEXT_CLASS)}>
-                        <SymmetryMetric label="Space group" value="N/A" />
-                        <SymmetryMetric label="Point group" value="N/A" />
-                        <SymmetryMetric label="Crystal system" value="N/A" />
+                        <SymmetryMetric label={t("summary.spaceGroup")} value="N/A" />
+                        <SymmetryMetric label={t("summary.pointGroup")} value="N/A" />
+                        <SymmetryMetric label={t("summary.crystalSystem")} value="N/A" />
                       </dl>
                     )}
                   </div>
@@ -242,7 +250,7 @@ export function StructureSummaryCard({
                       <Separator />
                       <div>
                         <span className="block text-xs font-bold text-muted-foreground">
-                          Lattice Parameters
+                          {t("summary.latticeParameters")}
                         </span>
                         <dl className={cn("mt-1.5 grid grid-cols-3 gap-x-3 gap-y-1 font-mono", COMMON_PANEL_BODY_TEXT_CLASS)}>
                           <CellMetric label="a" value={summary.cell.a} unit="Å" />

@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { AngleSlider } from "@/components/ui/angle-slider";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ export function RollControl({
   onValueChange: (value: number) => void;
   value: number;
 }) {
+  const { t } = useTranslation();
   const committedValue = toPositiveRollDegrees(value);
   const [isDragging, setIsDragging] = useState(false);
   const [draftValue, setDraftValue] = useState(committedValue);
@@ -227,10 +229,10 @@ export function RollControl({
       )}
     >
       <h2 id="camera-roll-label" className="sr-only">
-        Roll
+        {t("orientation.roll")}
       </h2>
       <AngleSlider
-        aria-label="Roll"
+        aria-label={t("orientation.roll")}
         className="size-[116px]"
         value={displayedValue}
         onInteractionStart={handleSliderInteractionStart}
@@ -238,12 +240,12 @@ export function RollControl({
         onValueCommit={handleSliderCommit}
       />
       <label className="absolute left-1/2 top-1/2 z-10 inline-flex h-5 min-w-[1.45rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[4px] border border-transparent bg-transparent px-1 transition-[background-color,border-color,box-shadow] duration-150 hover:border-foreground/8 hover:bg-background/55 focus-within:border-ring/15 focus-within:bg-background/70 focus-within:shadow-[0_0_0_0.5px_color-mix(in_srgb,var(--ring)_14%,transparent)]">
-        <span className="sr-only">Roll value</span>
+        <span className="sr-only">{t("orientation.rollValue")}</span>
         <input
           type="text"
           inputMode="decimal"
           value={displayedValueText}
-          aria-label="Roll value"
+          aria-label={t("orientation.rollValue")}
           className="h-full min-w-[1ch] border-0 bg-transparent px-0 text-right font-mono text-xs font-normal leading-none tabular-nums outline-none focus-visible:ring-0"
           style={{ width: rollValueInputWidth(displayedValueText) }}
           onBlur={handleValueBlur}

@@ -1,4 +1,5 @@
 import { DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { useTranslation } from "react-i18next";
 import { PRETTY_LATTICE_VERSION } from "../appMetadata";
 import { PrettyLatticeLogo } from "./PrettyLatticeLogo";
 
@@ -16,6 +17,8 @@ function GitHubMarkIcon() {
 }
 
 export function AboutPrettyLatticeDialog() {
+  const { t } = useTranslation();
+
   return (
     <DialogContent
       className="w-[min(calc(100vw-2rem),20rem)] overflow-hidden rounded-2xl border-foreground/10 bg-background p-0 shadow-xl shadow-foreground/12 sm:max-w-none"
@@ -26,7 +29,7 @@ export function AboutPrettyLatticeDialog() {
           href={PRETTY_LATTICE_GITHUB_URL}
           target="_blank"
           rel="noreferrer"
-          aria-label="Open Pretty Lattice on GitHub"
+          aria-label={t("app.github")}
           className="absolute right-3 top-3 grid size-7 place-items-center rounded-[10px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40 motion-reduce:transition-none [&_svg]:size-6"
         >
           <GitHubMarkIcon />
@@ -44,16 +47,16 @@ export function AboutPrettyLatticeDialog() {
           </div>
 
           <DialogTitle className="mt-5 text-xl font-semibold leading-tight tracking-normal">
-            <span className="sr-only">About </span>
-            Pretty Lattice
+            <span className="sr-only">{t("app.about")} </span>
+            {t("app.prettyLattice")}
           </DialogTitle>
 
           <DialogDescription className="mt-2.5 max-w-[20rem] text-[0.9rem] leading-5 text-foreground/76">
-            A crystal visualization tool for creating beautiful figures.
+            {t("app.description")}
           </DialogDescription>
 
           <p className="mt-4 text-sm leading-5 text-muted-foreground">
-            Version {PRETTY_LATTICE_VERSION}
+            {t("app.version", { version: PRETTY_LATTICE_VERSION })}
           </p>
         </div>
 

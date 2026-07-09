@@ -1,5 +1,6 @@
 import { RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ export function PrimaryAxisRollSection({
   primary: CrystalCameraPrimaryDirection;
   rollDegrees: number;
 }) {
+  const { t } = useTranslation();
   const [rollResetFeedbackPhase, setRollResetFeedbackPhase] =
     useState<ToolButtonFeedbackPhase>(null);
   const rollResetFeedbackTickRef = useRef(0);
@@ -67,12 +69,12 @@ export function PrimaryAxisRollSection({
           id="camera-axis-roll-label"
           className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "leading-tight text-muted-foreground")}
         >
-          Primary axis
+          {t("orientation.primaryAxis")}
         </h2>
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Reset roll"
+          aria-label={t("actions.resetRoll")}
           className={cn(
             TOOL_ICON_BUTTON_CLASS,
             rollResetFeedbackPhase === "a" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS : null,

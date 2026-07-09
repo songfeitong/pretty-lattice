@@ -31,10 +31,33 @@ export interface ExportSettingsState {
   width: number;
 }
 
-export interface ExportSettingsValidation {
-  message: string | null;
-  valid: boolean;
-}
+export type ExportSettingsValidationCode =
+  | "jpg-needs-opaque-background"
+  | "no-components"
+  | "size-range"
+  | "size-too-large"
+  | "supersampling-invalid";
+
+type ExportSettingsValidationSimpleErrorCode = Exclude<
+  ExportSettingsValidationCode,
+  "size-range"
+>;
+
+export type ExportSettingsValidation =
+  | {
+      code: null;
+      valid: true;
+    }
+  | {
+      code: ExportSettingsValidationSimpleErrorCode;
+      valid: false;
+    }
+  | {
+      code: "size-range";
+      max: number;
+      min: number;
+      valid: false;
+    };
 
 export const EXPORT_DIMENSION_MIN = 64;
 export const EXPORT_DIMENSION_MAX = 6000;
@@ -60,12 +83,6 @@ export const MESH_QUALITY_OPTIONS: readonly MeshQuality[] = [
   "xhigh",
 ];
 export const EXPORT_MESH_QUALITY_OPTIONS = MESH_QUALITY_OPTIONS;
-export const MESH_QUALITY_LABELS: Record<MeshQuality, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-  xhigh: "XHigh",
-};
 
 export const DEFAULT_EXPORT_SETTINGS: ExportSettingsState = {
   aspectRatioLocked: false,
@@ -283,7 +300,7 @@ export function validateExportSettings(
   if (!Object.values(settings.components).some(Boolean)) {
     return {
       valid: false,
-      message: "Select at least one export component.",
+      code: "no-components",
     };
   }
 
@@ -297,21 +314,23 @@ export function validateExportSettings(
   ) {
     return {
       valid: false,
-      message: `Size must be ${EXPORT_DIMENSION_MIN}-${EXPORT_DIMENSION_MAX} px.`,
+      code: "size-range",
+      max: EXPORT_DIMENSION_MAX,
+      min: EXPORT_DIMENSION_MIN,
     };
   }
 
   if (!EXPORT_SUPERSAMPLING_OPTIONS.includes(settings.supersampling)) {
     return {
       valid: false,
-      message: "Supersampling must be 1x, 2x, or 4x.",
+      code: "supersampling-invalid",
     };
   }
 
   if (!isExportBackgroundAllowed(settings.format, settings.background)) {
     return {
       valid: false,
-      message: "JPG exports need a white or black background.",
+      code: "jpg-needs-opaque-background",
     };
   }
 
@@ -324,13 +343,13 @@ export function validateExportSettings(
   ) {
     return {
       valid: false,
-      message: "Size and supersampling are too large for this browser export.",
+      code: "size-too-large",
     };
   }
 
   return {
     valid: true,
-    message: null,
+    code: null,
   };
 }
 

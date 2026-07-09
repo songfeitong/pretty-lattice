@@ -1,4 +1,5 @@
 import { type CSSProperties } from "react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 
@@ -20,9 +21,10 @@ export function ElementLegend({
   onElementColorChange?: (element: string, color: string) => void;
   safeArea: PreviewSafeArea;
 }) {
+  const { t } = useTranslation();
   return (
     <nav
-      aria-label="Element legend"
+      aria-label={t("display.elementLegend")}
       className={cn(
         "pointer-events-none absolute bottom-7 -translate-x-1/2 rounded-full border px-4 py-2 shadow-lg shadow-foreground/10 transition-[left,max-width] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
         GLASS_SURFACE_CLASS,
@@ -56,6 +58,7 @@ function ElementLegendColorControl({
   element: string;
   onElementColorChange?: (element: string, color: string) => void;
 }) {
+  const { t } = useTranslation();
   const hexColor = normalizeHexColor(color);
 
   if (!onElementColorChange) {
@@ -67,8 +70,8 @@ function ElementLegendColorControl({
   return (
     <HexColorPicker
       align="center"
-      ariaLabel={`Set ${element} color`}
-      inputLabel={`${element} color value`}
+      ariaLabel={t("objectsPanel.setElementColor", { element })}
+      inputLabel={t("colorPicker.colorValue", { target: element })}
       pickerId={legendElementColorPickerId(element)}
       side="top"
       triggerClassName="pointer-events-auto rounded-full"

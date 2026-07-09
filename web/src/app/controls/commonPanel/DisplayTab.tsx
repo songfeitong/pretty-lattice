@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,6 +56,8 @@ export function DisplayTabContent({
   opacity: ComponentOpacityState;
   visibility: ComponentVisibilityState;
 }) {
+  const { t } = useTranslation();
+
   function setVisibility(key: keyof ComponentVisibilityState, value: boolean) {
     onVisibilityChange((currentVisibility) => ({
       ...currentVisibility,
@@ -105,10 +108,10 @@ export function DisplayTabContent({
             id="display-components-label"
             className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "leading-tight text-muted-foreground")}
           >
-            Objects
+            {t("display.visibleObjects")}
           </h2>
           <span className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "text-right leading-tight text-muted-foreground")}>
-            Opacity
+            {t("display.opacity")}
           </span>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -116,7 +119,7 @@ export function DisplayTabContent({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Reset opacity"
+                  aria-label={t("actions.resetOpacity")}
                   className={cn(
                     TOOL_ICON_BUTTON_CLASS,
                     resetFeedbackPhase === "a" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS : null,
@@ -128,14 +131,14 @@ export function DisplayTabContent({
                 </Button>
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top">Reset opacity</TooltipContent>
+            <TooltipContent side="top">{t("actions.resetOpacity")}</TooltipContent>
           </Tooltip>
         </div>
 
         <div className={cn("mt-1", COMMON_PANEL_ROW_STACK_CLASS)}>
           <ComponentOpacityRow
             checked={visibility.atoms}
-            label="Atoms"
+            label={t("display.atoms")}
             max={COMPONENT_OPACITY_MAX.atoms}
             value={opacity.atoms}
             onCheckedChange={(checked) => setVisibility("atoms", checked)}
@@ -143,7 +146,7 @@ export function DisplayTabContent({
           />
           <ComponentOpacityRow
             checked={visibility.bonds}
-            label="Bonds"
+            label={t("display.bonds")}
             max={COMPONENT_OPACITY_MAX.bonds}
             value={opacity.bonds}
             onCheckedChange={(checked) => setVisibility("bonds", checked)}
@@ -151,7 +154,7 @@ export function DisplayTabContent({
           />
           <ComponentOpacityRow
             checked={visibility.unitCell}
-            label="Unit cell"
+            label={t("display.unitCell")}
             max={COMPONENT_OPACITY_MAX.unitCell}
             value={opacity.unitCell}
             onCheckedChange={(checked) => setVisibility("unitCell", checked)}
@@ -160,7 +163,7 @@ export function DisplayTabContent({
           <ComponentOpacityRow
             checked={hasPolyhedra && visibility.polyhedra}
             checkboxDisabled={!hasPolyhedra}
-            label="Polyhedra"
+            label={t("display.polyhedra")}
             max={COMPONENT_OPACITY_MAX.polyhedra}
             value={opacity.polyhedra}
             onCheckedChange={(checked) => setVisibility("polyhedra", checked)}
@@ -176,17 +179,17 @@ export function DisplayTabContent({
           id="image-components-label"
           className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "px-1.5 leading-tight text-muted-foreground")}
         >
-          Periodic images
+          {t("display.periodicImages")}
         </h2>
         <div className="mt-1.5 flex flex-col gap-1">
           <ImageSwitchRow
             checked={visibility.boundaryAtoms}
-            label="Cell-boundary atoms"
+            label={t("display.boundaryAtoms")}
             onCheckedChange={(checked) => setVisibility("boundaryAtoms", checked)}
           />
           <ImageSwitchRow
             checked={visibility.oneHopBondedAtoms}
-            label="One-hop bonded atoms"
+            label={t("display.oneHopBondedAtoms")}
             onCheckedChange={(checked) => setVisibility("oneHopBondedAtoms", checked)}
           />
         </div>
@@ -212,6 +215,7 @@ function ComponentOpacityRow({
   onOpacityChange: (opacity: number) => void;
   value: number;
 }) {
+  const { t } = useTranslation();
   const [opacityText, setOpacityText] = useState(formatOpacityValue(value));
   const sliderBlur = useAutoBlurSlider();
   const sliderPosition = max > 0 ? value / max : 0;
@@ -300,7 +304,7 @@ function ComponentOpacityRow({
           step={1}
           value={value}
           disabled={inputDisabled}
-          aria-label={`${label} opacity`}
+          aria-label={t("display.opacityControl", { target: label })}
           aria-valuetext={`${formatOpacityValue(value)}%`}
           className="opacity-slider absolute inset-0 z-10 h-full w-full"
           ref={sliderBlur.ref}
@@ -322,13 +326,15 @@ function ComponentOpacityRow({
         className="opacity-value-control group flex h-[22px] items-baseline justify-center gap-0 rounded-md border px-0.5 transition-[background-color,border-color,box-shadow] duration-150"
         data-disabled={inputDisabled ? "true" : "false"}
       >
-        <span className="sr-only">{label} opacity value</span>
+        <span className="sr-only">
+          {t("display.opacityValue", { target: label })}
+        </span>
         <input
           type="text"
           inputMode="numeric"
           value={opacityText}
           disabled={inputDisabled}
-          aria-label={`${label} opacity value`}
+          aria-label={t("display.opacityValue", { target: label })}
           className="opacity-value-input h-full w-[1.35rem] border-0 bg-transparent px-0 text-center font-mono text-[0.68rem] leading-none tabular-nums outline-none"
           onBlur={commitOpacityText}
           onChange={(event) => setOpacityText(event.target.value)}

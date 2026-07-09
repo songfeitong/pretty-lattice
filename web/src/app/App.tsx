@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ import { useFigureExportController } from "./hooks/useFigureExportController";
 import { useLockedInteractionFeedback } from "./hooks/useLockedInteractionFeedback";
 import { usePreviewCameraCommands } from "./hooks/usePreviewCameraCommands";
 import { useStructurePreview } from "./hooks/useStructurePreview";
+import type { StructurePreviewErrorKind } from "./hooks/useStructurePreview";
 import { ElementLegend } from "./legend/ElementLegend";
 import {
   orientationGizmoContainerStyle,
@@ -100,6 +102,7 @@ export function App() {
 }
 
 function AppContent() {
+  const { t } = useTranslation();
   const { closeActiveColorPicker } = useColorPickerRegistry();
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [componentVisibility, setComponentVisibility] = useState(
@@ -163,6 +166,7 @@ function AppContent() {
   }, [closeActiveColorPicker]);
   const {
     bondAlgorithm,
+    errorKind,
     errorMessage,
     errorTitle,
     handleBondAlgorithmChange,
@@ -553,14 +557,14 @@ function AppContent() {
           onSelect={handleResetView}
         >
           <RotateCcw aria-hidden="true" />
-          Reset view
+          {t("actions.resetView")}
         </ContextMenuItem>
       </ContextMenuGroup>
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuItem onSelect={() => fileInputRef.current?.click()}>
           <FolderOpen aria-hidden="true" />
-          Open file
+          {t("actions.openFile")}
         </ContextMenuItem>
         <ContextMenuItem
           disabled={!scene || isExporting || previewStatus === "loading"}
@@ -569,7 +573,7 @@ function AppContent() {
           }}
         >
           <ImageDown aria-hidden="true" />
-          Export figure
+          {t("actions.exportFigure")}
         </ContextMenuItem>
       </ContextMenuGroup>
       <ContextMenuSeparator />
@@ -581,7 +585,7 @@ function AppContent() {
           }}
         >
           <RefreshCw aria-hidden="true" />
-          Reset all
+          {t("actions.resetAll")}
         </ContextMenuItem>
       </ContextMenuGroup>
     </ContextMenuContent>
@@ -610,7 +614,7 @@ function AppContent() {
       <input
         ref={fileInputRef}
         type="file"
-        aria-label="Structure file"
+        aria-label={t("preview.structureFile")}
         className="hidden"
         tabIndex={-1}
         onChange={(event) => void handleFileChange(event)}
@@ -621,7 +625,7 @@ function AppContent() {
           <section
             className="scene-stage absolute inset-0 transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
             style={{ transform: `translateX(${sceneOffsetX}px)` }}
-            aria-label="Crystal structure preview"
+            aria-label={t("preview.crystalStructurePreview")}
             onPointerCancelCapture={handleScenePointerEndCapture}
             onContextMenuCapture={handleSceneContextMenuCapture}
             onPointerDownCapture={handleScenePointerDownCapture}
@@ -683,10 +687,10 @@ function AppContent() {
                       data-testid="loading-structure-spinner"
                       className="inline-flex size-3 shrink-0 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground motion-safe:animate-spin motion-safe:[animation-duration:450ms]"
                     />
-                    Loading structure
+                    {t("preview.loadingStructure")}
                   </span>
                 ) : (
-                  "No structure loaded"
+                  t("preview.noStructureLoaded")
                 )}
               </div>
             )}
@@ -786,8 +790,12 @@ function AppContent() {
           onDismiss={() => setErrorMessage(null)}
         >
           <AlertTriangleIcon aria-hidden="true" />
-          <AlertTitle className="font-semibold">{errorTitle}</AlertTitle>
-          <AlertDescription>{errorMessage}</AlertDescription>
+          <AlertTitle className="font-semibold">
+            {localizedPreviewErrorTitle(errorKind, errorTitle, t)}
+          </AlertTitle>
+          <AlertDescription>
+            {localizedPreviewErrorMessage(errorKind, errorMessage, t)}
+          </AlertDescription>
         </Alert>
       ) : null}
 
@@ -862,4 +870,38 @@ function AppContent() {
       ) : null}
     </main>
   );
+}
+
+function localizedPreviewErrorTitle(
+  kind: StructurePreviewErrorKind | null,
+  fallbackTitle: string,
+  t: ReturnType<typeof useTranslation>["t"],
+) {
+  if (kind === "backend-unavailable") {
+    return t("validation.pythonBackendUnavailable");
+  }
+  if (kind) {
+    return t("validation.unsupportedFile");
+  }
+  return fallbackTitle;
+}
+
+function localizedPreviewErrorMessage(
+  kind: StructurePreviewErrorKind | null,
+  fallbackMessage: string,
+  t: ReturnType<typeof useTranslation>["t"],
+) {
+  if (kind === "backend-unavailable") {
+    return t("validation.startLocalBackend");
+  }
+  if (kind === "file-too-large") {
+    return t("validation.fileTooLarge");
+  }
+  if (kind === "parse-error") {
+    return t("validation.parseError");
+  }
+  if (kind === "static-example") {
+    return t("validation.staticExampleFailed");
+  }
+  return fallbackMessage;
 }

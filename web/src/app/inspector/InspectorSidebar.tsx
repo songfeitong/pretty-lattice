@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { PanelRight } from "lucide-react";
 
@@ -30,6 +31,13 @@ import {
   type BondAlgorithm,
   type SceneSpec,
 } from "../../api/scene";
+import {
+  currentAppLanguage,
+  setAppLanguage,
+  SUPPORTED_LANGUAGES,
+  type AppLanguage,
+} from "../../i18n";
+import { MESH_QUALITY_LABEL_KEYS } from "../../i18n/exportSettingsText";
 import {
   TOOL_ICON_BUTTON_ACTIVE_CLASS,
   TOOL_ICON_BUTTON_CLASS,
@@ -56,7 +64,6 @@ import {
 } from "../viewState";
 import { useAutoBlurSlider } from "../controls/commonPanel/sharedControls";
 import {
-  MESH_QUALITY_LABELS,
   MESH_QUALITY_OPTIONS,
   type MeshQuality,
   type StyleState,
@@ -66,12 +73,20 @@ import { ObjectsPanel, type ObjectsPanelTab } from "./ObjectsPanel";
 
 export type InspectorSidebarTab = "settings" | "objects";
 
-const INSPECTOR_BODY_TEXT_CLASS = "text-sm";
+const INSPECTOR_BODY_TEXT_CLASS = "text-[13px]";
 const INSPECTOR_SECTION_TITLE_CLASS =
   "text-[13px] font-bold leading-tight text-muted-foreground";
 const INSPECTOR_SELECT_TRIGGER_CLASS =
-  "!h-[26px] w-full !px-2 !py-0 bg-background text-sm";
-const INSPECTOR_SELECT_ITEM_CLASS = "min-h-[26px] py-1 text-sm";
+  "!h-6 w-full !px-2 !py-0 bg-background text-[13px]";
+const INSPECTOR_SELECT_ITEM_CLASS = "min-h-6 py-0.5 text-[13px]";
+const INSPECTOR_LANGUAGE_LABEL_KEYS: Record<AppLanguage, "language.english" | "language.simplifiedChinese"> = {
+  en: "language.english",
+  "zh-CN": "language.simplifiedChinese",
+};
+const INTERACTION_MODE_LABEL_KEYS: Record<InteractionMode, "settings.orbit" | "settings.trackball"> = {
+  orbit: "settings.orbit",
+  trackball: "settings.trackball",
+};
 
 export function InspectorToggle({
   isOpen,
@@ -80,7 +95,8 @@ export function InspectorToggle({
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }) {
-  const label = "Sidebar";
+  const { t } = useTranslation();
+  const label = t("nav.sidebar");
 
   return (
     <TooltipProvider>
@@ -189,10 +205,12 @@ export function InspectorSidebar({
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   onUnitCellLineStyleChange: (lineStyle: UnitCellLineStyle) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <aside
       id="inspector-sidebar"
-      aria-label="Sidebar"
+      aria-label={t("nav.sidebar")}
       aria-hidden={!isOpen}
       inert={!isOpen}
       className={cn(
@@ -216,13 +234,13 @@ export function InspectorSidebar({
               value="settings"
               className="h-8 flex-none px-0 text-[0.875rem] font-semibold"
             >
-              Settings
+              {t("nav.settings")}
             </TabsTrigger>
             <TabsTrigger
               value="objects"
               className="h-8 flex-none px-0 text-[0.875rem] font-semibold"
             >
-              Objects
+              {t("nav.objects")}
             </TabsTrigger>
           </TabsList>
         </header>
@@ -331,23 +349,60 @@ function SettingsPanel({
   onShowCrystalAxisLabelsChange: (showCrystalAxisLabels: boolean) => void;
   onUnitCellLineStyleChange: (lineStyle: UnitCellLineStyle) => void;
 }) {
+  const { t } = useTranslation();
+  const appLanguage = currentAppLanguage();
+
   return (
     <div className="flex flex-col gap-3">
-      <InspectorSettingsSection id="inspector-appearance-settings" title="Appearance">
+      <InspectorSettingsSection id="inspector-preferences-settings" title={t("settings.preferences")}>
+        <InspectorSelectRow label={t("settings.language")}>
+          <Select
+            value={appLanguage}
+            onValueChange={(value) => {
+              void setAppLanguage(value as AppLanguage);
+            }}
+          >
+            <SelectTrigger
+              size="sm"
+              aria-label={t("settings.language")}
+              className={INSPECTOR_SELECT_TRIGGER_CLASS}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" className="!bg-background !text-foreground">
+              <SelectGroup>
+                {SUPPORTED_LANGUAGES.map((language) => (
+                  <SelectItem
+                    key={language}
+                    value={language}
+                    className={INSPECTOR_SELECT_ITEM_CLASS}
+                  >
+                    {t(INSPECTOR_LANGUAGE_LABEL_KEYS[language])}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </InspectorSelectRow>
+      </InspectorSettingsSection>
+
+      <Separator />
+
+      <InspectorSettingsSection id="inspector-appearance-settings" title={t("settings.appearance")}>
         <InspectorSwitchRow
           checked={showCrystalAxisLabels}
-          label="Show crystal axis labels"
+          label={t("settings.showCrystalAxisLabels")}
           onCheckedChange={onShowCrystalAxisLabelsChange}
         />
 
-        <InspectorSelectRow label="Unit cell line style">
+        <InspectorSelectRow label={t("settings.unitCellLineStyle")}>
           <Select
             value={unitCellLineStyle}
             onValueChange={(value) => onUnitCellLineStyleChange(value as UnitCellLineStyle)}
           >
             <SelectTrigger
               size="sm"
-              aria-label="Unit cell line style"
+              aria-label={t("settings.unitCellLineStyle")}
               className={INSPECTOR_SELECT_TRIGGER_CLASS}
             >
               <SelectValue />
@@ -355,10 +410,10 @@ function SettingsPanel({
             <SelectContent position="popper" className="!bg-background !text-foreground">
               <SelectGroup>
                 <SelectItem value="solid" className={INSPECTOR_SELECT_ITEM_CLASS}>
-                  Solid
+                  {t("settings.solid")}
                 </SelectItem>
                 <SelectItem value="dashed" className={INSPECTOR_SELECT_ITEM_CLASS}>
-                  Dashed
+                  {t("settings.dashed")}
                 </SelectItem>
               </SelectGroup>
             </SelectContent>
@@ -367,19 +422,19 @@ function SettingsPanel({
 
         <InspectorSwitchRow
           checked={fogAffectsUnitCell}
-          label="Apply depth cueing to unit cell"
+          label={t("settings.applyDepthCueingToUnitCell")}
           onCheckedChange={onFogAffectsUnitCellChange}
         />
 
         <InspectorSwitchRow
           checked={isCustomColorScheme ? false : distinguishSimilarColors}
           disabled={isCustomColorScheme}
-          label="Distinguish similar colors"
+          label={t("settings.distinguishSimilarColors")}
           onCheckedChange={onDistinguishSimilarColorsChange}
         />
 
         <InspectorRangeRow
-          label="Light strength"
+          label={t("settings.lightStrength")}
           value={lightStrength}
           min={MIN_LIGHT_STRENGTH}
           max={MAX_LIGHT_STRENGTH}
@@ -395,15 +450,15 @@ function SettingsPanel({
 
       <Separator />
 
-      <InspectorSettingsSection id="inspector-rendering-settings" title="Rendering">
-        <InspectorSelectRow label="Preview quality">
+      <InspectorSettingsSection id="inspector-rendering-settings" title={t("settings.rendering")}>
+        <InspectorSelectRow label={t("settings.previewQuality")}>
           <Select
             value={previewMeshQuality}
             onValueChange={(value) => onPreviewMeshQualityChange(value as MeshQuality)}
           >
             <SelectTrigger
               size="sm"
-              aria-label="Preview quality"
+              aria-label={t("settings.previewQuality")}
               className={INSPECTOR_SELECT_TRIGGER_CLASS}
             >
               <SelectValue />
@@ -416,7 +471,7 @@ function SettingsPanel({
                     value={option}
                     className={INSPECTOR_SELECT_ITEM_CLASS}
                   >
-                    {MESH_QUALITY_LABELS[option]}
+                    {t(MESH_QUALITY_LABEL_KEYS[option])}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -426,22 +481,22 @@ function SettingsPanel({
 
         <InspectorSwitchRow
           checked={showFpsOverlay}
-          label="Show FPS"
+          label={t("settings.showFps")}
           onCheckedChange={onShowFpsOverlayChange}
         />
       </InspectorSettingsSection>
 
       <Separator />
 
-      <InspectorSettingsSection id="inspector-interaction-settings" title="Interaction">
-        <InspectorSelectRow label="Mouse control">
+      <InspectorSettingsSection id="inspector-interaction-settings" title={t("settings.interaction")}>
+        <InspectorSelectRow label={t("settings.mouseControl")}>
           <Select
             value={interactionMode}
             onValueChange={(value) => onInteractionModeChange(value as InteractionMode)}
           >
             <SelectTrigger
               size="sm"
-              aria-label="Mouse control"
+              aria-label={t("settings.mouseControl")}
               className={INSPECTOR_SELECT_TRIGGER_CLASS}
             >
               <SelectValue />
@@ -454,7 +509,7 @@ function SettingsPanel({
                     value={option.value}
                     className={INSPECTOR_SELECT_ITEM_CLASS}
                   >
-                    {option.label}
+                    {t(INTERACTION_MODE_LABEL_KEYS[option.value])}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -465,12 +520,12 @@ function SettingsPanel({
         <InspectorSwitchRow
           checked={mouseInertia}
           disabled={interactionMode !== "trackball"}
-          label="Mouse inertia"
+          label={t("settings.mouseInertia")}
           onCheckedChange={onMouseInertiaChange}
         />
 
         <InspectorRangeRow
-          label="Drag sensitivity"
+          label={t("settings.dragSensitivity")}
           value={dragSensitivity}
           min={MIN_DRAG_SENSITIVITY}
           max={MAX_DRAG_SENSITIVITY}
@@ -486,8 +541,8 @@ function SettingsPanel({
 
       <Separator />
 
-      <InspectorSettingsSection id="inspector-analysis-settings" title="Analysis">
-        <InspectorSelectRow label="Bonding algorithm">
+      <InspectorSettingsSection id="inspector-analysis-settings" title={t("settings.analysis")}>
+        <InspectorSelectRow label={t("settings.bondingAlgorithm")}>
           <Select
             value={bondAlgorithm}
             disabled={isSceneLoading}
@@ -495,7 +550,7 @@ function SettingsPanel({
           >
             <SelectTrigger
               size="sm"
-              aria-label="Bonding algorithm"
+              aria-label={t("settings.bondingAlgorithm")}
               className={INSPECTOR_SELECT_TRIGGER_CLASS}
             >
               <SelectValue />
@@ -534,7 +589,7 @@ function InspectorSettingsSection({
       <h2 id={id} className={INSPECTOR_SECTION_TITLE_CLASS}>
         {title}
       </h2>
-      <div className="flex flex-col gap-2">{children}</div>
+      <div className="flex flex-col gap-1">{children}</div>
     </section>
   );
 }

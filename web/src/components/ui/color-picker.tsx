@@ -14,6 +14,7 @@ import {
   Slot as SlotPrimitive,
 } from "radix-ui";
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { useComposedRefs } from "@/lib/compose-refs";
 import { cn } from "@/lib/utils";
 import { VisuallyHiddenInput } from "@/components/visually-hidden-input";
@@ -1140,6 +1141,7 @@ function ColorPickerAlphaSlider(
 }
 
 function ColorPickerSwatch(props: DivProps) {
+  const { t } = useTranslation();
   const { asChild, className, ...swatchProps } = props;
 
   const context = useColorPickerContext(SWATCH_NAME);
@@ -1169,8 +1171,8 @@ function ColorPickerSwatch(props: DivProps) {
   }, [color]);
 
   const ariaLabel = !color
-    ? "No color selected"
-    : `Current color: ${colorToString(color, format)}`;
+    ? t("colorPicker.noColorSelected")
+    : t("colorPicker.currentColor", { value: colorToString(color, format) });
 
   const SwatchPrimitive = asChild ? SlotPrimitive.Slot : "div";
 
@@ -1596,6 +1598,7 @@ interface FormatInputProps extends ColorPickerInputProps {
 }
 
 function HexInput(props: FormatInputProps) {
+  const { t } = useTranslation();
   const {
     color,
     onColorChange,
@@ -1681,7 +1684,7 @@ function HexInput(props: FormatInputProps) {
   if (withoutAlpha) {
     return (
       <InputGroupItem
-        aria-label="Hex color value"
+        aria-label={t("colorPicker.hexColorValue")}
         position="isolated"
         {...inputProps}
         placeholder="#000000"
@@ -1703,7 +1706,7 @@ function HexInput(props: FormatInputProps) {
       className={cn("flex items-center", className)}
     >
       <InputGroupItem
-        aria-label="Hex color value"
+        aria-label={t("colorPicker.hexColorValue")}
         position="first"
         {...inputProps}
         placeholder="#000000"
@@ -1717,7 +1720,7 @@ function HexInput(props: FormatInputProps) {
         disabled={context.disabled}
       />
       <InputGroupItem
-        aria-label="Alpha transparency percentage"
+        aria-label={t("colorPicker.alphaTransparency")}
         position="last"
         {...inputProps}
         placeholder="100"
@@ -1737,6 +1740,7 @@ function HexInput(props: FormatInputProps) {
 }
 
 function RgbInput(props: FormatInputProps) {
+  const { t } = useTranslation();
   const {
     color,
     onColorChange,
@@ -1766,7 +1770,7 @@ function RgbInput(props: FormatInputProps) {
     >
       <NumericChannelInput
         {...inputProps}
-        aria-label="Red color component (0-255)"
+        aria-label={t("colorPicker.redComponent")}
         position="first"
         placeholder="0"
         min={0}
@@ -1778,7 +1782,7 @@ function RgbInput(props: FormatInputProps) {
       />
       <NumericChannelInput
         {...inputProps}
-        aria-label="Green color component (0-255)"
+        aria-label={t("colorPicker.greenComponent")}
         position="middle"
         placeholder="0"
         min={0}
@@ -1790,7 +1794,7 @@ function RgbInput(props: FormatInputProps) {
       />
       <NumericChannelInput
         {...inputProps}
-        aria-label="Blue color component (0-255)"
+        aria-label={t("colorPicker.blueComponent")}
         position={withoutAlpha ? "last" : "middle"}
         placeholder="0"
         min={0}
@@ -1803,7 +1807,7 @@ function RgbInput(props: FormatInputProps) {
       {!withoutAlpha && (
         <NumericChannelInput
           {...inputProps}
-          aria-label="Alpha transparency percentage"
+          aria-label={t("colorPicker.alphaTransparency")}
           position="last"
           placeholder="100"
           min={0}
@@ -1819,6 +1823,7 @@ function RgbInput(props: FormatInputProps) {
 }
 
 function HslInput(props: FormatInputProps) {
+  const { t } = useTranslation();
   const {
     color,
     onColorChange,
@@ -1854,7 +1859,7 @@ function HslInput(props: FormatInputProps) {
     >
       <NumericChannelInput
         {...inputProps}
-        aria-label="Hue degree (0-360)"
+        aria-label={t("colorPicker.hslHue")}
         position="first"
         placeholder="0"
         suffix="°"
@@ -1867,7 +1872,7 @@ function HslInput(props: FormatInputProps) {
       />
       <NumericChannelInput
         {...inputProps}
-        aria-label="Saturation percentage (0-100)"
+        aria-label={t("colorPicker.hslSaturation")}
         position="middle"
         placeholder="0"
         suffix="%"
@@ -1880,7 +1885,7 @@ function HslInput(props: FormatInputProps) {
       />
       <NumericChannelInput
         {...inputProps}
-        aria-label="Lightness percentage (0-100)"
+        aria-label={t("colorPicker.hslLightness")}
         position={withoutAlpha ? "last" : "middle"}
         placeholder="0"
         suffix="%"
@@ -1894,7 +1899,7 @@ function HslInput(props: FormatInputProps) {
       {!withoutAlpha && (
         <NumericChannelInput
           {...inputProps}
-          aria-label="Alpha transparency percentage"
+          aria-label={t("colorPicker.alphaTransparency")}
           position="last"
           placeholder="100"
           suffix="%"
@@ -1911,6 +1916,7 @@ function HslInput(props: FormatInputProps) {
 }
 
 function OklchInput(props: FormatInputProps) {
+  const { t } = useTranslation();
   const {
     color,
     onColorChange,
@@ -1946,7 +1952,7 @@ function OklchInput(props: FormatInputProps) {
     >
       <NumericChannelInput
         {...inputProps}
-        aria-label="OKLCH lightness percentage (0-100)"
+        aria-label={t("colorPicker.oklchLightness")}
         position="first"
         placeholder="0"
         suffix="%"
@@ -1959,7 +1965,7 @@ function OklchInput(props: FormatInputProps) {
       />
       <NumericChannelInput
         {...inputProps}
-        aria-label="OKLCH chroma percentage (0-100)"
+        aria-label={t("colorPicker.oklchChroma")}
         position="middle"
         placeholder="0"
         suffix="%"
@@ -1972,7 +1978,7 @@ function OklchInput(props: FormatInputProps) {
       />
       <NumericChannelInput
         {...inputProps}
-        aria-label="OKLCH hue degree (0-360)"
+        aria-label={t("colorPicker.oklchHue")}
         position={withoutAlpha ? "last" : "middle"}
         placeholder="0"
         suffix="°"
@@ -1986,7 +1992,7 @@ function OklchInput(props: FormatInputProps) {
       {!withoutAlpha && (
         <NumericChannelInput
           {...inputProps}
-          aria-label="Alpha transparency percentage"
+          aria-label={t("colorPicker.alphaTransparency")}
           position="last"
           placeholder="100"
           suffix="%"

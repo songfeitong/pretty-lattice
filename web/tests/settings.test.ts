@@ -286,7 +286,7 @@ describe("settings", () => {
         },
       }),
     ).toEqual({
-      message: "Select at least one export component.",
+      code: "no-components",
       valid: false,
     });
     expect(
@@ -296,8 +296,19 @@ describe("settings", () => {
         format: "jpg",
       }),
     ).toEqual({
+      code: "jpg-needs-opaque-background",
       valid: false,
-      message: "JPG exports need a white or black background.",
+    });
+    expect(
+      validateExportSettings({
+        ...defaultSettings,
+        width: 63,
+      }),
+    ).toEqual({
+      code: "size-range",
+      max: 6000,
+      min: 64,
+      valid: false,
     });
     expect(
       validateExportSettings({
@@ -307,8 +318,8 @@ describe("settings", () => {
         width: 6000,
       }),
     ).toEqual({
+      code: "size-too-large",
       valid: false,
-      message: "Size and supersampling are too large for this browser export.",
     });
   });
 

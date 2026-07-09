@@ -55,7 +55,7 @@ export async function createFigureExportFiles({
 }: CreateFigureExportOptions): Promise<FigureExportFile[]> {
   const validation = validateExportSettings(settings);
   if (!validation.valid) {
-    throw new Error(validation.message ?? "Export settings are invalid.");
+    throw new Error("Export settings are invalid.");
   }
 
   if (settings.combineComponents) {

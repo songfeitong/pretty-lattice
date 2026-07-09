@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 
@@ -70,6 +71,7 @@ export function ScreenAxisChooser({
   onValueChange: (value: CrystalCameraPrimaryDirection) => void;
   value: CrystalCameraPrimaryDirection;
 }) {
+  const { t } = useTranslation();
   const [hoveredAxis, setHoveredAxis] = useState<CrystalCameraScreenDirection | null>(null);
 
   return (
@@ -122,7 +124,7 @@ export function ScreenAxisChooser({
       </ScreenAxisOverlayLabel>
       <button
         type="button"
-        aria-label="X Right"
+        aria-label={t("orientation.screenAxisRight")}
         aria-pressed={value === "right"}
         className="absolute z-10 cursor-pointer outline-none focus-visible:ring-[2px] focus-visible:ring-ring/25"
         style={screenAxisHitboxStyle("right")}
@@ -132,7 +134,7 @@ export function ScreenAxisChooser({
       />
       <button
         type="button"
-        aria-label="Y Up"
+        aria-label={t("orientation.screenAxisUp")}
         aria-pressed={value === "upward"}
         className="absolute z-10 cursor-pointer outline-none focus-visible:ring-[2px] focus-visible:ring-ring/25"
         style={screenAxisHitboxStyle("upward")}
@@ -142,7 +144,7 @@ export function ScreenAxisChooser({
       />
       <button
         type="button"
-        aria-label="Z Out"
+        aria-label={t("orientation.screenAxisOut")}
         aria-pressed={value === "outward"}
         className="absolute z-10 cursor-pointer outline-none focus-visible:ring-[2px] focus-visible:ring-ring/25"
         style={screenAxisHitboxStyle("outward")}

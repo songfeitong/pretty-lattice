@@ -20,6 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,6 +126,22 @@ const OBJECTS_ATOM_COLUMN_DEFS: ColumnDef<ObjectsAtomRow>[] =
     header: column.header,
   }));
 
+function objectsAtomColumnHeader(
+  columnId: ObjectsAtomColumnId,
+  t: ReturnType<typeof useTranslation>["t"],
+) {
+  switch (columnId) {
+    case "site":
+      return t("objectsPanel.atom");
+    case "radius":
+      return t("objectsPanel.radius");
+    case "color":
+      return t("objectsPanel.color");
+    case "visible":
+      return t("objectsPanel.visible");
+  }
+}
+
 export function ObjectsPanel({
   activeTab,
   atomLocateRequest,
@@ -150,6 +167,8 @@ export function ObjectsPanel({
   selectedAtomId: string | null;
   style: StyleState;
 }) {
+  const { t } = useTranslation();
+
   return (
     <TooltipProvider delayDuration={500}>
     <Tabs
@@ -164,13 +183,13 @@ export function ObjectsPanel({
           value="atoms"
           className="!h-6 flex-none rounded-lg px-2.5 text-xs font-medium"
         >
-          Atoms
+          {t("objectsPanel.atoms")}
         </TabsTrigger>
         <TabsTrigger
           value="bonds"
           className="!h-6 flex-none rounded-lg px-2.5 text-xs font-medium"
         >
-          Bonds
+          {t("objectsPanel.bonds")}
         </TabsTrigger>
       </TabsList>
 
@@ -217,6 +236,7 @@ function ObjectsAtomsTable({
   selectedAtomId: string | null;
   style: StyleState;
 }) {
+  const { t } = useTranslation();
   const [expandedElements, setExpandedElements] = useState<Record<string, boolean>>({});
   const [pendingLocateAtomId, setPendingLocateAtomId] = useState<string | null>(null);
   const [virtualViewport, setVirtualViewport] = useState<VirtualViewport>(() => ({
@@ -520,7 +540,7 @@ function ObjectsAtomsTable({
             );
           return (
             <RadiusCell
-              ariaLabel={`${item.element} radius`}
+              ariaLabel={t("objectsPanel.radiusControl", { target: item.element })}
               value={appearance.radius}
               onCommit={(radius) => setElementRadius(item.element, radius)}
             />
@@ -536,7 +556,7 @@ function ObjectsAtomsTable({
         );
         return (
           <RadiusCell
-            ariaLabel={`${formatAtomSite(item.atom)} radius`}
+            ariaLabel={t("objectsPanel.radiusControl", { target: formatAtomSite(item.atom) })}
             value={appearance.radius}
             onCommit={(radius) => setAtomRadius(item.atom, radius)}
           />
@@ -556,9 +576,9 @@ function ObjectsAtomsTable({
             );
           return (
             <ColorCell
-              ariaLabel={`Set ${item.element} color`}
+              ariaLabel={t("objectsPanel.setElementColor", { element: item.element })}
               color={appearance.color}
-              inputLabel={`${item.element} color value`}
+              inputLabel={t("colorPicker.colorValue", { target: item.element })}
               onChange={(color) => onElementColorChange(item.element, color)}
               pickerId={objectsElementColorPickerId(item.element)}
             />
@@ -574,9 +594,9 @@ function ObjectsAtomsTable({
         );
         return (
           <ColorCell
-            ariaLabel={`Set ${formatAtomSite(item.atom)} color`}
+            ariaLabel={t("objectsPanel.setAtomColor", { atom: formatAtomSite(item.atom) })}
             color={appearance.color}
-            inputLabel={`${formatAtomSite(item.atom)} color value`}
+            inputLabel={t("colorPicker.colorValue", { target: formatAtomSite(item.atom) })}
             onChange={(color) => setAtomColor(item.atom, color)}
             pickerId={objectsAtomColorPickerId(item.atom.id)}
           />
@@ -596,7 +616,7 @@ function ObjectsAtomsTable({
             );
           return (
             <VisibilityCell
-              ariaLabel={`${item.element} visibility`}
+              ariaLabel={t("objectsPanel.visibility", { target: item.element })}
               visible={appearance.visible}
               onToggle={() => setElementVisible(item.element, !appearance.visible)}
             />
@@ -612,7 +632,7 @@ function ObjectsAtomsTable({
         );
         return (
           <VisibilityCell
-            ariaLabel={`${formatAtomSite(item.atom)} visibility`}
+            ariaLabel={t("objectsPanel.visibility", { target: formatAtomSite(item.atom) })}
             visible={appearance.visible}
             onToggle={() => setAtomVisible(item.atom, !appearance.visible)}
           />
@@ -654,7 +674,7 @@ function ObjectsAtomsTable({
                   column.id === "visible" ? "text-center" : null,
                 )}
               >
-                {column.header}
+                {objectsAtomColumnHeader(column.id, t)}
               </TableHead>
             ))}
           </TableRow>
@@ -740,13 +760,19 @@ function ElementSiteCell({
   onApply: () => void;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="grid min-w-0 grid-cols-[1.25rem_2.1ch_2ch_1fr_auto] items-center gap-x-1">
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        aria-label={expanded ? `Collapse ${element}` : `Expand ${element}`}
+        aria-label={
+          expanded
+            ? t("objectsPanel.collapseElement", { element })
+            : t("objectsPanel.expandElement", { element })
+        }
         className={cn(
           TOOL_ICON_BUTTON_CLASS,
           "size-5 rounded-[7px] [&_svg]:size-3",
@@ -778,7 +804,7 @@ function ElementSiteCell({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label={`Apply ${element} style to all atoms`}
+            aria-label={t("objectsPanel.applyElementToAllAtoms", { element })}
             className={cn(
               TOOL_ICON_BUTTON_CLASS,
               "size-6 rounded-[8px] text-muted-foreground/70 [&_svg]:size-3.5",
@@ -792,7 +818,7 @@ function ElementSiteCell({
             <CopyCheck aria-hidden="true" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="left">Apply to all atoms</TooltipContent>
+        <TooltipContent side="left">{t("objectsPanel.applyToAllAtoms")}</TooltipContent>
       </Tooltip>
     </div>
   );

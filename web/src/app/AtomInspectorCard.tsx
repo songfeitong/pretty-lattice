@@ -1,5 +1,6 @@
 import { Copy, SquareMousePointer, X } from "lucide-react";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -36,6 +37,7 @@ export function AtomInspectorCard({
   onLocateInObjects?: (atomId: string) => void;
   style: StyleState;
 }) {
+  const { t } = useTranslation();
   const { atom, canonicalAtom } = info;
   const atomColor = resolveAtomAppearance({
     atom: canonicalAtom,
@@ -49,7 +51,7 @@ export function AtomInspectorCard({
 
   return (
     <aside
-      aria-label="Selected atom"
+      aria-label={t("atomInspector.selectedAtom")}
       className={cn(
         "absolute right-16 top-4 z-30 w-[300px] rounded-xl border px-3 py-2.5 font-mono text-xs shadow-xl shadow-foreground/10",
         "transition-[right] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
@@ -66,14 +68,14 @@ export function AtomInspectorCard({
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label="Close atom info"
+                aria-label={t("actions.closeAtomInfo")}
                 className={cn(TOOL_ICON_BUTTON_CLASS, "size-6 rounded-[9px] [&_svg]:size-3.25")}
                 onClick={onClose}
               >
                 <X aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Close atom info</TooltipContent>
+            <TooltipContent side="bottom">{t("actions.closeAtomInfo")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -93,14 +95,14 @@ export function AtomInspectorCard({
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label="Copy atom info"
+                aria-label={t("actions.copyAtomInfo")}
                 className={cn(TOOL_ICON_BUTTON_CLASS, "size-6 rounded-[9px] [&_svg]:size-3.25")}
                 onClick={handleCopy}
               >
                 <Copy aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Copy atom info</TooltipContent>
+            <TooltipContent side="bottom">{t("actions.copyAtomInfo")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -111,28 +113,28 @@ export function AtomInspectorCard({
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label="Locate atom in Objects"
+                aria-label={t("actions.locateAtomInObjects")}
                 className={cn(TOOL_ICON_BUTTON_CLASS, "size-6 rounded-[9px] [&_svg]:size-3.25")}
                 onClick={() => onLocateInObjects?.(atom.id)}
               >
                 <SquareMousePointer aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Locate in Objects</TooltipContent>
+            <TooltipContent side="bottom">{t("actions.locateAtomInObjects")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
 
       <dl className="mt-2 grid grid-cols-[5.8rem_minmax(0,1fr)] gap-x-2 gap-y-1 tabular-nums">
-        <dt className="text-muted-foreground">Fractional</dt>
+        <dt className="text-muted-foreground">{t("atomInspector.fractional")}</dt>
         <dd className="truncate text-right text-foreground">
           {formatAtomCoordinateForDisplay(canonicalAtom.fractionalPosition)}
         </dd>
-        <dt className="text-muted-foreground">Cartesian</dt>
+        <dt className="text-muted-foreground">{t("atomInspector.cartesian")}</dt>
         <dd className="truncate text-right text-foreground">
           {formatAtomCoordinateForDisplay(canonicalAtom.position)}
         </dd>
-        <dt className="text-muted-foreground">Cell offset</dt>
+        <dt className="text-muted-foreground">{t("atomInspector.cellOffset")}</dt>
         <dd className="truncate text-right text-foreground">
           {formatCellOffset(atom.imageOffset)}
         </dd>

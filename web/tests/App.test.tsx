@@ -576,7 +576,7 @@ describe("App", () => {
       expect(fileInputClickCount).toBe(1);
 
       await openPreviewContextMenu();
-      await user.click(await screen.findByRole("menuitem", { name: "Export figure" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Export" }));
 
       await waitFor(() => expect(exportRequests).toHaveLength(1));
       expect(exportRequests[0]?.settings.format).toBe("png");
@@ -597,7 +597,7 @@ describe("App", () => {
 
     expect(await screen.findByRole("menuitem", { name: "Reset view" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Open file" })).toBeTruthy();
-    expect(screen.getByRole("menuitem", { name: "Export figure" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "Export" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Reset all" })).toBeTruthy();
   });
 

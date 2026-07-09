@@ -24,6 +24,11 @@ import type { PreviewStatus } from "../previewState";
 const MAX_STRUCTURE_UPLOAD_BYTES = 1 * 1024 * 1024;
 const STRUCTURE_FILE_TOO_LARGE_MESSAGE = "File is too large to preview.";
 const STRUCTURE_PARSE_ERROR_MESSAGE = "pymatgen could not parse this file.";
+export type StructurePreviewErrorKind =
+  | "backend-unavailable"
+  | "file-too-large"
+  | "parse-error"
+  | "static-example";
 
 interface ResetLoadedPreviewOptions {
   preserveActiveCommonPanelTab?: boolean;
@@ -50,10 +55,23 @@ export function useStructurePreview({
     isStaticScenePreview ? "loading" : "idle",
   );
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setRawErrorMessage] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<StructurePreviewErrorKind | null>(null);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [bondAlgorithm, setBondAlgorithm] =
     useState<BondAlgorithm>(DEFAULT_BOND_ALGORITHM);
+
+  const setErrorMessage = useCallback((message: string | null) => {
+    if (message === null) {
+      setErrorKind(null);
+    }
+    setRawErrorMessage(message);
+  }, []);
+
+  const setPreviewError = useCallback((kind: StructurePreviewErrorKind, message: string) => {
+    setErrorKind(kind);
+    setRawErrorMessage(message);
+  }, []);
 
   useEffect(() => {
     if (!isStaticScenePreview) {
@@ -83,7 +101,7 @@ export function useStructurePreview({
         onPreviewCleared();
         setSelectedFileName(null);
         setPreviewStatus("error");
-        setErrorMessage("Static example could not be loaded.");
+        setPreviewError("static-example", "Static example could not be loaded.");
       }
     }
 
@@ -92,7 +110,7 @@ export function useStructurePreview({
     return () => {
       isCurrent = false;
     };
-  }, [isStaticScenePreview, onPreviewCleared, resetLoadedPreviewState]);
+  }, [isStaticScenePreview, onPreviewCleared, resetLoadedPreviewState, setPreviewError]);
 
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -103,14 +121,14 @@ export function useStructurePreview({
       }
 
       if (isStaticScenePreview) {
-        setErrorMessage(BACKEND_UNAVAILABLE_MESSAGE);
+        setPreviewError("backend-unavailable", BACKEND_UNAVAILABLE_MESSAGE);
         return;
       }
 
       if (file.size > MAX_STRUCTURE_UPLOAD_BYTES) {
         setSelectedFileName(null);
         setPreviewStatus("error");
-        setErrorMessage(STRUCTURE_FILE_TOO_LARGE_MESSAGE);
+        setPreviewError("file-too-large", STRUCTURE_FILE_TOO_LARGE_MESSAGE);
         setScene(null);
         setCurrentFile(null);
         onPreviewCleared();
@@ -137,21 +155,24 @@ export function useStructurePreview({
         setSelectedFileName(null);
         onPreviewCleared();
         setPreviewStatus("error");
-        setErrorMessage(
+        setPreviewError(
+          isBackendUnavailablePreviewError(error)
+            ? "backend-unavailable"
+            : "parse-error",
           isBackendUnavailablePreviewError(error)
             ? error.message
             : STRUCTURE_PARSE_ERROR_MESSAGE,
         );
       }
     },
-    [isStaticScenePreview, onPreviewCleared, resetLoadedPreviewState],
+    [isStaticScenePreview, onPreviewCleared, resetLoadedPreviewState, setErrorMessage, setPreviewError],
   );
 
   const handleBondAlgorithmChange = useCallback(
     async (nextBondAlgorithm: BondAlgorithm) => {
       if (!currentFile) {
         if (scene) {
-          setErrorMessage(BACKEND_UNAVAILABLE_MESSAGE);
+          setPreviewError("backend-unavailable", BACKEND_UNAVAILABLE_MESSAGE);
         }
         return;
       }
@@ -170,7 +191,7 @@ export function useStructurePreview({
       } catch (error) {
         if (isBackendUnavailablePreviewError(error)) {
           setPreviewStatus(scene ? "ready" : "error");
-          setErrorMessage(error.message);
+          setPreviewError("backend-unavailable", error.message);
           return;
         }
 
@@ -179,10 +200,10 @@ export function useStructurePreview({
         setSelectedFileName(null);
         onPreviewCleared();
         setPreviewStatus("error");
-        setErrorMessage(STRUCTURE_PARSE_ERROR_MESSAGE);
+        setPreviewError("parse-error", STRUCTURE_PARSE_ERROR_MESSAGE);
       }
     },
-    [currentFile, onBondAlgorithmSceneLoaded, onPreviewCleared, scene],
+    [currentFile, onBondAlgorithmSceneLoaded, onPreviewCleared, scene, setErrorMessage, setPreviewError],
   );
 
   const handleResetAllSettings = useCallback(async () => {
@@ -216,13 +237,24 @@ export function useStructurePreview({
       setPreviewStatus("ready");
     } catch (error) {
       setPreviewStatus(scene ? "ready" : "error");
-      setErrorMessage(
+      setPreviewError(
+        isBackendUnavailablePreviewError(error)
+          ? "backend-unavailable"
+          : "parse-error",
         isBackendUnavailablePreviewError(error)
           ? error.message
           : STRUCTURE_PARSE_ERROR_MESSAGE,
       );
     }
-  }, [bondAlgorithm, currentFile, previewStatus, resetLoadedPreviewState, scene]);
+  }, [
+    bondAlgorithm,
+    currentFile,
+    previewStatus,
+    resetLoadedPreviewState,
+    scene,
+    setErrorMessage,
+    setPreviewError,
+  ]);
 
   const errorTitle = useMemo(
     () =>
@@ -234,6 +266,7 @@ export function useStructurePreview({
 
   return {
     bondAlgorithm,
+    errorKind,
     errorMessage,
     errorTitle,
     handleBondAlgorithmChange,

@@ -1,5 +1,6 @@
 import { AlertTriangleIcon, ImageDown, Link, RotateCcw, Unlink } from "lucide-react";
 import { type CSSProperties, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,13 +21,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 
 import {
+  MESH_QUALITY_LABEL_KEYS,
+  translateExportSettingsValidation,
+} from "../../../i18n/exportSettingsText";
+import {
   createDefaultExportSettings,
   EXPORT_BACKGROUND_OPTIONS,
   EXPORT_FORMAT_OPTIONS,
   EXPORT_LEGEND_LAYOUT_OPTIONS,
   EXPORT_SUPERSAMPLING_OPTIONS,
   isExportBackgroundAllowed,
-  MESH_QUALITY_LABELS,
   MESH_QUALITY_OPTIONS,
   parseExportDimensionInput,
   setExportAspectRatioLocked,
@@ -65,14 +69,14 @@ const EXPORT_FORMAT_LABELS: Record<ExportFormat, string> = {
   pdf: "PDF",
   png: "PNG",
 };
-const EXPORT_BACKGROUND_LABELS: Record<ExportBackground, string> = {
-  black: "Black",
-  transparent: "Transparent",
-  white: "White",
+const EXPORT_BACKGROUND_LABEL_KEYS: Record<ExportBackground, "exportPanel.black" | "exportPanel.transparent" | "exportPanel.white"> = {
+  black: "exportPanel.black",
+  transparent: "exportPanel.transparent",
+  white: "exportPanel.white",
 };
-const EXPORT_LEGEND_LAYOUT_LABELS: Record<ExportLegendLayout, string> = {
-  horizontal: "Horizontal",
-  vertical: "Vertical",
+const EXPORT_LEGEND_LAYOUT_LABEL_KEYS: Record<ExportLegendLayout, "exportPanel.horizontal" | "exportPanel.vertical"> = {
+  horizontal: "exportPanel.horizontal",
+  vertical: "exportPanel.vertical",
 };
 const EXPORT_SEGMENTED_TRIGGER_CLASS =
   "!h-5 rounded-[4px] px-0.5 py-0 text-[0.68rem] font-medium transition-[background-color,color,box-shadow] duration-75 ease-out motion-reduce:transition-none md:text-[0.68rem]";
@@ -92,9 +96,12 @@ export function ExportTabContent({
   onSettingsChange: (settings: ExportSettingsState) => void;
   settings: ExportSettingsState;
 }) {
+  const { t } = useTranslation();
   const validation = validateExportSettings(settings);
-  const statusMessage = error ?? validation.message;
-  const actionLabel = `Export ${EXPORT_FORMAT_LABELS[settings.format]}`;
+  const statusMessage = error ?? translateExportSettingsValidation(validation, t);
+  const actionLabel = t("actions.exportFormat", {
+    format: EXPORT_FORMAT_LABELS[settings.format],
+  });
 
   function setDimension(dimension: "height" | "width", value: number) {
     onSettingsChange(setExportDimension(settings, dimension, value, exportProjectedSize));
@@ -145,7 +152,7 @@ export function ExportTabContent({
             id="export-components-label"
             className={cn("leading-tight text-muted-foreground", COMMON_PANEL_SECTION_TITLE_TEXT_CLASS)}
           >
-            Components
+            {t("exportPanel.components")}
           </h2>
           <ExportCombineSwitch
             checked={settings.combineComponents}
@@ -159,7 +166,7 @@ export function ExportTabContent({
             <ExportComponentCheckbox
               checked={settings.components.structure}
               component="structure"
-              label="Structure"
+              label={t("exportPanel.structure")}
               onSettingsChange={(component, checked) =>
                 onSettingsChange(setExportComponentSelected(settings, component, checked))
               }
@@ -167,7 +174,7 @@ export function ExportTabContent({
             <ExportComponentCheckbox
               checked={settings.components.crystalAxes}
               component="crystalAxes"
-              label="Crystal axes"
+              label={t("exportPanel.crystalAxes")}
               onSettingsChange={(component, checked) =>
                 onSettingsChange(setExportComponentSelected(settings, component, checked))
               }
@@ -178,7 +185,7 @@ export function ExportTabContent({
               checked={settings.components.legend}
               className="h-full flex-none px-0 hover:bg-transparent"
               component="legend"
-              label="Legend"
+              label={t("exportPanel.legend")}
               onSettingsChange={(component, checked) =>
                 onSettingsChange(setExportComponentSelected(settings, component, checked))
               }
@@ -205,7 +212,7 @@ export function ExportTabContent({
               id="export-output-label"
               className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "leading-tight text-muted-foreground")}
             >
-              Output
+              {t("exportPanel.output")}
             </h2>
             <ExportStatusIndicator message={statusMessage} />
           </div>
@@ -216,7 +223,7 @@ export function ExportTabContent({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Reset Output Settings"
+                  aria-label={t("actions.resetOutputSettings")}
                   className={cn(
                     TOOL_ICON_BUTTON_CLASS,
                     resetFeedbackPhase === "a" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS : null,
@@ -228,15 +235,15 @@ export function ExportTabContent({
                 </Button>
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top">Reset Output Settings</TooltipContent>
+            <TooltipContent side="top">{t("actions.resetOutputSettings")}</TooltipContent>
           </Tooltip>
         </div>
 
         <div className="flex items-end justify-between gap-3 px-1.5">
           <div className="grid grid-cols-[2.75rem_1.25rem_2.75rem] items-end gap-[0.1875rem]">
             <ExportSizeInput
-              label="Width"
-              accessibleLabel="Export width"
+              label={t("exportPanel.width")}
+              accessibleLabel={t("exportPanel.exportWidth")}
               value={settings.width}
               onCommit={(value) => setDimension("width", value)}
             />
@@ -247,8 +254,8 @@ export function ExportTabContent({
                   type="button"
                   aria-label={
                     settings.aspectRatioLocked
-                      ? "Unlock aspect ratio"
-                      : "Lock aspect ratio"
+                      ? t("exportPanel.unlockAspectRatio")
+                      : t("exportPanel.lockAspectRatio")
                   }
                   aria-pressed={settings.aspectRatioLocked}
                   className="mb-0 inline-flex h-6 w-full items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none [&_svg]:size-3.5"
@@ -269,13 +276,13 @@ export function ExportTabContent({
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top">
-                {settings.aspectRatioLocked ? "Unlock ratio" : "Lock ratio"}
+                {settings.aspectRatioLocked ? t("exportPanel.unlockRatio") : t("exportPanel.lockRatio")}
               </TooltipContent>
             </Tooltip>
 
             <ExportSizeInput
-              label="Height"
-              accessibleLabel="Export height"
+              label={t("exportPanel.height")}
+              accessibleLabel={t("exportPanel.exportHeight")}
               value={settings.height}
               onCommit={(value) => setDimension("height", value)}
             />
@@ -300,7 +307,7 @@ export function ExportTabContent({
       <div className="mb-1.5 grid min-h-8 grid-cols-[auto_auto] items-end justify-between gap-2 px-1.5">
         <div className="grid min-w-0 gap-1">
           <span className={cn("truncate px-0.5 leading-none text-muted-foreground", COMMON_PANEL_FIELD_LABEL_TEXT_CLASS)}>
-            Format
+            {t("exportPanel.format")}
           </span>
           <div className="flex items-center">
             <Select
@@ -311,7 +318,7 @@ export function ExportTabContent({
             >
               <SelectTrigger
                 size="sm"
-                aria-label="Format"
+                aria-label={t("exportPanel.format")}
                 className="!h-6 w-[4.25rem] rounded-r-none border-r-0 !px-1.5 !py-0 text-xs"
               >
                 <SelectValue />
@@ -368,7 +375,7 @@ export function ExportTabContent({
                 )}
               />
             </span>
-            Export
+            {t("actions.exportFigure")}
           </Button>
         </div>
       </div>
@@ -385,18 +392,20 @@ function ExportBackgroundPopover({
   onCommit: (value: ExportBackground) => void;
   value: ExportBackground;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const options = EXPORT_BACKGROUND_OPTIONS.filter((option) =>
     isExportBackgroundAllowed(format, option),
   );
+  const currentBackgroundLabel = t(EXPORT_BACKGROUND_LABEL_KEYS[value]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={`Background: ${EXPORT_BACKGROUND_LABELS[value]}`}
-          title="Background"
+          aria-label={t("exportPanel.backgroundValue", { value: currentBackgroundLabel })}
+          title={t("exportPanel.background")}
           className="-ml-px inline-flex h-6 w-8 items-center justify-center rounded-l-none rounded-r-md border border-input bg-transparent shadow-xs transition-[background-color,border-color,box-shadow] duration-150 hover:bg-accent/60 focus-visible:z-10 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none"
         >
           <ExportBackgroundToken value={value} className="h-4 w-5" />
@@ -408,29 +417,32 @@ function ExportBackgroundPopover({
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <div className={cn("px-2 pb-1 pt-1.5 leading-none text-muted-foreground", COMMON_PANEL_FIELD_LABEL_TEXT_CLASS)}>
-          Background
+          {t("exportPanel.background")}
         </div>
-        <div role="listbox" aria-label="Background" className="grid gap-0.5">
-          {options.map((option) => (
-            <button
-              key={option}
-              type="button"
-              role="option"
-              aria-selected={option === value}
-              className={cn(
-                "flex h-7 w-full items-center gap-2 rounded-sm px-2 text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground",
-                COMMON_PANEL_BODY_TEXT_CLASS,
-                option === value ? "bg-accent/55 text-foreground" : "text-foreground",
-              )}
-              onClick={() => {
-                onCommit(option);
-                setOpen(false);
-              }}
-            >
-              <ExportBackgroundToken value={option} />
-              <span className="min-w-0 truncate">{EXPORT_BACKGROUND_LABELS[option]}</span>
-            </button>
-          ))}
+        <div role="listbox" aria-label={t("exportPanel.background")} className="grid gap-0.5">
+          {options.map((option) => {
+            const label = t(EXPORT_BACKGROUND_LABEL_KEYS[option]);
+            return (
+              <button
+                key={option}
+                type="button"
+                role="option"
+                aria-selected={option === value}
+                className={cn(
+                  "flex h-7 w-full items-center gap-2 rounded-sm px-2 text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground",
+                  COMMON_PANEL_BODY_TEXT_CLASS,
+                  option === value ? "bg-accent/55 text-foreground" : "text-foreground",
+                )}
+                onClick={() => {
+                  onCommit(option);
+                  setOpen(false);
+                }}
+              >
+                <ExportBackgroundToken value={option} />
+                <span className="min-w-0 truncate">{label}</span>
+              </button>
+            );
+          })}
         </div>
       </PopoverContent>
     </Popover>
@@ -482,6 +494,7 @@ function ExportComponentCheckbox({
   label: string;
   onSettingsChange: (component: ExportComponentId, checked: boolean) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <label
       className={cn(
@@ -492,7 +505,7 @@ function ExportComponentCheckbox({
     >
       <Checkbox
         checked={checked}
-        aria-label={`Export ${label}`}
+        aria-label={t("exportPanel.exportComponent", { label })}
         className="size-3.5 rounded-[3px]"
         iconClassName="size-3"
         onCheckedChange={(nextChecked) => onSettingsChange(component, nextChecked === true)}
@@ -509,6 +522,7 @@ function ExportCombineSwitch({
   checked: boolean;
   onSettingsChange: (checked: boolean) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <label
       className={cn(
@@ -516,9 +530,9 @@ function ExportCombineSwitch({
         "text-[12px] font-medium leading-none text-foreground",
       )}
     >
-      <span>Combined</span>
+      <span>{t("exportPanel.combined")}</span>
       <Switch
-        aria-label="Combine selected components"
+        aria-label={t("exportPanel.combineSelectedComponents")}
         checked={checked}
         className="h-4 w-7 p-0.5"
         thumbClassName="size-3 data-[state=checked]:translate-x-3"
@@ -537,6 +551,7 @@ function ExportLegendLayoutControl({
   onCommit: (value: ExportLegendLayout) => void;
   value: ExportLegendLayout;
 }) {
+  const { t } = useTranslation();
   return (
     <Select
       disabled={disabled}
@@ -545,7 +560,7 @@ function ExportLegendLayoutControl({
     >
       <SelectTrigger
         size="sm"
-        aria-label="Legend layout"
+        aria-label={t("exportPanel.legendLayout")}
         className={cn(
           "!h-6 w-full !px-2 !py-0",
           COMMON_PANEL_BODY_TEXT_CLASS,
@@ -558,16 +573,19 @@ function ExportLegendLayoutControl({
         className="!bg-background !text-foreground"
       >
         <SelectGroup>
-          {EXPORT_LEGEND_LAYOUT_OPTIONS.map((option) => (
-            <SelectItem
-              key={option}
-              value={option}
-              textValue={EXPORT_LEGEND_LAYOUT_LABELS[option]}
-              className={cn("min-h-6 py-0.5", COMMON_PANEL_BODY_TEXT_CLASS)}
-            >
-              {EXPORT_LEGEND_LAYOUT_LABELS[option]}
-            </SelectItem>
-          ))}
+          {EXPORT_LEGEND_LAYOUT_OPTIONS.map((option) => {
+            const label = t(EXPORT_LEGEND_LAYOUT_LABEL_KEYS[option]);
+            return (
+              <SelectItem
+                key={option}
+                value={option}
+                textValue={label}
+                className={cn("min-h-6 py-0.5", COMMON_PANEL_BODY_TEXT_CLASS)}
+              >
+                {label}
+              </SelectItem>
+            );
+          })}
         </SelectGroup>
       </SelectContent>
     </Select>
@@ -665,10 +683,11 @@ function ExportSupersamplingControl({
   onCommit: (value: number) => void;
   value: ExportSupersampling;
 }) {
+  const { t } = useTranslation();
   return (
     <label className="ml-auto grid min-w-0 justify-items-end gap-1">
       <span className={cn("truncate px-0.5 leading-none text-muted-foreground", COMMON_PANEL_FIELD_LABEL_TEXT_CLASS)}>
-        Super Sampling
+        {t("exportPanel.supersampling")}
       </span>
       <Tabs
         value={String(value)}
@@ -676,14 +695,14 @@ function ExportSupersamplingControl({
         onValueChange={(nextValue) => onCommit(Number(nextValue))}
       >
         <TabsList
-          aria-label="Export supersampling"
+          aria-label={t("exportPanel.supersampling")}
           className="!h-6 w-full rounded-md p-0.5"
         >
           {EXPORT_SUPERSAMPLING_OPTIONS.map((option) => (
             <TabsTrigger
               key={option}
               value={String(option)}
-              aria-label={`${option}x supersampling`}
+              aria-label={t("exportPanel.supersamplingOption", { value: option })}
               className={EXPORT_SEGMENTED_TRIGGER_CLASS}
             >
               {option}x
@@ -702,10 +721,11 @@ function ExportMeshQualityControl({
   onCommit: (value: ExportMeshQuality) => void;
   value: ExportMeshQuality;
 }) {
+  const { t } = useTranslation();
   return (
     <label className="mt-0.5 grid min-w-0 gap-1 px-1.5">
       <span className={cn("truncate px-0.5 leading-none text-muted-foreground", COMMON_PANEL_FIELD_LABEL_TEXT_CLASS)}>
-        3D Mesh Quality
+        {t("exportPanel.meshQuality")}
       </span>
       <Tabs
         value={value}
@@ -713,19 +733,22 @@ function ExportMeshQualityControl({
         onValueChange={(nextValue) => onCommit(nextValue as ExportMeshQuality)}
       >
         <TabsList
-          aria-label="Export 3D Mesh Quality"
+          aria-label={t("exportPanel.meshQuality")}
           className="!h-6 w-full rounded-md p-0.5"
         >
-          {MESH_QUALITY_OPTIONS.map((option) => (
-            <TabsTrigger
-              key={option}
-              value={option}
-              aria-label={`${MESH_QUALITY_LABELS[option]} 3D Mesh Quality`}
-              className={EXPORT_SEGMENTED_TRIGGER_CLASS}
-            >
-              {MESH_QUALITY_LABELS[option]}
-            </TabsTrigger>
-          ))}
+          {MESH_QUALITY_OPTIONS.map((option) => {
+            const label = t(MESH_QUALITY_LABEL_KEYS[option]);
+            return (
+              <TabsTrigger
+                key={option}
+                value={option}
+                aria-label={t("exportPanel.meshQualityOption", { quality: label })}
+                className={EXPORT_SEGMENTED_TRIGGER_CLASS}
+              >
+                {label}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </Tabs>
     </label>

@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -64,20 +65,25 @@ import {
 import { HexColorPicker, normalizeHexColor } from "../HexColorPicker";
 import { MaterialPresetToken3D } from "./MaterialPresetToken3D";
 
-const BOND_COLOR_OPTIONS: { label: string; value: BondColorMode }[] = [
-  { label: "Unicolor", value: "unicolor" },
-  { label: "Bicolor", value: "bicolor" },
+const BOND_COLOR_OPTIONS: { labelKey: "style.unicolor" | "style.bicolor"; value: BondColorMode }[] = [
+  { labelKey: "style.unicolor", value: "unicolor" },
+  { labelKey: "style.bicolor", value: "bicolor" },
 ];
 const CUSTOM_COLOR_SCHEME_VALUE = "__custom";
 const ATOM_RADIUS_MODEL_OPTIONS: {
-  menuLabel: string;
+  labelKey:
+    | "style.atomic"
+    | "style.custom"
+    | "style.ionic"
+    | "style.uniform"
+    | "style.vanDerWaals";
   value: AtomRadiusStyleModel;
 }[] = [
-  { menuLabel: "Uniform", value: "uniform" },
-  { menuLabel: "Atomic", value: "atomic" },
-  { menuLabel: "Van der Waals", value: "vdw" },
-  { menuLabel: "Ionic", value: "ionic" },
-  { menuLabel: "Custom", value: CUSTOM_ATOM_RADIUS_MODEL },
+  { labelKey: "style.uniform", value: "uniform" },
+  { labelKey: "style.atomic", value: "atomic" },
+  { labelKey: "style.vanDerWaals", value: "vdw" },
+  { labelKey: "style.ionic", value: "ionic" },
+  { labelKey: "style.custom", value: CUSTOM_ATOM_RADIUS_MODEL },
 ];
 const BY_ATOM_TOKEN_STYLE = { background: "linear-gradient(90deg, #f58c9a 0 50%, #78a7ff 50% 100%)" } as const;
 const CUSTOM_COLOR_SCHEME_TOKEN_STYLE = {
@@ -96,6 +102,8 @@ export function StyleTabContent({
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   style: StyleState;
 }) {
+  const { t } = useTranslation();
+
   function setStyleScale(key: keyof typeof STYLE_SCALE_MIN, value: number) {
     onStyleChange((currentStyle) => ({
       ...currentStyle,
@@ -262,7 +270,7 @@ export function StyleTabContent({
             id="style-size-label"
             className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "leading-tight text-muted-foreground")}
           >
-            Size
+            {t("style.size")}
           </h2>
           <span aria-hidden="true" />
           <Tooltip>
@@ -271,7 +279,7 @@ export function StyleTabContent({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Reset scale"
+                  aria-label={t("actions.resetScale")}
                   className={cn(
                     TOOL_ICON_BUTTON_CLASS,
                     resetFeedbackPhase === "a" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS : null,
@@ -283,13 +291,13 @@ export function StyleTabContent({
                 </Button>
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top">Reset scale</TooltipContent>
+            <TooltipContent side="top">{t("actions.resetScale")}</TooltipContent>
           </Tooltip>
         </div>
 
         <div className={cn("mt-1", COMMON_PANEL_ROW_STACK_CLASS)}>
           <PercentSliderRow
-            accessibleLabel="Atom"
+            accessibleLabel={t("style.atom")}
             label={(
               <AtomRadiusModelPopover
                 value={style.atomRadiusModel}
@@ -300,14 +308,16 @@ export function StyleTabContent({
             min={STYLE_SCALE_MIN.atomRadius}
             value={style.atomRadius}
             disabled={isCustomAtomRadiusModel}
+            valueLabel={t("style.scale")}
             onValueChange={(value) => setStyleScale("atomRadius", value)}
           />
           <PercentSliderRow
-            accessibleLabel="Bond"
-            label="Bond"
+            accessibleLabel={t("style.bond")}
+            label={t("style.bond")}
             max={STYLE_SCALE_MAX.bondThickness}
             min={STYLE_SCALE_MIN.bondThickness}
             value={style.bondThickness}
+            valueLabel={t("style.scale")}
             onValueChange={(value) => setStyleScale("bondThickness", value)}
           />
         </div>
@@ -322,11 +332,11 @@ export function StyleTabContent({
               id="style-fog-label"
               className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "whitespace-nowrap leading-tight text-muted-foreground")}
             >
-              Depth cueing
+              {t("style.depthCueing")}
             </h2>
             <Switch
               checked={style.fogEnabled}
-              aria-label="Depth cueing"
+              aria-label={t("style.depthCueing")}
               className="h-4 w-7 p-0.5"
               thumbClassName="size-3 data-[state=checked]:translate-x-3"
               onCheckedChange={setFogEnabled}
@@ -338,7 +348,7 @@ export function StyleTabContent({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Reset depth cueing"
+                  aria-label={t("actions.resetDepthCueing")}
                   className={cn(
                     TOOL_ICON_BUTTON_CLASS,
                     fogResetFeedbackPhase === "a"
@@ -354,30 +364,30 @@ export function StyleTabContent({
                 </Button>
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top">Reset depth cueing</TooltipContent>
+            <TooltipContent side="top">{t("actions.resetDepthCueing")}</TooltipContent>
           </Tooltip>
         </div>
         <div className={cn("mt-1", COMMON_PANEL_ROW_STACK_CLASS, style.fogEnabled ? null : "opacity-55")}>
           <PercentSliderRow
-            accessibleLabel="Depth cueing"
+            accessibleLabel={t("style.depthCueing")}
             allowZero
             disabled={!style.fogEnabled}
-            label="Start"
+            label={t("style.start")}
             max={STYLE_FOG_START_MAX}
             min={STYLE_FOG_START_MIN}
             value={style.fogStart}
-            valueLabel="start"
+            valueLabel={t("style.startValueLabel")}
             onValueChange={setFogStart}
           />
           <PercentSliderRow
-            accessibleLabel="Depth cueing"
+            accessibleLabel={t("style.depthCueing")}
             allowZero
             disabled={!style.fogEnabled}
-            label="Amount"
+            label={t("style.amount")}
             max={STYLE_FOG_AMOUNT_MAX}
             min={STYLE_FOG_AMOUNT_MIN}
             value={style.fogAmount}
-            valueLabel="amount"
+            valueLabel={t("style.amountValueLabel")}
             onValueChange={setFogAmount}
           />
         </div>
@@ -392,14 +402,14 @@ export function StyleTabContent({
             COMMON_PANEL_BODY_TEXT_CLASS,
           )}
         >
-          <span className="min-w-0 truncate leading-tight">Material</span>
+          <span className="min-w-0 truncate leading-tight">{t("style.material")}</span>
           <Select
             value={style.materialPreset}
             onValueChange={(value) => setMaterialPreset(value)}
           >
             <SelectTrigger
               size="sm"
-              aria-label="Material"
+              aria-label={t("style.material")}
               className={cn("!h-6 w-full !px-2 !py-0", COMMON_PANEL_BODY_TEXT_CLASS)}
             >
               {selectedMaterialPresetOption ? (
@@ -442,7 +452,7 @@ export function StyleTabContent({
           )}
         >
           <span className="flex min-w-0 items-center gap-1.5 leading-tight">
-            <span className="min-w-0 truncate">Bond style</span>
+            <span className="min-w-0 truncate">{t("style.bondStyle")}</span>
             {style.bondColorMode === "unicolor" ? (
               <BondColorPicker
                 value={style.bondColor}
@@ -456,7 +466,7 @@ export function StyleTabContent({
           >
             <SelectTrigger
               size="sm"
-              aria-label="Bond style"
+              aria-label={t("style.bondStyle")}
               className={cn("!h-6 w-full !px-2 !py-0", COMMON_PANEL_BODY_TEXT_CLASS)}
             >
               <SelectValue />
@@ -466,20 +476,23 @@ export function StyleTabContent({
               className="!bg-background !text-foreground"
             >
               <SelectGroup>
-                {BOND_COLOR_OPTIONS.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    textValue={option.label}
-                    className={cn("min-h-6 py-0.5", COMMON_PANEL_BODY_TEXT_CLASS)}
-                  >
-                    <BondStyleOptionLabel
-                      label={option.label}
-                      unicolorColor={style.bondColor}
+                {BOND_COLOR_OPTIONS.map((option) => {
+                  const label = t(option.labelKey);
+                  return (
+                    <SelectItem
+                      key={option.value}
                       value={option.value}
-                    />
-                  </SelectItem>
-                ))}
+                      textValue={label}
+                      className={cn("min-h-6 py-0.5", COMMON_PANEL_BODY_TEXT_CLASS)}
+                    >
+                      <BondStyleOptionLabel
+                        label={label}
+                        unicolorColor={style.bondColor}
+                        value={option.value}
+                      />
+                    </SelectItem>
+                  );
+                })}
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -491,14 +504,14 @@ export function StyleTabContent({
             COMMON_PANEL_BODY_TEXT_CLASS,
           )}
         >
-          <span className="min-w-0 truncate leading-tight">Color scheme</span>
+          <span className="min-w-0 truncate leading-tight">{t("style.colorScheme")}</span>
           <Select
             value={selectedColorSchemeValue}
             onValueChange={setColorScheme}
           >
             <SelectTrigger
               size="sm"
-              aria-label="Color scheme"
+              aria-label={t("style.colorScheme")}
               className={cn("!h-6 w-full !px-2 !py-0", COMMON_PANEL_BODY_TEXT_CLASS)}
             >
               <SelectValue />
@@ -523,10 +536,10 @@ export function StyleTabContent({
                 ))}
                 <SelectItem
                   value={CUSTOM_COLOR_SCHEME_VALUE}
-                  textValue="Custom"
+                  textValue={t("style.custom")}
                   className={cn("min-h-6 py-0.5", COMMON_PANEL_BODY_TEXT_CLASS)}
                 >
-                  <CustomColorSchemeOptionLabel />
+                  <CustomColorSchemeOptionLabel label={t("style.custom")} />
                 </SelectItem>
               </SelectGroup>
             </SelectContent>
@@ -544,10 +557,12 @@ function AtomRadiusModelPopover({
   onValueChange: (value: AtomRadiusStyleModel) => void;
   value: AtomRadiusStyleModel;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const [tooltipSuppressed, setTooltipSuppressed] = useState(false);
   const selectedOption = ATOM_RADIUS_MODEL_OPTIONS.find((option) => option.value === value);
+  const selectedLabel = selectedOption ? t(selectedOption.labelKey) : t("style.unknown");
 
   function handlePopoverOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
@@ -573,7 +588,7 @@ function AtomRadiusModelPopover({
   return (
     <Popover open={open} onOpenChange={handlePopoverOpenChange}>
       <span className="inline-flex min-w-0 items-center gap-1">
-        <span className="min-w-0 truncate">Atom</span>
+        <span className="min-w-0 truncate">{t("style.atom")}</span>
         <Tooltip
           delayDuration={300}
           open={tooltipOpen}
@@ -585,7 +600,7 @@ function AtomRadiusModelPopover({
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={`Atom radius model: ${selectedOption?.menuLabel ?? "Unknown"}`}
+                aria-label={t("style.atomRadiusModelValue", { value: selectedLabel })}
                 aria-haspopup="listbox"
                 className={cn(
                   TOOL_ICON_BUTTON_CLASS,
@@ -598,7 +613,7 @@ function AtomRadiusModelPopover({
               </Button>
             </TooltipTrigger>
           </PopoverTrigger>
-          <TooltipContent side="top">Select atom radius model</TooltipContent>
+          <TooltipContent side="top">{t("style.selectAtomRadiusModel")}</TooltipContent>
         </Tooltip>
       </span>
       <PopoverContent
@@ -612,39 +627,42 @@ function AtomRadiusModelPopover({
             COMMON_PANEL_BODY_TEXT_CLASS,
           )}
         >
-          Atom radius model
+          {t("style.atomRadiusModel")}
         </div>
-        <div role="listbox" aria-label="Atom radius model" className="grid gap-0.5">
-          {ATOM_RADIUS_MODEL_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="option"
-              aria-selected={option.value === value}
-              className={cn(
-                "flex h-7 w-full items-center gap-2 rounded-sm px-2 text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground",
-                COMMON_PANEL_BODY_TEXT_CLASS,
-                option.value === value
-                  ? "bg-accent text-accent-foreground font-medium"
-                  : "text-foreground",
-              )}
-              onClick={() => {
-                setTooltipOpen(false);
-                setTooltipSuppressed(true);
-                onValueChange(option.value);
-                setOpen(false);
-              }}
-            >
-              <Check
-                aria-hidden="true"
+        <div role="listbox" aria-label={t("style.atomRadiusModel")} className="grid gap-0.5">
+          {ATOM_RADIUS_MODEL_OPTIONS.map((option) => {
+            const label = t(option.labelKey);
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={option.value === value}
                 className={cn(
-                  "size-3 shrink-0",
-                  option.value === value ? "opacity-100" : "opacity-0",
+                  "flex h-7 w-full items-center gap-2 rounded-sm px-2 text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground",
+                  COMMON_PANEL_BODY_TEXT_CLASS,
+                  option.value === value
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "text-foreground",
                 )}
-              />
-              <span className="min-w-0 truncate">{option.menuLabel}</span>
-            </button>
-          ))}
+                onClick={() => {
+                  setTooltipOpen(false);
+                  setTooltipSuppressed(true);
+                  onValueChange(option.value);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  aria-hidden="true"
+                  className={cn(
+                    "size-3 shrink-0",
+                    option.value === value ? "opacity-100" : "opacity-0",
+                  )}
+                />
+                <span className="min-w-0 truncate">{label}</span>
+              </button>
+            );
+          })}
         </div>
       </PopoverContent>
     </Popover>
@@ -707,13 +725,14 @@ function BondColorPicker({
   onValueChange: (value: string) => void;
   value: string;
 }) {
+  const { t } = useTranslation();
   const hexValue = normalizeHexColor(value, DEFAULT_BOND_COLOR);
   return (
     <HexColorPicker
       align="center"
-      ariaLabel="Bond color"
+      ariaLabel={t("colorPicker.bondColor")}
       fallbackValue={DEFAULT_BOND_COLOR}
-      inputLabel="Bond color value"
+      inputLabel={t("colorPicker.bondColorValue")}
       pickerId={BOND_COLOR_PICKER_ID}
       side="left"
       value={hexValue}
@@ -743,7 +762,7 @@ function ColorSchemeOptionLabel({
   );
 }
 
-function CustomColorSchemeOptionLabel() {
+function CustomColorSchemeOptionLabel({ label }: { label: string }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <span
@@ -751,7 +770,7 @@ function CustomColorSchemeOptionLabel() {
         className="h-3 w-6 shrink-0 rounded-full border border-border"
         style={CUSTOM_COLOR_SCHEME_TOKEN_STYLE}
       />
-      <span className="min-w-0 truncate">Custom</span>
+      <span className="min-w-0 truncate">{label}</span>
     </span>
   );
 }
