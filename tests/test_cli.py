@@ -24,6 +24,35 @@ def test_choose_free_port() -> None:
     assert port > 0
 
 
+def test_default_port_falls_back_when_unavailable(monkeypatch) -> None:
+    monkeypatch.setattr(cli, "_is_port_available", lambda host, port: False)
+    monkeypatch.setattr(cli, "_choose_free_port", lambda host: 54321)
+
+    assert (
+        _choose_port("127.0.0.1", 8765, fallback_to_available_port=True) == 54321
+    )
+
+
+def test_explicit_port_does_not_fallback(monkeypatch) -> None:
+    def choose_free_port(host: str) -> int:
+        raise AssertionError("explicit ports should not fall back")
+
+    monkeypatch.setattr(cli, "_is_port_available", lambda host, port: False)
+    monkeypatch.setattr(cli, "_choose_free_port", choose_free_port)
+
+    assert _choose_port("127.0.0.1", 8765) == 8765
+
+
+def test_port_availability_rejects_listening_port() -> None:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("127.0.0.1", 0))
+        server.listen()
+        port = int(server.getsockname()[1])
+
+        assert not cli._is_port_available("127.0.0.1", port)
+
+
 def test_cli_import_defers_server_app() -> None:
     result = subprocess.run(
         [
@@ -61,6 +90,7 @@ def test_root_command_starts_gui(monkeypatch) -> None:
             "no_open": False,
             "reload": False,
             "verbose": False,
+            "fallback_to_available_port": True,
         }
     ]
 
@@ -86,6 +116,30 @@ def test_root_command_accepts_gui_options(monkeypatch) -> None:
             "no_open": True,
             "reload": True,
             "verbose": True,
+            "fallback_to_available_port": False,
+        }
+    ]
+
+
+def test_root_command_treats_explicit_default_port_as_strict(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def run_gui(**kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr(cli, "_run_gui", run_gui)
+
+    result = runner.invoke(cli.app, ["--port", "8765"])
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "host": "127.0.0.1",
+            "port": 8765,
+            "no_open": False,
+            "reload": False,
+            "verbose": False,
+            "fallback_to_available_port": False,
         }
     ]
 
@@ -108,6 +162,7 @@ def test_gui_command_remains_compatibility_alias(monkeypatch) -> None:
             "no_open": True,
             "reload": False,
             "verbose": False,
+            "fallback_to_available_port": True,
         }
     ]
 
@@ -119,20 +174,19 @@ def test_run_gui_prints_compact_startup_banner(monkeypatch) -> None:
         uvicorn_calls.append(kwargs)
 
     monkeypatch.setattr(cli, "metadata_version", lambda package_name: __version__)
+    monkeypatch.setattr(cli, "_is_port_available", lambda host, port: True)
     monkeypatch.setattr(cli, "_load_uvicorn_run", lambda: run_uvicorn)
 
     result = runner.invoke(cli.app, ["--no-open"])
 
     assert result.exit_code == 0
     assert result.output == (
-        "\n"
-        f"Pretty Lattice  v{__version__}\n"
-        "\n"
-        "›  Local server:  http://127.0.0.1:8765/\n"
-        "›  press ctrl + c to quit\n"
-        "\n"
-        "\n"
-        "›  Pretty Lattice stopped.\n"
+        "╭──────────────────────────────────────────╮\n"
+        f"│ 💠 Pretty Lattice  v{__version__}                │\n"
+        "│                                          │\n"
+        "│ ›  Local server:  http://localhost:8765/ │\n"
+        "│ ›  press ctrl + c to quit                │\n"
+        "╰──────────────────────────────────────────╯\n"
     )
     assert uvicorn_calls == [
         {
@@ -142,6 +196,35 @@ def test_run_gui_prints_compact_startup_banner(monkeypatch) -> None:
             "log_level": "warning",
         }
     ]
+
+
+def test_run_gui_falls_back_from_default_port_when_occupied(monkeypatch) -> None:
+    uvicorn_calls: list[dict[str, object]] = []
+
+    def run_uvicorn(*_args: object, **kwargs: object) -> None:
+        uvicorn_calls.append(kwargs)
+
+    monkeypatch.setattr(cli, "_is_port_available", lambda host, port: False)
+    monkeypatch.setattr(cli, "_choose_free_port", lambda host: 54321)
+    monkeypatch.setattr(cli, "_load_uvicorn_run", lambda: run_uvicorn)
+
+    result = runner.invoke(cli.app, ["--no-open"])
+
+    assert result.exit_code == 0
+    assert "http://localhost:54321/" in result.output
+    assert uvicorn_calls == [
+        {
+            "host": "127.0.0.1",
+            "port": 54321,
+            "access_log": False,
+            "log_level": "warning",
+        }
+    ]
+
+
+def test_display_url_uses_localhost_for_default_host() -> None:
+    assert cli._display_url("127.0.0.1", 8765) == "http://localhost:8765/"
+    assert cli._display_url("0.0.0.0", 8765) == "http://0.0.0.0:8765/"
 
 
 def test_startup_banner_does_not_clear_terminal(monkeypatch) -> None:
@@ -168,6 +251,7 @@ def test_run_gui_verbose_enables_server_logs(monkeypatch) -> None:
         uvicorn_calls.append(kwargs)
 
     monkeypatch.setattr(cli, "_load_uvicorn_run", lambda: run_uvicorn)
+    monkeypatch.setattr(cli, "_is_port_available", lambda host, port: True)
 
     result = runner.invoke(cli.app, ["--no-open", "--verbose"])
 
@@ -182,16 +266,17 @@ def test_run_gui_verbose_enables_server_logs(monkeypatch) -> None:
     ]
 
 
-def test_run_gui_prints_shutdown_banner_after_keyboard_interrupt(monkeypatch) -> None:
+def test_run_gui_handles_keyboard_interrupt_without_traceback(monkeypatch) -> None:
     def run_uvicorn(*_args: object, **_kwargs: object) -> None:
         raise KeyboardInterrupt
 
     monkeypatch.setattr(cli, "_load_uvicorn_run", lambda: run_uvicorn)
+    monkeypatch.setattr(cli, "_is_port_available", lambda host, port: True)
 
     result = runner.invoke(cli.app, ["--no-open"])
 
     assert result.exit_code == 0
-    assert "›  Pretty Lattice stopped.\n" in result.output
+    assert "Pretty Lattice stopped" not in result.output
     assert "KeyboardInterrupt" not in result.output
 
 
