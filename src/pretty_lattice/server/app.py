@@ -8,9 +8,13 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 
 from pretty_lattice.server.prewarm import start_structure_preview_prewarm
 from pretty_lattice.server.routes import router
+
+RESPONSE_GZIP_MINIMUM_SIZE = 4 * 1024
+RESPONSE_GZIP_COMPRESSLEVEL = 6
 
 
 def create_app(
@@ -20,6 +24,11 @@ def create_app(
 ) -> FastAPI:
     lifespan = _lifespan if prewarm_structure_stack else None
     app = FastAPI(title="Pretty Lattice", version="0.1.5", lifespan=lifespan)
+    app.add_middleware(
+        GZipMiddleware,
+        minimum_size=RESPONSE_GZIP_MINIMUM_SIZE,
+        compresslevel=RESPONSE_GZIP_COMPRESSLEVEL,
+    )
     app.include_router(router, prefix="/api")
     _mount_static_web(app, static_root=static_root, dev_static_fallback=dev_static_fallback)
     return app

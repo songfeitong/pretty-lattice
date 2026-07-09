@@ -139,6 +139,28 @@ async def test_structure_preview_upload_endpoint_returns_scene() -> None:
 
 
 @pytest.mark.anyio
+async def test_structure_preview_upload_endpoint_gzips_large_json_response() -> None:
+    payload = (FIXTURE_DIR / "SrTiO3.cif").read_bytes()
+
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app()), base_url="http://testserver"
+    ) as client:
+        response = await client.post(
+            "/api/structure-preview",
+            content=payload,
+            headers={
+                "accept-encoding": "gzip",
+                "x-pretty-lattice-filename": "SrTiO3.cif",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.headers["content-encoding"] == "gzip"
+    assert "Accept-Encoding" in response.headers["vary"]
+    assert response.json()["summary"]["formula"] == "SrTiO3"
+
+
+@pytest.mark.anyio
 async def test_structure_preview_upload_endpoint_accepts_supported_bond_algorithm() -> None:
     payload = (FIXTURE_DIR / "SrTiO3.cif").read_bytes()
 
