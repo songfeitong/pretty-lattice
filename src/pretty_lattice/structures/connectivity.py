@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Mapping
 from dataclasses import dataclass, field
+from types import MappingProxyType
 
+import numpy as np
 from pymatgen.core import Structure
 from pymatgen.core.local_env import CrystalNN, CutOffDictNN, MinimumDistanceNN
-from pymatgen.core.sites import PeriodicSite
-from pymatgen.core.structure import PeriodicNeighbor
 
 from pretty_lattice.structures.periodic_images import (
     CANONICAL_IMAGE_OFFSET,
@@ -58,6 +58,50 @@ class ConnectivityResult:
     connections_by_source: dict[AtomKey, list[ConnectedAtom]]
 
 
+@dataclass(frozen=True, slots=True)
+class NeighborRecord:
+    site_index: int
+    image: tuple[int, int, int]
+
+
+@dataclass(frozen=True)
+class _CutoffConfig:
+    max_distance: float
+    symbol_codes: Mapping[str, int]
+    unknown_symbol_code: int
+    cutoff_matrix: np.ndarray
+
+
+def _load_vesta_cutoff_config() -> _CutoffConfig:
+    analyzer = CutOffDictNN.from_preset("vesta_2019")
+    symbols = sorted(
+        set(analyzer._lookup_dict).union(
+            symbol
+            for cutoffs_by_symbol in analyzer._lookup_dict.values()
+            for symbol in cutoffs_by_symbol
+        )
+    )
+    symbol_codes = MappingProxyType({symbol: index for index, symbol in enumerate(symbols)})
+    unknown_symbol_code = len(symbols)
+    values = np.zeros((len(symbols) + 1, len(symbols) + 1), dtype=float)
+    for source_symbol, cutoffs_by_symbol in analyzer._lookup_dict.items():
+        source_code = symbol_codes[source_symbol]
+        for target_symbol, cutoff in cutoffs_by_symbol.items():
+            values[source_code, symbol_codes[target_symbol]] = cutoff
+
+    immutable_values = np.frombuffer(values.tobytes(), dtype=values.dtype).reshape(values.shape)
+    return _CutoffConfig(
+        max_distance=float(analyzer._max_dist),
+        symbol_codes=symbol_codes,
+        unknown_symbol_code=unknown_symbol_code,
+        cutoff_matrix=immutable_values,
+    )
+
+
+_VESTA_CUTOFF_CONFIG = _load_vesta_cutoff_config()
+type _NeighborAnalyzer = CrystalNN | MinimumDistanceNN
+
+
 def build_connectivity(
     *,
     atom_records: dict[AtomKey, AtomRecord],
@@ -68,11 +112,12 @@ def build_connectivity(
     structure: Structure,
 ) -> ConnectivityResult:
     neighbor_analyzer = _neighbor_analyzer_for_bond_algorithm(bond_algorithm)
-    neighbor_info_by_site = _neighbor_info_by_site_for_connectivity(
-        bond_algorithm=bond_algorithm,
-        neighbor_analyzer=neighbor_analyzer,
-        structure=structure,
+    cutoff_neighbors_by_site = (
+        _vesta_neighbor_records_by_site(structure)
+        if bond_algorithm == "cut-off-dict"
+        else None
     )
+    analyzed_neighbors_by_site: dict[int, list[NeighborRecord]] = {}
     source_keys = [*canonical_source_keys, *boundary_source_keys]
     bond_records: dict[tuple[str, str], BondRecord] = {}
     connections_by_source: dict[AtomKey, list[ConnectedAtom]] = {
@@ -85,18 +130,27 @@ def build_connectivity(
         source_atom_id = atom_instance_id(source_site.site_id, source_image_offset)
         source_is_boundary_image = source_image_offset != CANONICAL_IMAGE_OFFSET
 
-        neighbor_info = (
-            neighbor_info_by_site[source_site_index]
-            if neighbor_info_by_site is not None
-            else neighbor_analyzer.get_nn_info(structure, source_site_index)
-        )
-        for neighbor in neighbor_info:
-            target_site_index = int(neighbor["site_index"])
+        if cutoff_neighbors_by_site is not None:
+            neighbor_records = cutoff_neighbors_by_site[source_site_index]
+        else:
+            neighbor_records = analyzed_neighbors_by_site.get(source_site_index)
+            if neighbor_records is None:
+                if neighbor_analyzer is None:
+                    raise RuntimeError("Neighbor analyzer is unavailable.")
+                neighbor_records = _neighbor_records_for_site(
+                    neighbor_analyzer=neighbor_analyzer,
+                    site_index=source_site_index,
+                    structure=structure,
+                )
+                analyzed_neighbors_by_site[source_site_index] = neighbor_records
+
+        for neighbor in neighbor_records:
+            target_site_index = neighbor.site_index
             target_site = sites[target_site_index]
             target_image_offset = add_image_offsets(
                 add_image_offsets(
                     source_image_offset,
-                    normalize_image_offset(neighbor.get("image", CANONICAL_IMAGE_OFFSET)),
+                    neighbor.image,
                 ),
                 subtract_image_offsets(
                     target_site.canonical_image_offset,
@@ -182,69 +236,70 @@ def build_bonds(
     return bonds
 
 
-def _neighbor_info_by_site_for_connectivity(
+def _neighbor_records_for_site(
     *,
-    bond_algorithm: BondAlgorithm,
-    neighbor_analyzer: object,
+    neighbor_analyzer: _NeighborAnalyzer,
+    site_index: int,
     structure: Structure,
-) -> list[list[dict]] | None:
-    if bond_algorithm == "cut-off-dict":
-        return neighbor_analyzer.get_all_nn_info(structure)  # type: ignore[attr-defined]
+) -> list[NeighborRecord]:
+    return [
+        NeighborRecord(
+            site_index=int(neighbor["site_index"]),
+            image=normalize_image_offset(
+                neighbor.get("image", CANONICAL_IMAGE_OFFSET)
+            ),
+        )
+        for neighbor in neighbor_analyzer.get_nn_info(structure, site_index)
+    ]
 
-    return None
+
+def _vesta_neighbor_records_by_site(structure: Structure) -> list[list[NeighborRecord]]:
+    center_indices, target_indices, images, distances = structure.get_neighbor_list(
+        _VESTA_CUTOFF_CONFIG.max_distance
+    )
+    site_codes = np.fromiter(
+        (
+            _VESTA_CUTOFF_CONFIG.symbol_codes.get(
+                site_element_symbol(site),
+                _VESTA_CUTOFF_CONFIG.unknown_symbol_code,
+            )
+            for site in structure
+        ),
+        dtype=np.intp,
+        count=len(structure),
+    )
+    accepted = distances < _VESTA_CUTOFF_CONFIG.cutoff_matrix[
+        site_codes[center_indices], site_codes[target_indices]
+    ]
+    accepted_images = np.rint(images[accepted]).astype(np.int64)
+
+    neighbors_by_site: list[list[NeighborRecord]] = [[] for _ in structure]
+    for center_index, target_index, image in zip(
+        center_indices[accepted],
+        target_indices[accepted],
+        accepted_images,
+        strict=True,
+    ):
+        neighbors_by_site[int(center_index)].append(
+            NeighborRecord(
+                site_index=int(target_index),
+                image=(int(image[0]), int(image[1]), int(image[2])),
+            )
+        )
+    return neighbors_by_site
 
 
-def _neighbor_analyzer_for_bond_algorithm(bond_algorithm: BondAlgorithm):
+def _neighbor_analyzer_for_bond_algorithm(
+    bond_algorithm: BondAlgorithm,
+) -> _NeighborAnalyzer | None:
     if bond_algorithm == "crystal-nn":
         return CrystalNN()
     if bond_algorithm == "minimum-distance":
         return MinimumDistanceNN()
     if bond_algorithm == "cut-off-dict":
-        return _PresetCutOffDictNN.from_preset("vesta_2019")
+        return None
 
     raise UnsupportedBondAlgorithmError(f"Unsupported bond algorithm '{bond_algorithm}'.")
-
-
-class _PresetCutOffDictNN(CutOffDictNN):
-    def get_all_nn_info(self, structure: Structure) -> list[list[dict]]:
-        return [
-            self._neighbor_info_for_site_neighbors(
-                site=structure[site_index],
-                neighbors=neighbors,
-            )
-            for site_index, neighbors in enumerate(structure.get_all_neighbors(self._max_dist))
-        ]
-
-    def get_nn_info(self, structure: Structure, n: int) -> list[dict]:
-        return self._neighbor_info_for_site_neighbors(
-            site=structure[n],
-            neighbors=structure.get_neighbors(structure[n], self._max_dist),
-        )
-
-    def _neighbor_info_for_site_neighbors(
-        self,
-        *,
-        site: PeriodicSite,
-        neighbors: Iterable[PeriodicNeighbor],
-    ) -> list[dict]:
-        site_key = site_element_symbol(site)
-        neighbor_info: list[dict] = []
-
-        for neighbor in neighbors:
-            distance = neighbor.nn_distance
-            neighbor_key = site_element_symbol(neighbor)
-            cutoff = self._lookup_dict.get(site_key, {}).get(neighbor_key, 0.0)
-            if distance < cutoff:
-                neighbor_info.append(
-                    {
-                        "site": neighbor,
-                        "image": neighbor.image,
-                        "weight": distance,
-                        "site_index": neighbor.index,
-                    }
-                )
-
-        return neighbor_info
 
 
 def _merge_bond_visibility_dependency_group(

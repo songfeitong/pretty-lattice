@@ -20,6 +20,7 @@ Focused research notes and implementation references live here. Keep the root do
 ## Design References
 
 - [Backend Architecture Scan](backend_architecture_scan_2026-06-27.md): pre-refactor scan of backend module boundaries, coupling risks, and a conservative one-shot refactor plan.
+- [后端 Python 性能审查](backend_python_performance_review_2026-07-10.md)：只读调查后端的邻居分析、大体系扩展、NumPy 优化机会、CIF 解析、服务响应性、内存和场景数据开销。
 - [Frontend Architecture Scan](frontend_architecture_scan_2026-06-27.md): pre-refactor scan of frontend module boundaries, highest-risk files, and a recommended first refactor slice.
 - [Objects Panel Large-List Performance](objects_panel_large_list_performance_2026-07-04.md): implementation note on virtualizing large atom groups, row-index locate, and avoiding DOM explosions in Objects > Atoms.
 - [Thermo-Nuclear Code Quality Review](thermo_nuclear_code_quality_review_2026-06-30.md): 严格中文审查报告，聚焦当前前端大文件、导出域、scene object、App 编排和合同漂移风险。

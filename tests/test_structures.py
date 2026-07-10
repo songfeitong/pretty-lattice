@@ -1,11 +1,14 @@
 import ast
 import tomllib
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from math import dist
 from pathlib import Path
 
+import numpy as np
 import pytest
 from pymatgen.core import Lattice, Structure
+from pymatgen.core.local_env import CrystalNN, CutOffDictNN, MinimumDistanceNN
 
 import pretty_lattice.structures.connectivity as connectivity_module
 import pretty_lattice.structures.polyhedra as polyhedra_module
@@ -396,30 +399,201 @@ def test_cutoff_dict_bonding_uses_batched_neighbor_table(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
-    captured_atom_counts: list[int] = []
-    original_get_all_nn_info = connectivity_module._PresetCutOffDictNN.get_all_nn_info
+    captured_calls: list[tuple[int, float]] = []
+    original_get_neighbor_list = Structure.get_neighbor_list
 
-    def capture_get_all_nn_info(
-        self: connectivity_module._PresetCutOffDictNN,
-        structure_arg: Structure,
-    ) -> list[list[dict[str, object]]]:
-        captured_atom_counts.append(len(structure_arg))
-        return original_get_all_nn_info(self, structure_arg)
+    def capture_get_neighbor_list(
+        self: Structure,
+        radius: float,
+        *args: object,
+        **kwargs: object,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        captured_calls.append((len(self), radius))
+        return original_get_neighbor_list(self, radius, *args, **kwargs)
 
-    def fail_get_nn_info(*_args: object, **_kwargs: object) -> None:
-        pytest.fail("CutOffDictNN connectivity should use the batched neighbor table.")
+    def fail_get_all_neighbors(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("Cutoff connectivity should not create PeriodicNeighbor tables.")
 
-    monkeypatch.setattr(
-        connectivity_module._PresetCutOffDictNN,
-        "get_all_nn_info",
-        capture_get_all_nn_info,
-    )
-    monkeypatch.setattr(connectivity_module._PresetCutOffDictNN, "get_nn_info", fail_get_nn_info)
+    monkeypatch.setattr(Structure, "get_neighbor_list", capture_get_neighbor_list)
+    monkeypatch.setattr(Structure, "get_all_neighbors", fail_get_all_neighbors)
 
     scene = build_scene_response(structure, bond_algorithm="cut-off-dict")
 
-    assert captured_atom_counts == [len(structure)]
+    assert captured_calls == [
+        (len(structure), connectivity_module._VESTA_CUTOFF_CONFIG.max_distance)
+    ]
     assert scene["bonds"]
+    assert "warnings" not in scene
+
+
+def test_vesta_cutoff_config_is_immutable_and_reused_between_requests(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
+
+    def fail_reload(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("VESTA cutoffs should not be parsed during a request.")
+
+    monkeypatch.setattr(CutOffDictNN, "from_preset", fail_reload)
+
+    first_scene = build_scene_response(structure, bond_algorithm="cut-off-dict")
+    second_scene = build_scene_response(structure, bond_algorithm="cut-off-dict")
+
+    assert first_scene == second_scene
+    with pytest.raises(TypeError):
+        connectivity_module._VESTA_CUTOFF_CONFIG.symbol_codes["X"] = 0  # type: ignore[index]
+    with pytest.raises(ValueError):
+        connectivity_module._VESTA_CUTOFF_CONFIG.cutoff_matrix[0, 0] = 0.0
+    with pytest.raises(ValueError):
+        connectivity_module._VESTA_CUTOFF_CONFIG.cutoff_matrix.setflags(write=True)
+
+
+def test_vesta_cutoff_config_is_safe_for_concurrent_neighbor_tables() -> None:
+    structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        neighbor_tables = list(
+            executor.map(
+                lambda _index: connectivity_module._vesta_neighbor_records_by_site(
+                    structure
+                ),
+                range(8),
+            )
+        )
+
+    assert all(table == neighbor_tables[0] for table in neighbor_tables)
+
+
+@pytest.mark.parametrize(
+    ("bond_algorithm", "analyzer_type"),
+    [
+        ("crystal-nn", CrystalNN),
+        ("minimum-distance", MinimumDistanceNN),
+    ],
+)
+def test_site_neighbor_analysis_is_reused_for_boundary_images(
+    monkeypatch: pytest.MonkeyPatch,
+    bond_algorithm: str,
+    analyzer_type: type[CrystalNN] | type[MinimumDistanceNN],
+) -> None:
+    structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
+    analyzed_site_indices: list[int] = []
+    original_get_nn_info = analyzer_type.get_nn_info
+
+    def capture_get_nn_info(
+        self: object,
+        structure_arg: Structure,
+        site_index: int,
+    ) -> list[dict[str, object]]:
+        analyzed_site_indices.append(site_index)
+        return original_get_nn_info(self, structure_arg, site_index)
+
+    monkeypatch.setattr(analyzer_type, "get_nn_info", capture_get_nn_info)
+
+    scene = build_scene_response(structure, bond_algorithm=bond_algorithm)
+
+    assert analyzed_site_indices == list(range(len(structure)))
+    assert scene["bonds"]
+    assert "warnings" not in scene
+
+
+def test_vesta_cutoff_filter_is_strict_and_keeps_neighbor_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    structure = Structure(
+        Lattice.cubic(10.0),
+        ["C", "H"],
+        [[0.0, 0.0, 0.0], [0.1, 0.0, 0.0]],
+    )
+    config = connectivity_module._VESTA_CUTOFF_CONFIG
+    cutoff = config.cutoff_matrix[
+        config.symbol_codes["C"], config.symbol_codes["H"]
+    ]
+
+    def cutoff_boundary_neighbor_list(
+        *_args: object,
+        **_kwargs: object,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        return (
+            np.array([0, 0, 0]),
+            np.array([1, 1, 1]),
+            np.array([[2, 0, 0], [3, 0, 0], [4, 0, 0]]),
+            np.array([np.nextafter(cutoff, -np.inf), cutoff, np.nextafter(cutoff, np.inf)]),
+        )
+
+    monkeypatch.setattr(Structure, "get_neighbor_list", cutoff_boundary_neighbor_list)
+
+    neighbors = connectivity_module._vesta_neighbor_records_by_site(structure)
+
+    assert neighbors == [
+        [connectivity_module.NeighborRecord(site_index=1, image=(2, 0, 0))],
+        [],
+    ]
+
+
+def test_vesta_cutoff_records_match_legacy_order_for_all_fixtures() -> None:
+    analyzer = CutOffDictNN.from_preset("vesta_2019")
+
+    for filename, *_fixture_metadata in CIF_FIXTURES:
+        structure = read_structure(FIXTURE_DIR / filename)
+        expected: list[list[tuple[int, tuple[int, int, int]]]] = []
+        for site, neighbors in zip(
+            structure,
+            structure.get_all_neighbors(analyzer._max_dist),
+            strict=True,
+        ):
+            site_symbol = connectivity_module.site_element_symbol(site)
+            expected.append(
+                [
+                    (
+                        int(neighbor.index),
+                        connectivity_module.normalize_image_offset(neighbor.image),
+                    )
+                    for neighbor in neighbors
+                    if neighbor.nn_distance
+                    < analyzer._lookup_dict.get(site_symbol, {}).get(
+                        connectivity_module.site_element_symbol(neighbor), 0.0
+                    )
+                ]
+            )
+
+        actual = [
+            [(neighbor.site_index, neighbor.image) for neighbor in site_neighbors]
+            for site_neighbors in connectivity_module._vesta_neighbor_records_by_site(
+                structure
+            )
+        ]
+
+        assert actual == expected, filename
+
+
+def test_vesta_cutoff_uses_dominant_element_for_disordered_sites() -> None:
+    structure = Structure(
+        Lattice.cubic(10.0),
+        [{"Na": 0.6, "K": 0.4}, "Cl"],
+        [[0.0, 0.0, 0.0], [0.35, 0.0, 0.0]],
+    )
+
+    neighbors = connectivity_module._vesta_neighbor_records_by_site(structure)
+
+    assert connectivity_module.site_element_symbol(structure[0]) == "Na"
+    assert neighbors == [[], []]
+
+
+def test_vesta_cutoff_uses_element_symbols_for_oxidized_sites() -> None:
+    structure = Structure(
+        Lattice.cubic(4.0),
+        ["Na", "Cl"],
+        [[0.0, 0.0, 0.0], [0.5, 0.0, 0.0]],
+    )
+    structure.add_oxidation_state_by_element({"Na": 1, "Cl": -1})
+
+    neighbors = connectivity_module._vesta_neighbor_records_by_site(structure)
+
+    assert [[neighbor.site_index for neighbor in row] for row in neighbors] == [
+        [1, 1],
+        [0, 0],
+    ]
 
 
 def test_cutoff_dict_bonding_keeps_boundary_bonds_local_after_canonicalizing_sites() -> None:
