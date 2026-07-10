@@ -10,6 +10,11 @@ from pretty_lattice.structures.periodic_images import (
     build_atom_records,
     vector3,
 )
+from pretty_lattice.structures.preview_limits import (
+    PreviewLimitExceeded,
+    enforce_scene_limits,
+    enforce_structure_atom_limit,
+)
 from pretty_lattice.structures.schema import (
     BondAlgorithm,
     SceneSpec,
@@ -46,6 +51,7 @@ def _build_scene_spec(
     *,
     bond_algorithm: str | None = None,
 ) -> SceneSpec:
+    enforce_structure_atom_limit(len(structure))
     structure = normalize_structure_for_preview(structure)
     normalized_bond_algorithm = normalize_bond_algorithm(bond_algorithm)
     selected_bond_algorithm = normalized_bond_algorithm or default_bond_algorithm_for_atom_count(
@@ -76,6 +82,8 @@ def _build_scene_spec(
                 sites=atom_data.sites,
                 structure=structure,
             )
+        except PreviewLimitExceeded:
+            raise
         except Exception as exc:
             warnings.append(
                 _analysis_warning(
@@ -94,6 +102,8 @@ def _build_scene_spec(
                     atom_index_by_key=atom_index_by_key,
                     connectivity=connectivity,
                 )
+            except PreviewLimitExceeded:
+                raise
             except Exception as exc:
                 warnings.append(
                     _analysis_warning(
@@ -112,6 +122,8 @@ def _build_scene_spec(
                     connectivity=connectivity,
                     structure=structure,
                 )
+            except PreviewLimitExceeded:
+                raise
             except Exception as exc:
                 warnings.append(
                     _analysis_warning(
@@ -122,6 +134,11 @@ def _build_scene_spec(
                     )
                 )
 
+    enforce_scene_limits(
+        atom_count=len(atom_data.atom_records),
+        bond_count=len(bonds),
+        polyhedron_count=len(polyhedra),
+    )
     scene: SceneSpec = {
         "cell": {"vectors": cell_vectors},
         "atoms": [

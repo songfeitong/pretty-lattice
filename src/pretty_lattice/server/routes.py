@@ -4,18 +4,20 @@ from urllib.parse import unquote
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from pretty_lattice.structures.preview_limits import (
+    MAX_STRUCTURE_UPLOAD_BYTES,
+    STRUCTURE_FILE_TOO_LARGE_MESSAGE,
+)
 from pretty_lattice.structures.schema import (
     UnsupportedBondAlgorithmError,
     normalize_bond_algorithm,
 )
 
 router = APIRouter()
-MAX_STRUCTURE_UPLOAD_BYTES = 1 * 1024 * 1024
-STRUCTURE_FILE_TOO_LARGE_MESSAGE = "File is too large to preview."
 
 
 @router.get("/health")
-def health() -> dict[str, str]:
+async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
@@ -31,14 +33,20 @@ async def create_structure_preview(
         raise HTTPException(status_code=400, detail={"message": str(exc)}) from exc
 
     payload = await _uploaded_payload(request)
-    StructureReadError, read_structure_bytes, build_scene_response = (
-        _structure_preview_dependencies()
-    )
+    StructureReadError, PreviewLimitExceeded, create_preview = _structure_preview_dependencies()
     try:
-        structure = read_structure_bytes(payload, filename=filename)
-        return build_scene_response(structure, bond_algorithm=normalized_bond_algorithm)
+        return await create_preview(
+            payload,
+            filename=filename,
+            bond_algorithm=normalized_bond_algorithm,
+        )
     except StructureReadError as exc:
         raise HTTPException(status_code=400, detail={"message": str(exc)}) from exc
+    except PreviewLimitExceeded as exc:
+        raise HTTPException(
+            status_code=413,
+            detail={"code": exc.code, "message": str(exc)},
+        ) from exc
 
 
 async def _uploaded_payload(request: Request) -> bytes:
@@ -51,13 +59,24 @@ async def _uploaded_payload(request: Request) -> bytes:
         if upload_size is not None and upload_size > MAX_STRUCTURE_UPLOAD_BYTES:
             raise HTTPException(
                 status_code=413,
-                detail={"message": STRUCTURE_FILE_TOO_LARGE_MESSAGE},
+                detail={
+                    "code": "upload-too-large",
+                    "message": STRUCTURE_FILE_TOO_LARGE_MESSAGE,
+                },
             )
 
-    payload = await request.body()
-    if len(payload) > MAX_STRUCTURE_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail={"message": STRUCTURE_FILE_TOO_LARGE_MESSAGE})
-    return payload
+    payload = bytearray()
+    async for chunk in request.stream():
+        if len(payload) + len(chunk) > MAX_STRUCTURE_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail={
+                    "code": "upload-too-large",
+                    "message": STRUCTURE_FILE_TOO_LARGE_MESSAGE,
+                },
+            )
+        payload.extend(chunk)
+    return bytes(payload)
 
 
 def _uploaded_filename(request: Request) -> str:
@@ -68,7 +87,8 @@ def _uploaded_filename(request: Request) -> str:
 
 
 def _structure_preview_dependencies():
-    from pretty_lattice.structures.readers import StructureReadError, read_structure_bytes
-    from pretty_lattice.structures.scene_builder import build_scene_response
+    from pretty_lattice.server.preview_service import create_structure_preview
+    from pretty_lattice.structures.preview_limits import PreviewLimitExceeded
+    from pretty_lattice.structures.readers import StructureReadError
 
-    return StructureReadError, read_structure_bytes, build_scene_response
+    return StructureReadError, PreviewLimitExceeded, create_structure_preview

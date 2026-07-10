@@ -10,19 +10,31 @@ import json
 import platform
 import pstats
 import re
+import socket
 import statistics
 import sys
+import threading
+import time
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
 from typing import Any
 
+import httpx
+import uvicorn
+from fastapi import FastAPI, Request
 from pymatgen.core import Structure
 from pymatgen.core.local_env import CrystalNN, MinimumDistanceNN
+from pymatgen.io.cif import CifWriter
 
+import pretty_lattice.server.preview_service as preview_service
 import pretty_lattice.structures.connectivity as connectivity_module
-from pretty_lattice.structures.scene_builder import build_scene_spec
+from pretty_lattice.server.app import create_app
+from pretty_lattice.structures.readers import read_structure_bytes
+from pretty_lattice.structures.scene_builder import build_scene_response, build_scene_spec
 from pretty_lattice.structures.warning_policy import suppress_third_party_structure_warnings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -41,6 +53,62 @@ FIXTURE_NAMES = (
     "TiO2.cif",
 )
 type Scene = dict[str, Any]
+
+
+@contextmanager
+def _running_backend(app: FastAPI | None = None) -> Any:
+    app = app or create_app(prewarm_structure_stack=False)
+    server = uvicorn.Server(
+        uvicorn.Config(
+            app,
+            access_log=False,
+            lifespan="off",
+            log_level="error",
+        )
+    )
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(("127.0.0.1", 0))
+    server_socket.listen()
+    port = int(server_socket.getsockname()[1])
+    server_thread = threading.Thread(
+        target=server.run,
+        kwargs={"sockets": [server_socket]},
+        daemon=True,
+    )
+    server_thread.start()
+    deadline = perf_counter() + 10
+    while not server.started:
+        if not server_thread.is_alive():
+            raise RuntimeError("Benchmark Uvicorn server stopped during startup.")
+        if perf_counter() >= deadline:
+            raise TimeoutError("Benchmark Uvicorn server did not start within 10 seconds.")
+        time.sleep(0.01)
+
+    try:
+        yield f"http://127.0.0.1:{port}"
+    finally:
+        server.should_exit = True
+        server_thread.join(timeout=10)
+        server_socket.close()
+        if server_thread.is_alive():
+            raise RuntimeError("Benchmark Uvicorn server did not stop cleanly.")
+
+
+def _blocking_control_app(preview_started: threading.Event) -> FastAPI:
+    app = FastAPI()
+
+    @app.get("/api/health")
+    async def health() -> dict[str, str]:
+        return {"status": "ok"}
+
+    @app.post("/api/structure-preview")
+    async def structure_preview(request: Request) -> dict[str, object]:
+        payload = await request.body()
+        preview_started.set()
+        structure = read_structure_bytes(payload, filename="responsiveness.cif")
+        return build_scene_response(structure)
+
+    return app
 
 
 def _load_structure(filename: str, supercell: tuple[int, int, int] = (1, 1, 1)) -> Structure:
@@ -256,6 +324,126 @@ def _benchmark_neighbor_reuse(*, full: bool) -> dict[str, dict[str, Any]]:
     }
 
 
+def _timed_preview_request(
+    client: httpx.Client,
+    *,
+    payload: bytes,
+    filename: str,
+    bond_algorithm: str | None = None,
+) -> tuple[float, dict[str, Any]]:
+    query = f"?bondAlgorithm={bond_algorithm}" if bond_algorithm else ""
+    started = perf_counter()
+    response = client.post(
+        f"/api/structure-preview{query}",
+        content=payload,
+        headers={"x-pretty-lattice-filename": filename},
+    )
+    duration = perf_counter() - started
+    response.raise_for_status()
+    scene = response.json()
+    _validate_scene(scene, require_polyhedra=True)
+    return duration, scene
+
+
+def _wait_for_preview_worker(*, timeout: float = 10) -> None:
+    deadline = perf_counter() + timeout
+    while preview_service.PREVIEW_STRUCTURE_CACHE.stats().misses == 0:
+        if perf_counter() >= deadline:
+            raise TimeoutError("Preview worker did not start before benchmark timeout.")
+        time.sleep(0.005)
+
+
+def _benchmark_service(*, full: bool) -> dict[str, Any]:
+    responsiveness_structure = _load_structure("SrTiO3.cif", (5, 5, 5))
+    responsiveness_payload = str(CifWriter(responsiveness_structure)).encode()
+    repeat_supercell = (10, 10, 10) if full else (6, 6, 6)
+    repeat_structure = _load_structure("SrTiO3.cif", repeat_supercell)
+    repeat_payload = str(CifWriter(repeat_structure)).encode()
+
+    with _running_backend() as base_url:
+        with httpx.Client(base_url=base_url, timeout=180, trust_env=False) as client:
+            preview_service.PREVIEW_STRUCTURE_CACHE.clear()
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                preview_future = executor.submit(
+                    _timed_preview_request,
+                    client,
+                    payload=responsiveness_payload,
+                    filename="responsiveness.cif",
+                )
+                _wait_for_preview_worker()
+                health_started = perf_counter()
+                health_response = client.get("/api/health")
+                health_seconds = perf_counter() - health_started
+                preview_seconds, responsiveness_scene = preview_future.result()
+            health_response.raise_for_status()
+
+            preview_service.PREVIEW_STRUCTURE_CACHE.clear()
+            uncached_seconds, uncached_scene = _timed_preview_request(
+                client,
+                payload=repeat_payload,
+                filename="repeat.cif",
+                bond_algorithm="cut-off-dict",
+            )
+            cached_seconds, cached_scene = _timed_preview_request(
+                client,
+                payload=repeat_payload,
+                filename="repeat.cif",
+                bond_algorithm="cut-off-dict",
+            )
+            cache_stats = preview_service.PREVIEW_STRUCTURE_CACHE.stats()
+
+    blocking_preview_started = threading.Event()
+    blocking_app = _blocking_control_app(blocking_preview_started)
+    with _running_backend(blocking_app) as base_url:
+        with httpx.Client(base_url=base_url, timeout=180, trust_env=False) as client:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                preview_future = executor.submit(
+                    _timed_preview_request,
+                    client,
+                    payload=responsiveness_payload,
+                    filename="responsiveness.cif",
+                )
+                if not blocking_preview_started.wait(timeout=10):
+                    raise TimeoutError("Blocking control preview did not start.")
+                health_started = perf_counter()
+                health_response = client.get("/api/health")
+                blocking_health_seconds = perf_counter() - health_started
+                blocking_preview_seconds, blocking_scene = preview_future.result()
+            health_response.raise_for_status()
+
+    if _scene_digest(uncached_scene) != _scene_digest(cached_scene):
+        raise AssertionError("Cached preview changed the SceneSpec response.")
+
+    return {
+        "transport": "uvicorn-http",
+        "blocking_control": {
+            "input_atoms": len(responsiveness_structure),
+            "preview_seconds": blocking_preview_seconds,
+            "health_seconds_during_preview": blocking_health_seconds,
+            **_scene_contract(blocking_scene),
+        },
+        "responsiveness": {
+            "input_atoms": len(responsiveness_structure),
+            "upload_bytes": len(responsiveness_payload),
+            "preview_seconds": preview_seconds,
+            "health_seconds_during_preview": health_seconds,
+            **_scene_contract(responsiveness_scene),
+        },
+        "repeat_parse": {
+            "input_atoms": len(repeat_structure),
+            "upload_bytes": len(repeat_payload),
+            "uncached_seconds": uncached_seconds,
+            "cached_seconds": cached_seconds,
+            "saved_seconds": uncached_seconds - cached_seconds,
+            "speedup": uncached_seconds / cached_seconds,
+            "cache_hits": cache_stats.hits,
+            "cache_misses": cache_stats.misses,
+            "parse_count": cache_stats.parses,
+            **_scene_contract(cached_scene),
+        },
+    }
+
+
 def _compare_contracts(
     current: dict[str, dict[str, Any]],
     current_neighbor_reuse: dict[str, dict[str, Any]],
@@ -315,7 +503,7 @@ def _write_profile(*, full: bool, label: str) -> dict[str, str]:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Benchmark the backend neighbor and SceneSpec paths."
+        description="Benchmark backend SceneSpec, service responsiveness, and parse reuse."
     )
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--quick", action="store_true", help="Run the short benchmark set.")
@@ -333,6 +521,11 @@ def _parse_args() -> argparse.Namespace:
         "--profile",
         action="store_true",
         help="Also write a cProfile result for the largest selected SrTiO3 case.",
+    )
+    parser.add_argument(
+        "--service",
+        action="store_true",
+        help="Also measure health responsiveness and repeated parsing through local Uvicorn HTTP.",
     )
     return parser.parse_args()
 
@@ -376,6 +569,8 @@ def main() -> None:
     }
     if args.profile:
         result["profile"] = _write_profile(full=full, label=label)
+    if args.service:
+        result["service"] = _benchmark_service(full=full)
 
     output_path = OUTPUT_DIR / f"{label}.json"
     output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n")

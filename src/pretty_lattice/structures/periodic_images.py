@@ -8,6 +8,10 @@ from itertools import product
 from pymatgen.core import Structure
 from pymatgen.core.sites import PeriodicSite
 
+from pretty_lattice.structures.preview_limits import (
+    MAX_SCENE_ATOMS,
+    enforce_scene_atom_limit,
+)
 from pretty_lattice.structures.schema import AtomSpec, ImageReason, VisibilityDependency
 from pretty_lattice.structures.visibility import (
     ordered_image_reasons,
@@ -127,6 +131,8 @@ def ensure_atom_record(
     key = (site.index, image_offset)
     record = records.get(key)
     if record is None:
+        if len(records) >= MAX_SCENE_ATOMS:
+            enforce_scene_atom_limit(MAX_SCENE_ATOMS + 1)
         record = AtomRecord(site=site, image_offset=image_offset)
         records[key] = record
 

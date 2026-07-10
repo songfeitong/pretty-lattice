@@ -20,6 +20,10 @@ from pretty_lattice.structures.periodic_images import (
     site_element_symbol,
     subtract_image_offsets,
 )
+from pretty_lattice.structures.preview_limits import (
+    MAX_SCENE_BONDS,
+    enforce_scene_bond_limit,
+)
 from pretty_lattice.structures.schema import (
     BondAlgorithm,
     BondSpec,
@@ -188,6 +192,8 @@ def build_connectivity(
             endpoint_key = tuple(sorted((source_atom_id, target_atom_id)))
             bond_record = bond_records.get(endpoint_key)
             if bond_record is None:
+                if len(bond_records) >= MAX_SCENE_BONDS:
+                    enforce_scene_bond_limit(MAX_SCENE_BONDS + 1)
                 bond_record = BondRecord(
                     start_atom_key=source_key,
                     end_atom_key=target_key,

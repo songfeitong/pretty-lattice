@@ -14,6 +14,10 @@ from pretty_lattice.structures.periodic_images import (
     atom_record_cartesian_position,
     site_specie,
 )
+from pretty_lattice.structures.preview_limits import (
+    MAX_SCENE_POLYHEDRA,
+    enforce_scene_polyhedron_limit,
+)
 from pretty_lattice.structures.schema import PolyhedronSpec
 from pretty_lattice.structures.visibility import (
     combined_visibility_dependency_groups_for_records,
@@ -65,6 +69,9 @@ def build_polyhedra(
         faces = _polyhedron_faces_from_positions(positions)
         if not faces:
             continue
+
+        if len(polyhedra) >= MAX_SCENE_POLYHEDRA:
+            enforce_scene_polyhedron_limit(MAX_SCENE_POLYHEDRA + 1)
 
         visibility_dependency_groups = [
             dependency_group
