@@ -129,8 +129,7 @@ export const zhCN = {
     viewControls: "视图控制",
   },
   objectsPanel: {
-    applyElementToAllAtoms: "把 {{element}} 的风格应用到所有原子",
-    applyToAllAtoms: "应用到所有原子",
+    applyElementStyleToAtoms: "应用到所有 {{element}} 原子",
     atoms: "原子",
     bonds: "键",
     collapseElement: "收起 {{element}}",

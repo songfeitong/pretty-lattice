@@ -934,21 +934,38 @@ describe("App", () => {
 
     expect(within(sidebar).getByRole("tab", { name: "Atoms" })).toBeTruthy();
     expect(within(sidebar).getByText("R (Å)").isConnected).toBe(true);
+    expect(within(sidebar).queryByText("Color")).toBeNull();
     expect(within(sidebar).queryByText("Na:0")).toBeNull();
     expect(within(sidebar).queryByText(/image/)).toBeNull();
 
     await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
 
     const sodiumAtomLabel = within(sidebar).getByText("Na:0");
+    const sodiumElementLabel = within(sidebar).getByText("Na");
     expect(sodiumAtomLabel.isConnected).toBe(true);
+    expect(sodiumElementLabel.parentElement?.classList.contains("gap-x-2.5")).toBe(true);
+    expect(sodiumAtomLabel.parentElement?.classList.contains("gap-x-2.5")).toBe(true);
+    const sodiumColorToken = sodiumAtomLabel.previousElementSibling?.querySelector(
+      '[data-color-picker-trigger=""] > span',
+    );
+    expect(sodiumColorToken?.classList.contains("size-4")).toBe(true);
+    expect(sodiumColorToken?.classList.contains("rounded-full")).toBe(true);
+    expect(sodiumColorToken?.getAttribute("style")).toContain("linear-gradient");
     expect(within(sidebar).queryByText("Na: 0")).toBeNull();
     expect(within(sidebar).queryByText("Na 0")).toBeNull();
     expect(within(sidebar).queryByText("Na-0")).toBeNull();
     expect(
-      within(sidebar).getByRole("button", {
+      within(sidebar).queryByRole("button", {
         name: "Apply Na style to all atoms",
-      }).isConnected,
-    ).toBe(true);
+      }),
+    ).toBeNull();
+    fireEvent.contextMenu(sodiumElementLabel.closest("tr")!);
+    expect(
+      (await screen.findByRole("menuitem", {
+        name: "Apply to all Na atoms",
+      })).getAttribute("data-disabled"),
+    ).toBeNull();
+    await user.keyboard("{Escape}");
 
     await user.click(within(sidebar).getByRole("button", { name: "Set Na color" }));
     expect(await screen.findByLabelText("Na color value")).toBeTruthy();
@@ -1023,6 +1040,17 @@ describe("App", () => {
     await waitFor(() => {
       expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
       expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("true");
+    });
+
+    fireEvent.contextMenu(sodiumElementLabel.closest("tr")!);
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: "Apply to all Na atoms",
+      }),
+    );
+    await waitFor(() => {
+      expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
+      expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("false");
     });
 
     const commonControls = screen.getByRole("complementary", { name: "Common controls" });

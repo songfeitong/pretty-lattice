@@ -5,7 +5,6 @@ import {
 } from "@tanstack/react-table";
 import {
   ChevronRight,
-  CopyCheck,
   Eye,
   EyeOff,
 } from "lucide-react";
@@ -23,6 +22,12 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -33,15 +38,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import type { AtomSpec, SceneSpec } from "../../api/scene";
+import { lambertLegendSwatchBackground } from "../../scene/renderAppearance";
 import {
   objectsAtomColorPickerId,
   objectsElementColorPickerId,
@@ -93,7 +93,7 @@ type ObjectsAtomRow =
       kind: "atom";
     };
 
-type ObjectsAtomColumnId = "site" | "radius" | "color" | "visible";
+type ObjectsAtomColumnId = "site" | "radius" | "visible";
 
 interface VirtualViewport {
   height: number;
@@ -117,7 +117,6 @@ const RADIUS_STEP = 0.01;
 const OBJECTS_ATOM_COLUMNS = [
   { id: "site", header: "Site" },
   { id: "radius", header: "R (Å)" },
-  { id: "color", header: "Color" },
   { id: "visible", header: "Visible" },
 ] satisfies Array<{ id: ObjectsAtomColumnId; header: string }>;
 const OBJECTS_ATOM_COLUMN_DEFS: ColumnDef<ObjectsAtomRow>[] =
@@ -135,8 +134,6 @@ function objectsAtomColumnHeader(
       return t("objectsPanel.atom");
     case "radius":
       return t("objectsPanel.radius");
-    case "color":
-      return t("objectsPanel.color");
     case "visible":
       return t("objectsPanel.visible");
   }
@@ -170,7 +167,6 @@ export function ObjectsPanel({
   const { t } = useTranslation();
 
   return (
-    <TooltipProvider delayDuration={500}>
     <Tabs
       value={activeTab}
       onValueChange={(value) => onActiveTabChange(value as ObjectsPanelTab)}
@@ -201,7 +197,6 @@ export function ObjectsPanel({
         />
       </TabsContent>
     </Tabs>
-    </TooltipProvider>
   );
 }
 
@@ -503,18 +498,46 @@ function ObjectsAtomsTable({
     switch (columnId) {
       case "site": {
         if (item.kind === "element") {
+          const group = { atoms: item.atoms, element: item.element };
+          const appearance =
+            elementAppearanceByElement.get(item.element) ??
+            elementRowAppearance(
+              group,
+              style,
+              colorScheme,
+              colorOverrides,
+              atomsVisible,
+            );
           return (
             <ElementSiteCell
               atomCount={item.atoms.length}
+              color={appearance.color}
               expanded={expandedElements[item.element] === true}
               element={item.element}
-              onApply={() => applyElementToAllAtoms(item)}
+              inputLabel={t("colorPicker.colorValue", { target: item.element })}
+              onColorChange={(color) => onElementColorChange(item.element, color)}
               onToggle={() => toggleElementExpanded(item.element)}
+              pickerId={objectsElementColorPickerId(item.element)}
             />
           );
         }
 
-        return <AtomSiteCell atom={item.atom} />;
+        const appearance = resolveAtomAppearanceForRow(
+          item.atom,
+          style,
+          colorScheme,
+          colorOverrides,
+          atomsVisible,
+        );
+        return (
+          <AtomSiteCell
+            atom={item.atom}
+            color={appearance.color}
+            inputLabel={t("colorPicker.colorValue", { target: formatAtomSite(item.atom) })}
+            onColorChange={(color) => setAtomColor(item.atom, color)}
+            pickerId={objectsAtomColorPickerId(item.atom.id)}
+          />
+        );
       }
       case "radius": {
         if (item.kind === "element") {
@@ -549,46 +572,6 @@ function ObjectsAtomsTable({
             ariaLabel={t("objectsPanel.radiusControl", { target: formatAtomSite(item.atom) })}
             value={appearance.radius}
             onCommit={(radius) => setAtomRadius(item.atom, radius)}
-          />
-        );
-      }
-      case "color": {
-        if (item.kind === "element") {
-          const group = { atoms: item.atoms, element: item.element };
-          const appearance =
-            elementAppearanceByElement.get(item.element) ??
-            elementRowAppearance(
-              group,
-              style,
-              colorScheme,
-              colorOverrides,
-              atomsVisible,
-            );
-          return (
-            <ColorCell
-              ariaLabel={t("objectsPanel.setElementColor", { element: item.element })}
-              color={appearance.color}
-              inputLabel={t("colorPicker.colorValue", { target: item.element })}
-              onChange={(color) => onElementColorChange(item.element, color)}
-              pickerId={objectsElementColorPickerId(item.element)}
-            />
-          );
-        }
-
-        const appearance = resolveAtomAppearanceForRow(
-          item.atom,
-          style,
-          colorScheme,
-          colorOverrides,
-          atomsVisible,
-        );
-        return (
-          <ColorCell
-            ariaLabel={t("objectsPanel.setAtomColor", { atom: formatAtomSite(item.atom) })}
-            color={appearance.color}
-            inputLabel={t("colorPicker.colorValue", { target: formatAtomSite(item.atom) })}
-            onChange={(color) => setAtomColor(item.atom, color)}
-            pickerId={objectsAtomColorPickerId(item.atom.id)}
           />
         );
       }
@@ -648,9 +631,8 @@ function ObjectsAtomsTable({
     <div ref={tableContainerRef} className={cn("min-h-0", OBJECTS_BODY_TEXT_CLASS)}>
       <Table className="table-fixed border-separate border-spacing-0 text-[13px]">
         <colgroup>
-          <col className="w-[45%]" />
+          <col className="w-[61%]" />
           <col className="w-[23%]" />
-          <col className="w-[16%]" />
           <col className="w-[16%]" />
         </colgroup>
         <TableHeader>
@@ -686,7 +668,7 @@ function ObjectsAtomsTable({
             const item = tableRow.original;
             const selected =
               item.kind === "atom" && item.atom.id === selectedObjectAtomId;
-            return (
+            const row = (
               <TableRow
                 key={tableRow.id}
                 data-state={selected ? "selected" : undefined}
@@ -708,15 +690,32 @@ function ObjectsAtomsTable({
                     key={`${tableRow.id}:${column.id}`}
                     className={cn(
                       OBJECTS_CELL_CLASS,
-                      column.id === "visible" || column.id === "color"
-                        ? "text-center"
-                        : null,
+                      column.id === "visible" ? "text-center" : null,
                     )}
                   >
                     {renderObjectsAtomCell(item, column.id)}
                   </TableCell>
                 ))}
               </TableRow>
+            );
+
+            if (item.kind === "atom") {
+              return row;
+            }
+
+            return (
+              <ContextMenu key={tableRow.id}>
+                <ContextMenuTrigger asChild>{row}</ContextMenuTrigger>
+                <ContextMenuContent className="min-w-48">
+                  <ContextMenuItem
+                    onSelect={() => applyElementToAllAtoms(item)}
+                  >
+                    {t("objectsPanel.applyElementStyleToAtoms", {
+                      element: item.element,
+                    })}
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             );
           })}
           {bottomSpacerHeight > 0 ? (
@@ -739,21 +738,27 @@ function ObjectsAtomsTable({
 
 function ElementSiteCell({
   atomCount,
+  color,
   element,
   expanded,
-  onApply,
+  inputLabel,
+  onColorChange,
   onToggle,
+  pickerId,
 }: {
   atomCount: number;
+  color: string;
   element: string;
   expanded: boolean;
-  onApply: () => void;
+  inputLabel: string;
+  onColorChange: (color: string) => void;
   onToggle: () => void;
+  pickerId: string;
 }) {
   const { t } = useTranslation();
 
   return (
-    <div className="grid min-w-0 grid-cols-[1.25rem_2.1ch_2ch_1fr_auto] items-center gap-x-1">
+    <div className="grid min-w-0 grid-cols-[1.25rem_16px_2.1ch_2ch_1fr] items-center gap-x-2.5">
       <Button
         type="button"
         variant="ghost"
@@ -781,6 +786,13 @@ function ElementSiteCell({
           )}
         />
       </Button>
+      <ColorCell
+        ariaLabel={t("objectsPanel.setElementColor", { element })}
+        color={color}
+        inputLabel={inputLabel}
+        onChange={onColorChange}
+        pickerId={pickerId}
+      />
       <span className="min-w-0 truncate font-semibold leading-tight text-foreground">
         {element}
       </span>
@@ -788,36 +800,35 @@ function ElementSiteCell({
         {atomCount}
       </span>
       <span aria-hidden="true" />
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label={t("objectsPanel.applyElementToAllAtoms", { element })}
-            className={cn(
-              TOOL_ICON_BUTTON_CLASS,
-              "size-6 rounded-[8px] text-muted-foreground/70 [&_svg]:size-3.5",
-            )}
-            onClick={(event) => {
-              event.stopPropagation();
-              onApply();
-            }}
-            onDoubleClick={(event) => event.stopPropagation()}
-          >
-            <CopyCheck aria-hidden="true" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="left">{t("objectsPanel.applyToAllAtoms")}</TooltipContent>
-      </Tooltip>
     </div>
   );
 }
 
-function AtomSiteCell({ atom }: { atom: AtomSpec }) {
+function AtomSiteCell({
+  atom,
+  color,
+  inputLabel,
+  onColorChange,
+  pickerId,
+}: {
+  atom: AtomSpec;
+  color: string;
+  inputLabel: string;
+  onColorChange: (color: string) => void;
+  pickerId: string;
+}) {
+  const { t } = useTranslation();
+
   return (
-    <div className="grid min-w-0 grid-cols-[1.25rem_minmax(0,1fr)] gap-x-1.5 leading-tight text-foreground">
+    <div className="grid min-w-0 grid-cols-[1.25rem_16px_minmax(0,1fr)] items-center gap-x-2.5 leading-tight text-foreground">
       <span aria-hidden="true" />
+      <ColorCell
+        ariaLabel={t("objectsPanel.setAtomColor", { atom: formatAtomSite(atom) })}
+        color={color}
+        inputLabel={inputLabel}
+        onChange={onColorChange}
+        pickerId={pickerId}
+      />
       <span className="block truncate font-mono text-[12px]">{formatAtomSite(atom)}</span>
     </div>
   );
@@ -913,8 +924,10 @@ function ColorCell({
         inputLabel={inputLabel}
         pickerId={pickerId}
         side="left"
+        triggerClassName="size-4"
         value={hexColor}
-        swatchClassName="shadow-none"
+        swatchClassName="size-4 rounded-full"
+        swatchStyle={{ background: lambertLegendSwatchBackground(hexColor) }}
         onValueChange={onChange}
       />
     </span>

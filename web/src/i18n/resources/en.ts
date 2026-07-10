@@ -127,8 +127,7 @@ export const en = {
     viewControls: "View controls",
   },
   objectsPanel: {
-    applyElementToAllAtoms: "Apply {{element}} style to all atoms",
-    applyToAllAtoms: "Apply to all atoms",
+    applyElementStyleToAtoms: "Apply to all {{element}} atoms",
     atoms: "Atoms",
     bonds: "Bonds",
     collapseElement: "Collapse {{element}}",

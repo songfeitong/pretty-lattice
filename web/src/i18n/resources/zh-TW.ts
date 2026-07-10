@@ -129,8 +129,7 @@ export const zhTW = {
     viewControls: "視圖控制",
   },
   objectsPanel: {
-    applyElementToAllAtoms: "將 {{element}} 的樣式套用至所有原子",
-    applyToAllAtoms: "套用至所有原子",
+    applyElementStyleToAtoms: "套用至所有 {{element}} 原子",
     atoms: "原子",
     bonds: "鍵結",
     collapseElement: "收合 {{element}}",
