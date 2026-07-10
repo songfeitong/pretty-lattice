@@ -74,7 +74,7 @@ function ElementLegendColorControl({
       inputLabel={t("colorPicker.colorValue", { target: element })}
       pickerId={legendElementColorPickerId(element)}
       side="top"
-      triggerClassName="pointer-events-auto rounded-full"
+      triggerClassName="pointer-events-auto rounded-full transition-transform duration-150 ease-out hover:scale-[1.08] motion-reduce:transition-none motion-reduce:hover:scale-100"
       value={hexColor}
       swatchClassName="rounded-full"
       swatchStyle={legendSphereStyle(color)}

@@ -398,6 +398,8 @@ describe("App", () => {
 
     const sodiumColorButton = screen.getByRole("button", { name: "Set Na color" });
     const chlorineColorButton = screen.getByRole("button", { name: "Set Cl color" });
+    expect(sodiumColorButton.classList.contains("hover:scale-[1.08]")).toBe(true);
+    expect(sodiumColorButton.classList.contains("duration-150")).toBe(true);
 
     await user.click(sodiumColorButton);
     expect(await screen.findByLabelText("Na color value")).toBeTruthy();
@@ -951,6 +953,9 @@ describe("App", () => {
     expect(sodiumColorToken?.classList.contains("size-4")).toBe(true);
     expect(sodiumColorToken?.classList.contains("rounded-full")).toBe(true);
     expect(sodiumColorToken?.getAttribute("style")).toContain("linear-gradient");
+    expect(
+      sodiumColorToken?.parentElement?.classList.contains("hover:scale-[1.08]"),
+    ).toBe(true);
     expect(within(sidebar).queryByText("Na: 0")).toBeNull();
     expect(within(sidebar).queryByText("Na 0")).toBeNull();
     expect(within(sidebar).queryByText("Na-0")).toBeNull();
