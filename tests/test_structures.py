@@ -14,6 +14,7 @@ import pretty_lattice.structures.connectivity as connectivity_module
 import pretty_lattice.structures.polyhedra as polyhedra_module
 import pretty_lattice.structures.summary as summary_module
 from pretty_lattice.structures.normalization import normalize_structure_for_preview
+from pretty_lattice.structures.preview_limits import PreviewLimitExceeded
 from pretty_lattice.structures.readers import (
     StructureReadError,
     read_structure,
@@ -24,6 +25,8 @@ from pretty_lattice.structures.scene import (
 )
 from pretty_lattice.structures.schema import (
     STRUCTURE_ATOM_COUNT_THRESHOLD,
+    CustomBondRecalculationError,
+    InvalidBondCutoffOverridesError,
     UnsupportedBondAlgorithmError,
 )
 from pretty_lattice.structures.symmetry import (
@@ -221,7 +224,41 @@ def test_scene_response_shape_excludes_renderer_visual_data() -> None:
             "latticeSystem": "cubic",
         },
     }
-    assert scene.keys() == {"cell", "atoms", "bonds", "polyhedra", "summary"}
+    assert scene.keys() == {
+        "cell",
+        "atoms",
+        "bonds",
+        "bondFamilies",
+        "polyhedra",
+        "summary",
+    }
+    assert scene["bondFamilies"] == [
+        {
+            "key": "Sr|O",
+            "elements": ["Sr", "O"],
+            "minLength": pytest.approx(2.7666976290584877),
+            "maxLength": pytest.approx(2.7666976290584886),
+        },
+        {
+            "key": "Ti|O",
+            "elements": ["Ti", "O"],
+            "minLength": pytest.approx(1.956350655),
+            "maxLength": pytest.approx(1.9563506550000005),
+        },
+    ]
+    first_bond = scene["bonds"][0]
+    assert first_bond["id"].startswith("bond:")
+    assert first_bond["relationId"].startswith("bond-relation:")
+    assert first_bond["familyKey"] == "Sr|O"
+    assert first_bond["relativeImageOffset"] == [
+        end - start
+        for start, end in zip(
+            first_bond["startImageOffset"],
+            first_bond["endImageOffset"],
+            strict=True,
+        )
+    ]
+    assert first_bond["length"] == pytest.approx(2.7666976290584877)
 
 
 @pytest.mark.parametrize(
@@ -347,6 +384,120 @@ def test_scene_response_supports_selected_bond_algorithms() -> None:
     assert "warnings" not in cutoff_dict_scene
 
 
+def test_custom_family_cutoff_replaces_only_that_family_and_keeps_stable_ids() -> None:
+    structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
+
+    base_scene = build_scene_response(structure, bond_algorithm="crystal-nn")
+    custom_scene = build_scene_response(
+        structure,
+        bond_algorithm="crystal-nn",
+        bond_cutoff_overrides={"Sr|O": 2.0},
+    )
+    repeated_scene = build_scene_response(structure, bond_algorithm="crystal-nn")
+
+    assert [bond["id"] for bond in repeated_scene["bonds"]] == [
+        bond["id"] for bond in base_scene["bonds"]
+    ]
+    assert [bond["relationId"] for bond in repeated_scene["bonds"]] == [
+        bond["relationId"] for bond in base_scene["bonds"]
+    ]
+    assert not any(bond["familyKey"] == "Sr|O" for bond in custom_scene["bonds"])
+    assert {bond["id"] for bond in custom_scene["bonds"] if bond["familyKey"] == "Ti|O"} == {
+        bond["id"] for bond in base_scene["bonds"] if bond["familyKey"] == "Ti|O"
+    }
+    assert custom_scene["bondFamilies"][0] == {
+        "key": "Sr|O",
+        "elements": ["Sr", "O"],
+        "minLength": None,
+        "maxLength": None,
+    }
+    assert len(custom_scene["atoms"]) < len(base_scene["atoms"])
+    assert len(custom_scene["polyhedra"]) < len(base_scene["polyhedra"])
+
+
+def test_custom_family_cutoff_rejects_expensive_periodic_neighbor_search() -> None:
+    structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
+
+    with pytest.raises(PreviewLimitExceeded, match="overly expensive") as exc_info:
+        build_scene_response(
+            structure,
+            bond_algorithm="crystal-nn",
+            bond_cutoff_overrides={"Sr|O": 1_000.0},
+        )
+
+    assert exc_info.value.code == "bond-cutoff-search-too-expensive"
+
+
+def test_custom_family_cutoff_rejects_clustered_search_before_neighbor_allocation(
+    monkeypatch,
+) -> None:
+    atom_count = 1_100
+    structure = Structure(
+        Lattice.cubic(1_000),
+        ["H"] * atom_count,
+        [[index / (atom_count - 1) * 0.0002, 0, 0] for index in range(atom_count)],
+    )
+
+    def unexpected_neighbor_list(*_args: object, **_kwargs: object):
+        pytest.fail("The bounded preflight must reject before get_neighbor_list.")
+
+    monkeypatch.setattr(structure, "get_neighbor_list", unexpected_neighbor_list)
+
+    with pytest.raises(PreviewLimitExceeded, match="overly expensive") as exc_info:
+        connectivity_module._enforce_custom_neighbor_search_cost(structure, 1.0)
+
+    assert exc_info.value.code == "bond-cutoff-search-too-expensive"
+
+
+@pytest.mark.parametrize(
+    ("filename", "cutoff"),
+    [
+        ("SrTiO3.cif", 3.0),
+        ("LiFePO4.cif", 2.5),
+        ("Al2O3.cif", 2.0),
+    ],
+)
+def test_custom_neighbor_preflight_matches_periodic_neighbor_count(
+    filename: str,
+    cutoff: float,
+) -> None:
+    structure = normalize_structure_for_preview(read_structure(FIXTURE_DIR / filename))
+    center_indices, *_ = structure.get_neighbor_list(cutoff)
+
+    assert connectivity_module._custom_neighbor_candidate_count(
+        structure,
+        cutoff,
+    ) == len(center_indices)
+
+
+def test_custom_family_cutoff_is_inclusive_and_cannot_add_a_new_family() -> None:
+    structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
+    base_scene = build_scene_response(structure, bond_algorithm="crystal-nn")
+    sr_o_maximum = next(
+        family["maxLength"] for family in base_scene["bondFamilies"] if family["key"] == "Sr|O"
+    )
+    assert sr_o_maximum is not None
+
+    inclusive_scene = build_scene_response(
+        structure,
+        bond_algorithm="crystal-nn",
+        bond_cutoff_overrides={"O|Sr": sr_o_maximum},
+    )
+
+    assert sum(bond["familyKey"] == "Sr|O" for bond in inclusive_scene["bonds"]) == sum(
+        bond["familyKey"] == "Sr|O" for bond in base_scene["bonds"]
+    )
+    with pytest.raises(
+        InvalidBondCutoffOverridesError,
+        match="does not exist in the base connectivity",
+    ):
+        build_scene_response(
+            structure,
+            bond_algorithm="crystal-nn",
+            bond_cutoff_overrides={"Sr|Ti": 3.0},
+        )
+
+
 def test_third_party_structure_warnings_are_suppressed() -> None:
     structure_path = FIXTURE_DIR / "MoS2.cif"
 
@@ -454,9 +605,7 @@ def test_vesta_cutoff_config_is_safe_for_concurrent_neighbor_tables() -> None:
     with ThreadPoolExecutor(max_workers=4) as executor:
         neighbor_tables = list(
             executor.map(
-                lambda _index: connectivity_module._vesta_neighbor_records_by_site(
-                    structure
-                ),
+                lambda _index: connectivity_module._vesta_neighbor_records_by_site(structure),
                 range(8),
             )
         )
@@ -506,9 +655,7 @@ def test_vesta_cutoff_filter_is_strict_and_keeps_neighbor_order(
         [[0.0, 0.0, 0.0], [0.1, 0.0, 0.0]],
     )
     config = connectivity_module._VESTA_CUTOFF_CONFIG
-    cutoff = config.cutoff_matrix[
-        config.symbol_codes["C"], config.symbol_codes["H"]
-    ]
+    cutoff = config.cutoff_matrix[config.symbol_codes["C"], config.symbol_codes["H"]]
 
     def cutoff_boundary_neighbor_list(
         *_args: object,
@@ -559,9 +706,7 @@ def test_vesta_cutoff_records_match_legacy_order_for_all_fixtures() -> None:
 
         actual = [
             [(neighbor.site_index, neighbor.image) for neighbor in site_neighbors]
-            for site_neighbors in connectivity_module._vesta_neighbor_records_by_site(
-                structure
-            )
+            for site_neighbors in connectivity_module._vesta_neighbor_records_by_site(structure)
         ]
 
         assert actual == expected, filename
@@ -802,7 +947,10 @@ def test_scene_response_marks_one_hop_bonded_images_without_recursive_expansion(
     assert bonded_image_atoms
     assert boundary_source_bonds
     assert all(
-        scene["atoms"][bond["startAtomIndex"]]["imageReasons"] != ["bonded"]
+        any(
+            scene["atoms"][atom_index]["imageReasons"] != ["bonded"]
+            for atom_index in (bond["startAtomIndex"], bond["endAtomIndex"])
+        )
         for bond in boundary_source_bonds
     )
 
@@ -862,6 +1010,35 @@ def test_scene_response_returns_warning_when_polyhedra_analysis_fails(monkeypatc
             "message": "Polyhedra analysis with CrystalNN failed: polyhedra hull unavailable",
         }
     ]
+
+
+@pytest.mark.parametrize(
+    ("module", "attribute", "failure"),
+    [
+        (connectivity_module, "build_connectivity", "neighbor graph unavailable"),
+        (connectivity_module, "build_bonds", "bond serialization unavailable"),
+        (polyhedra_module, "build_polyhedra", "polyhedra hull unavailable"),
+    ],
+)
+def test_custom_recalculation_fails_atomically(
+    monkeypatch,
+    module: object,
+    attribute: str,
+    failure: str,
+) -> None:
+    structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
+
+    def fail_analysis(**_kwargs: object):
+        raise RuntimeError(failure)
+
+    monkeypatch.setattr(module, attribute, fail_analysis)
+
+    with pytest.raises(CustomBondRecalculationError, match=failure):
+        build_scene_response(
+            structure,
+            bond_algorithm="crystal-nn",
+            bond_cutoff_overrides={"Sr|O": 2.0},
+        )
 
 
 def test_empty_bond_result_is_not_a_warning(monkeypatch) -> None:
@@ -999,6 +1176,5 @@ def _imported_roots(source: str) -> set[str]:
 def _is_third_party_structure_warning(filename: str) -> bool:
     path_parts = set(Path(filename).parts)
     return any(
-        package_name in path_parts
-        for package_name in THIRD_PARTY_STRUCTURE_WARNING_PACKAGE_NAMES
+        package_name in path_parts for package_name in THIRD_PARTY_STRUCTURE_WARNING_PACKAGE_NAMES
     )

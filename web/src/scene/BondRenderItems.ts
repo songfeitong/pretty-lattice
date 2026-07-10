@@ -16,9 +16,11 @@ import { resolveAtomAppearance } from "../model";
 const BOND_UP_AXIS = new Vector3(0, 1, 0);
 
 export interface BondRenderItem {
+  bond: BondSpec;
   center: Vector3;
   endAtomIndex: number;
   endColor: string;
+  id: string;
   length: number;
   quaternion: Quaternion;
   startAtomIndex: number;
@@ -78,9 +80,11 @@ export function createBondRenderItems({
         : bondColor;
 
     items.push({
+      bond,
       center: start.clone().add(end).multiplyScalar(0.5),
       endAtomIndex: bond.endAtomIndex,
       endColor,
+      id: bond.id,
       length,
       quaternion: new Quaternion().setFromUnitVectors(
         BOND_UP_AXIS,

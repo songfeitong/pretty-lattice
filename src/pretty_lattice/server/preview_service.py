@@ -107,12 +107,14 @@ async def create_structure_preview(
     *,
     filename: str,
     bond_algorithm: str | None,
+    bond_cutoff_overrides: dict[str, float] | None = None,
 ) -> dict[str, object]:
     task = partial(
         _build_structure_preview,
         payload,
         filename=filename,
         bond_algorithm=bond_algorithm,
+        bond_cutoff_overrides=bond_cutoff_overrides,
     )
     return await to_thread.run_sync(
         task,
@@ -126,6 +128,7 @@ def _build_structure_preview(
     *,
     filename: str,
     bond_algorithm: str | None,
+    bond_cutoff_overrides: dict[str, float] | None = None,
 ) -> dict[str, object]:
     structure = PREVIEW_STRUCTURE_CACHE.get_or_parse(
         payload=payload,
@@ -133,7 +136,11 @@ def _build_structure_preview(
         parser=lambda: _read_limited_structure(payload, filename),
     )
     # Scene construction normalizes into a copy before any analysis touches the cached object.
-    return build_scene_response(structure, bond_algorithm=bond_algorithm)
+    return build_scene_response(
+        structure,
+        bond_algorithm=bond_algorithm,
+        bond_cutoff_overrides=bond_cutoff_overrides,
+    )
 
 
 def _read_limited_structure(payload: bytes, filename: str) -> Structure:

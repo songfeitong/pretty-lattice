@@ -42,6 +42,7 @@ export {
 const EXPORT_ACCESSORY_LONG_SIDE_WEIGHT = 0.25;
 
 export async function createFigureExportFiles({
+  bondVisibilityOverrides,
   cameraOrientationRef,
   componentOpacity,
   componentVisibility,
@@ -61,6 +62,7 @@ export async function createFigureExportFiles({
   if (settings.combineComponents) {
     return [
       await createCombinedExportFile({
+        bondVisibilityOverrides,
         cameraOrientationRef,
         componentOpacity,
         componentVisibility,
@@ -81,6 +83,7 @@ export async function createFigureExportFiles({
   if (settings.components.structure) {
     files.push(
       await createStructureExportFile({
+        bondVisibilityOverrides,
         cameraOrientationRef,
         componentOpacity,
         componentVisibility,
@@ -130,6 +133,7 @@ export async function createFigureExportFiles({
 }
 
 export async function createFigureExportFile({
+  bondVisibilityOverrides,
   cameraOrientationRef,
   componentOpacity,
   componentVisibility,
@@ -142,6 +146,7 @@ export async function createFigureExportFile({
   unitCellLineStyle,
 }: CreateFigureExportOptions): Promise<FigureExportFile> {
   return createStructureExportFile({
+    bondVisibilityOverrides,
     cameraOrientationRef,
     componentOpacity,
     componentVisibility,

@@ -811,6 +811,7 @@ function sceneWithOffCenterAtoms(): SceneSpec {
       atom("Si-3", [0.1, 0.1, 0.3]),
     ],
     bonds: [],
+    bondFamilies: [],
     polyhedra: [],
     cell: {
       vectors: [
@@ -865,6 +866,7 @@ function sceneWithExportVisibilityAtoms(): SceneSpec {
       },
     ],
     bonds: [],
+    bondFamilies: [],
     cell: {
       vectors: [
         [1, 0, 0],

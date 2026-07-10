@@ -3,6 +3,7 @@ import type { CameraOrientationRef } from "../scene/LatticeScene";
 import type {
   ComponentOpacityState,
   ComponentVisibilityState,
+  BondVisibilityOverrides,
   ExportFormat,
   ExportSettingsState,
   StyleState,
@@ -10,6 +11,7 @@ import type {
 } from "../model";
 
 export interface CreateFigureExportOptions {
+  bondVisibilityOverrides: BondVisibilityOverrides;
   cameraOrientationRef: CameraOrientationRef;
   componentOpacity: ComponentOpacityState;
   componentVisibility: ComponentVisibilityState;

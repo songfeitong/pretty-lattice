@@ -72,6 +72,7 @@ function sceneWithImageAtom(): SceneSpec {
       }),
     ],
     bonds: [],
+    bondFamilies: [],
     cell: { vectors: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] },
     polyhedra: [],
     summary: {

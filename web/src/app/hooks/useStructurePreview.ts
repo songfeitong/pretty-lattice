@@ -19,6 +19,11 @@ import {
   type BondAlgorithm,
   type SceneSpec,
 } from "../../api/scene";
+import {
+  CUSTOM_BONDING_MODE,
+  type BondingMode,
+  type CustomBondingProfile,
+} from "../../model/bondObjects";
 import type { PreviewStatus } from "../previewState";
 
 const MAX_STRUCTURE_UPLOAD_BYTES = 1 * 1024 * 1024;
@@ -26,6 +31,7 @@ const STRUCTURE_FILE_TOO_LARGE_MESSAGE = "File is too large to preview.";
 const STRUCTURE_PARSE_ERROR_MESSAGE = "pymatgen could not parse this file.";
 export type StructurePreviewErrorKind =
   | "backend-unavailable"
+  | "bonding-error"
   | "file-too-large"
   | "parse-error"
   | "static-example";
@@ -58,8 +64,10 @@ export function useStructurePreview({
   const [errorMessage, setRawErrorMessage] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<StructurePreviewErrorKind | null>(null);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
-  const [bondAlgorithm, setBondAlgorithm] =
-    useState<BondAlgorithm>(DEFAULT_BOND_ALGORITHM);
+  const [bondingMode, setBondingMode] =
+    useState<BondingMode>(DEFAULT_BOND_ALGORITHM);
+  const [customBondingProfile, setCustomBondingProfile] =
+    useState<CustomBondingProfile | null>(null);
 
   const setErrorMessage = useCallback((message: string | null) => {
     if (message === null) {
@@ -89,7 +97,8 @@ export function useStructurePreview({
 
         setScene(nextScene);
         setSelectedFileName(STATIC_SCENE_PREVIEW_NAME);
-        setBondAlgorithm(defaultBondAlgorithmForScene(nextScene));
+        setBondingMode(defaultBondAlgorithmForScene(nextScene));
+        setCustomBondingProfile(null);
         resetLoadedPreviewState(nextScene);
         setPreviewStatus("ready");
       } catch {
@@ -140,13 +149,14 @@ export function useStructurePreview({
       setErrorMessage(null);
       setScene(null);
       setCurrentFile(file);
-      setBondAlgorithm(DEFAULT_BOND_ALGORITHM);
+      setBondingMode(DEFAULT_BOND_ALGORITHM);
+      setCustomBondingProfile(null);
       resetLoadedPreviewState(null);
 
       try {
         const nextScene = await uploadStructurePreview(file);
         setScene(nextScene);
-        setBondAlgorithm(defaultBondAlgorithmForScene(nextScene));
+        setBondingMode(defaultBondAlgorithmForScene(nextScene));
         resetLoadedPreviewState(nextScene);
         setPreviewStatus("ready");
       } catch (error) {
@@ -169,7 +179,7 @@ export function useStructurePreview({
   );
 
   const handleBondAlgorithmChange = useCallback(
-    async (nextBondAlgorithm: BondAlgorithm) => {
+    async (nextBondingMode: BondingMode) => {
       if (!currentFile) {
         if (scene) {
           setPreviewError("backend-unavailable", BACKEND_UNAVAILABLE_MESSAGE);
@@ -181,29 +191,102 @@ export function useStructurePreview({
       setErrorMessage(null);
 
       try {
+        const nextProfile =
+          nextBondingMode === CUSTOM_BONDING_MODE
+            ? customBondingProfile
+            : null;
+        if (nextBondingMode === CUSTOM_BONDING_MODE && !nextProfile) {
+          setPreviewStatus("ready");
+          return;
+        }
         const nextScene = await uploadStructurePreview(currentFile, {
-          bondAlgorithm: nextBondAlgorithm,
+          bondAlgorithm:
+            nextProfile?.baseAlgorithm ?? (nextBondingMode as BondAlgorithm),
+          cutoffOverrides: nextProfile?.cutoffOverrides,
         });
-        setBondAlgorithm(nextBondAlgorithm);
+        setBondingMode(nextBondingMode);
         setScene(nextScene);
         onBondAlgorithmSceneLoaded(nextScene);
         setPreviewStatus("ready");
       } catch (error) {
-        if (isBackendUnavailablePreviewError(error)) {
-          setPreviewStatus(scene ? "ready" : "error");
-          setPreviewError("backend-unavailable", error.message);
-          return;
-        }
-
-        setScene(null);
-        setCurrentFile(null);
-        setSelectedFileName(null);
-        onPreviewCleared();
-        setPreviewStatus("error");
-        setPreviewError("parse-error", STRUCTURE_PARSE_ERROR_MESSAGE);
+        setPreviewStatus(scene ? "ready" : "error");
+        setPreviewError(
+          isBackendUnavailablePreviewError(error)
+            ? "backend-unavailable"
+            : "bonding-error",
+          error instanceof Error ? error.message : STRUCTURE_PARSE_ERROR_MESSAGE,
+        );
       }
     },
-    [currentFile, onBondAlgorithmSceneLoaded, onPreviewCleared, scene, setErrorMessage, setPreviewError],
+    [
+      currentFile,
+      customBondingProfile,
+      onBondAlgorithmSceneLoaded,
+      scene,
+      setErrorMessage,
+      setPreviewError,
+    ],
+  );
+
+  const handleBondCutoffOverrideChange = useCallback(
+    async (familyKey: string, cutoff: number | null) => {
+      if (!currentFile) {
+        if (scene) {
+          setPreviewError("backend-unavailable", BACKEND_UNAVAILABLE_MESSAGE);
+        }
+        return false;
+      }
+
+      const baseAlgorithm =
+        bondingMode === CUSTOM_BONDING_MODE
+          ? customBondingProfile?.baseAlgorithm ?? DEFAULT_BOND_ALGORITHM
+          : bondingMode;
+      const cutoffOverrides = {
+        ...(customBondingProfile?.cutoffOverrides ?? {}),
+      };
+      if (cutoff === null) {
+        delete cutoffOverrides[familyKey];
+      } else {
+        cutoffOverrides[familyKey] = cutoff;
+      }
+      const hasOverrides = Object.keys(cutoffOverrides).length > 0;
+      const nextProfile = hasOverrides
+        ? { baseAlgorithm, cutoffOverrides }
+        : null;
+
+      setPreviewStatus("loading");
+      setErrorMessage(null);
+      try {
+        const nextScene = await uploadStructurePreview(currentFile, {
+          bondAlgorithm: baseAlgorithm,
+          cutoffOverrides: nextProfile?.cutoffOverrides,
+        });
+        setScene(nextScene);
+        setCustomBondingProfile(nextProfile);
+        setBondingMode(hasOverrides ? CUSTOM_BONDING_MODE : baseAlgorithm);
+        onBondAlgorithmSceneLoaded(nextScene);
+        setPreviewStatus("ready");
+        return true;
+      } catch (error) {
+        setPreviewStatus(scene ? "ready" : "error");
+        setPreviewError(
+          isBackendUnavailablePreviewError(error)
+            ? "backend-unavailable"
+            : "bonding-error",
+          error instanceof Error ? error.message : STRUCTURE_PARSE_ERROR_MESSAGE,
+        );
+        return false;
+      }
+    },
+    [
+      bondingMode,
+      currentFile,
+      customBondingProfile,
+      onBondAlgorithmSceneLoaded,
+      scene,
+      setErrorMessage,
+      setPreviewError,
+    ],
   );
 
   const handleResetAllSettings = useCallback(async () => {
@@ -213,8 +296,9 @@ export function useStructurePreview({
 
     const defaultBondAlgorithm = defaultBondAlgorithmForScene(scene);
 
-    if (bondAlgorithm === defaultBondAlgorithm || !currentFile) {
-      setBondAlgorithm(defaultBondAlgorithm);
+    if (bondingMode === defaultBondAlgorithm || !currentFile) {
+      setBondingMode(defaultBondAlgorithm);
+      setCustomBondingProfile(null);
       setPreviewStatus("ready");
       resetLoadedPreviewState(scene, {
         preserveActiveCommonPanelTab: true,
@@ -228,7 +312,8 @@ export function useStructurePreview({
 
     try {
       const nextScene = await uploadStructurePreview(currentFile);
-      setBondAlgorithm(defaultBondAlgorithmForScene(nextScene));
+      setBondingMode(defaultBondAlgorithmForScene(nextScene));
+      setCustomBondingProfile(null);
       setScene(nextScene);
       resetLoadedPreviewState(nextScene, {
         preserveActiveCommonPanelTab: true,
@@ -240,14 +325,12 @@ export function useStructurePreview({
       setPreviewError(
         isBackendUnavailablePreviewError(error)
           ? "backend-unavailable"
-          : "parse-error",
-        isBackendUnavailablePreviewError(error)
-          ? error.message
-          : STRUCTURE_PARSE_ERROR_MESSAGE,
+          : "bonding-error",
+        error instanceof Error ? error.message : STRUCTURE_PARSE_ERROR_MESSAGE,
       );
     }
   }, [
-    bondAlgorithm,
+    bondingMode,
     currentFile,
     previewStatus,
     resetLoadedPreviewState,
@@ -265,11 +348,13 @@ export function useStructurePreview({
   );
 
   return {
-    bondAlgorithm,
+    bondAlgorithm: bondingMode,
+    customBondingProfile,
     errorKind,
     errorMessage,
     errorTitle,
     handleBondAlgorithmChange,
+    handleBondCutoffOverrideChange,
     handleFileChange,
     handleResetAllSettings,
     isStaticScenePreview,

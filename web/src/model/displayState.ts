@@ -9,6 +9,11 @@ import {
   visibleSceneForObjectStyles,
   type ObjectStyleState,
 } from "./objectStyles";
+import {
+  createDefaultBondVisibilityOverrides,
+  isBondVisible,
+  type BondVisibilityOverrides,
+} from "./bondObjects";
 
 export interface ComponentVisibilityState {
   atoms: boolean;
@@ -91,6 +96,7 @@ export function visibleSceneForComponents(
   scene: SceneSpec | null,
   visibility: ComponentVisibilityState,
   objectStyles?: ObjectStyleState,
+  bondVisibility: BondVisibilityOverrides = createDefaultBondVisibilityOverrides(),
 ): SceneSpec | null {
   if (!scene) {
     return scene;
@@ -105,7 +111,11 @@ export function visibleSceneForComponents(
     }
   });
   const bonds = visibility.bonds
-    ? scene.bonds.flatMap((bond) => remapBond(bond, atomIndexMap))
+    ? scene.bonds.flatMap((bond) =>
+        isBondVisible(bond, bondVisibility)
+          ? remapBond(bond, atomIndexMap)
+          : [],
+      )
     : [];
   const polyhedra = visibility.polyhedra
     ? scene.polyhedra.flatMap((polyhedron) => remapPolyhedron(polyhedron, atomIndexMap))

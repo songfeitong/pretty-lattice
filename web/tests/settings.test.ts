@@ -558,30 +558,13 @@ function sceneWithPeriodicImages(): SceneSpec {
       ),
     ],
     bonds: [
-      {
-        startAtomIndex: 0,
-        endAtomIndex: 2,
-        visibilityDependencies: [],
-        visibilityDependencyGroups: [],
-      },
-      {
-        startAtomIndex: 1,
-        endAtomIndex: 2,
-        visibilityDependencies: ["boundaryAtoms", "oneHopBondedAtoms"],
-        visibilityDependencyGroups: [["boundaryAtoms", "oneHopBondedAtoms"]],
-      },
-      {
-        startAtomIndex: 0,
-        endAtomIndex: 3,
-        visibilityDependencies: ["oneHopBondedAtoms"],
-        visibilityDependencyGroups: [["oneHopBondedAtoms"]],
-      },
-      {
-        startAtomIndex: 1,
-        endAtomIndex: 4,
-        visibilityDependencies: ["boundaryAtoms", "oneHopBondedAtoms"],
-        visibilityDependencyGroups: [["boundaryAtoms", "oneHopBondedAtoms"]],
-      },
+      bond(0, 2, [], []),
+      bond(1, 2, ["boundaryAtoms", "oneHopBondedAtoms"], [["boundaryAtoms", "oneHopBondedAtoms"]]),
+      bond(0, 3, ["oneHopBondedAtoms"], [["oneHopBondedAtoms"]]),
+      bond(1, 4, ["boundaryAtoms", "oneHopBondedAtoms"], [["boundaryAtoms", "oneHopBondedAtoms"]]),
+    ],
+    bondFamilies: [
+      { key: "Na|Cl", elements: ["Na", "Cl"], minLength: 1, maxLength: 1 },
     ],
     polyhedra: [
       polyhedron([0, 2]),
@@ -664,6 +647,29 @@ function polyhedron(hullAtomIndices: number[]): SceneSpec["polyhedra"][number] {
     faces: hullAtomIndices.length >= 3 ? [[0, 1, 2]] : [],
     visibilityDependencies: [],
     visibilityDependencyGroups: [],
+  };
+}
+
+function bond(
+  startAtomIndex: number,
+  endAtomIndex: number,
+  visibilityDependencies: SceneSpec["bonds"][number]["visibilityDependencies"],
+  visibilityDependencyGroups: SceneSpec["bonds"][number]["visibilityDependencyGroups"],
+): SceneSpec["bonds"][number] {
+  return {
+    id: `bond:${startAtomIndex}:${endAtomIndex}`,
+    relationId: `relation:${startAtomIndex}:${endAtomIndex}`,
+    familyKey: "Na|Cl",
+    startSiteId: "Na-0",
+    startImageOffset: [0, 0, 0],
+    endSiteId: "Cl-1",
+    endImageOffset: [0, 0, 0],
+    relativeImageOffset: [0, 0, 0],
+    length: 1,
+    startAtomIndex,
+    endAtomIndex,
+    visibilityDependencies,
+    visibilityDependencyGroups,
   };
 }
 

@@ -899,6 +899,7 @@ function orthogonalScene(): SceneSpec {
       },
     ],
     bonds: [],
+    bondFamilies: [],
     cell: {
       vectors: [
         [2, 0, 0],

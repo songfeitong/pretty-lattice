@@ -40,7 +40,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
-import type { AtomSpec, SceneSpec } from "../../api/scene";
+import type { AtomSpec, BondSpec, SceneSpec } from "../../api/scene";
 import { lambertLegendSwatchBackground } from "../../scene/renderAppearance";
 import {
   objectsAtomColorPickerId,
@@ -62,13 +62,15 @@ import {
   setElementOverrideProperty,
   type AtomAppearance,
   type StyleState,
+  type BondVisibilityOverrides,
 } from "../../model";
 import { HexColorPicker, normalizeHexColor } from "../controls/HexColorPicker";
 import {
   TOOL_ICON_BUTTON_CLASS,
 } from "../surface";
+import { BondsPanel, type BondLocateRequest } from "./BondsPanel";
 
-export type ObjectsPanelTab = "atoms";
+export type ObjectsPanelTab = "atoms" | "bonds";
 
 interface AtomLocateRequest {
   atomId: string;
@@ -143,24 +145,48 @@ export function ObjectsPanel({
   activeTab,
   atomLocateRequest,
   atomsVisible,
+  bondLocateRequest,
+  bondsVisible,
+  bondVisibilityOverrides,
+  cutoffOverrides,
+  isSceneLoading,
   onActiveTabChange,
   onAtomLocateRequestHandled,
   onAtomSelect,
+  onBondLocateRequestHandled,
+  onBondVisibilityChange,
+  onCutoffChange,
   onElementColorChange,
+  onFamilyReset,
+  onFamilyVisibilityChange,
   onStyleChange,
   scene,
+  bondObjectsResetToken,
+  selectedBondId,
   selectedAtomId,
   style,
 }: {
   activeTab: ObjectsPanelTab;
   atomLocateRequest: AtomLocateRequest | null;
   atomsVisible: boolean;
+  bondLocateRequest: BondLocateRequest | null;
+  bondsVisible: boolean;
+  bondVisibilityOverrides: BondVisibilityOverrides;
+  cutoffOverrides: Record<string, number>;
+  isSceneLoading: boolean;
   onActiveTabChange: (tab: ObjectsPanelTab) => void;
   onAtomLocateRequestHandled: (token: number) => void;
   onAtomSelect: (atomId: string) => void;
+  onBondLocateRequestHandled: (token: number) => void;
+  onBondVisibilityChange: (bond: BondSpec, visible: boolean) => void;
+  onCutoffChange: (familyKey: string, cutoff: number | null) => Promise<boolean>;
   onElementColorChange: (element: string, color: string) => void;
+  onFamilyReset: (familyKey: string) => Promise<void>;
+  onFamilyVisibilityChange: (familyKey: string, visible: boolean) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   scene: SceneSpec;
+  bondObjectsResetToken: number;
+  selectedBondId: string | null;
   selectedAtomId: string | null;
   style: StyleState;
 }) {
@@ -181,6 +207,12 @@ export function ObjectsPanel({
         >
           {t("objectsPanel.atoms")}
         </TabsTrigger>
+        <TabsTrigger
+          value="bonds"
+          className="!h-6 flex-none rounded-lg px-2.5 text-xs font-medium"
+        >
+          {t("objectsPanel.bonds")}
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="atoms" className="m-0 min-h-0">
@@ -194,6 +226,24 @@ export function ObjectsPanel({
           scene={scene}
           selectedAtomId={selectedAtomId}
           style={style}
+        />
+      </TabsContent>
+      <TabsContent value="bonds" className="m-0 min-h-0">
+        <BondsPanel
+          bondLocateRequest={bondLocateRequest}
+          bondsVisible={bondsVisible}
+          cutoffOverrides={cutoffOverrides}
+          isSceneLoading={isSceneLoading}
+          onBondLocateRequestHandled={onBondLocateRequestHandled}
+          onBondVisibilityChange={onBondVisibilityChange}
+          onCutoffChange={onCutoffChange}
+          onFamilyReset={onFamilyReset}
+          onFamilyVisibilityChange={onFamilyVisibilityChange}
+          resetToken={bondObjectsResetToken}
+          scene={scene}
+          selectedBondId={selectedBondId}
+          style={style}
+          visibilityOverrides={bondVisibilityOverrides}
         />
       </TabsContent>
     </Tabs>

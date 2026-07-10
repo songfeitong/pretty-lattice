@@ -9,6 +9,7 @@ import type {
 import { exportFileStem } from "./fileNames";
 
 export async function createCombinedExportFile({
+  bondVisibilityOverrides,
   cameraOrientationRef,
   componentOpacity,
   componentVisibility,
@@ -24,6 +25,7 @@ export async function createCombinedExportFile({
     scene,
     componentVisibility,
     style.objectStyles,
+    bondVisibilityOverrides,
   );
   const cameraPose = createCameraPoseSnapshot(cameraOrientationRef.current);
   const rasterImage = await renderCombinedExportRaster({

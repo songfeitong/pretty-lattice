@@ -28,6 +28,9 @@ The Objects tab has nested tabs:
 The Bonds tab is intentionally empty in the first slice. It exists only to
 reserve the shape of the panel.
 
+The follow-up Bonds behavior is specified separately in
+[Bond Objects 与场景交互](bond-objects-and-interaction.md).
+
 Use the default shadcn Tabs visual treatment for the nested Atoms/Bonds tabs,
 with compact sizing aligned to the Common panel tabs: 32px tab-list height,
 24px trigger height, small text, and medium weight. Do not use icons here. Do

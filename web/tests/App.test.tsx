@@ -1015,7 +1015,7 @@ describe("App", () => {
 
     await user.click(within(sidebar).getByRole("button", { name: "Collapse Na" }));
     expect(within(sidebar).queryByText("Na:0")).toBeNull();
-    expect(within(sidebar).queryByRole("tab", { name: "Bonds" })).toBeNull();
+    expect(within(sidebar).getByRole("tab", { name: "Bonds" })).toBeTruthy();
     expect(within(sidebar).queryByText("Na:0")).toBeNull();
     await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
 
@@ -1092,6 +1092,110 @@ describe("App", () => {
       expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("true");
       expect(chlorineElementVisibility().getAttribute("aria-pressed")).toBe("false");
     });
+  });
+
+  test("manages bond families, visibility, and sparse maximum-length overrides", async () => {
+    const user = userEvent.setup();
+    const scene = sceneWithPeriodicImages();
+
+    await renderLoadedStructure(user, scene);
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
+    await user.click(within(sidebar).getByRole("tab", { name: "Bonds" }));
+
+    expect(within(sidebar).getByText("Length (Å)").isConnected).toBe(true);
+    expect(within(sidebar).getByText("Na").isConnected).toBe(true);
+    expect(within(sidebar).getByText("Cl").isConnected).toBe(true);
+    expect(within(sidebar).getByText("1").isConnected).toBe(true);
+
+    const familyVisibility = () =>
+      within(sidebar).getByRole("button", { name: "Na–Cl visibility" });
+    await user.click(familyVisibility());
+    expect(familyVisibility().getAttribute("aria-pressed")).toBe("false");
+    expect(fetchCalls).toHaveLength(1);
+    expect(within(sidebar).getByText("1").isConnected).toBe(true);
+
+    await openPreviewContextMenu();
+    await user.click(await screen.findByRole("menuitem", { name: "Export" }));
+    await waitFor(() => expect(exportRequests).toHaveLength(1));
+    expect(
+      exportRequests[0]?.bondVisibilityOverrides.hiddenFamilies.has("Na|Cl"),
+    ).toBe(true);
+
+    const commonControls = screen.getByRole("complementary", {
+      name: "Common controls",
+    });
+    const bondsCheckbox = within(commonControls).getByRole("checkbox", {
+      name: "Bonds",
+    });
+    await user.click(bondsCheckbox);
+    await user.click(bondsCheckbox);
+    expect(familyVisibility().getAttribute("aria-pressed")).toBe("true");
+
+    await user.click(
+      within(sidebar).getByRole("button", { name: "Expand Na–Cl" }),
+    );
+    expect(within(sidebar).getByText("Automatic").isConnected).toBe(true);
+    await user.click(within(sidebar).getByRole("button", { name: "Set" }));
+    const cutoffInput = within(sidebar).getByRole("textbox", {
+      name: "Maximum length for Na–Cl",
+    });
+    expect(cutoffInput.getAttribute("value")).toBe("1");
+
+    queueFetchResponse(jsonResponse(scene));
+    await user.clear(cutoffInput);
+    await user.type(cutoffInput, "0.8{Enter}");
+    await waitFor(() => expect(fetchCalls).toHaveLength(2));
+    expect(fetchCalls[1]?.input).toBe(
+      "/api/structure-preview?bondAlgorithm=crystal-nn",
+    );
+    const headers = new Headers(fetchCalls[1]?.init?.headers);
+    expect(headers.get("x-pretty-lattice-bond-cutoff-overrides")).toBe(
+      '{"Na|Cl":0.8}',
+    );
+
+    await user.click(within(sidebar).getByRole("tab", { name: "Settings" }));
+    expect(
+      within(sidebar).getByRole("combobox", { name: "Bonding algorithm" })
+        .textContent,
+    ).toContain("Custom");
+  });
+
+  test("keeps preset bonding and the previous scene when a Custom cutoff fails", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user, sceneWithPeriodicImages());
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
+    await user.click(within(sidebar).getByRole("tab", { name: "Bonds" }));
+    await user.click(
+      within(sidebar).getByRole("button", { name: "Expand Na–Cl" }),
+    );
+    await user.click(within(sidebar).getByRole("button", { name: "Set" }));
+
+    queueFetchResponse(
+      errorResponse(
+        "Custom bonding recalculation failed: Bond analysis with CrystalNN failed",
+      ),
+    );
+    const cutoffInput = within(sidebar).getByRole("textbox", {
+      name: "Maximum length for Na–Cl",
+    });
+    await user.clear(cutoffInput);
+    await user.type(cutoffInput, "0.8{Enter}");
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Custom bonding recalculation failed",
+    );
+    expect(screen.getByTestId("lattice-canvas").isConnected).toBe(true);
+    expect(within(sidebar).getByText("Automatic").isConnected).toBe(true);
+    await user.click(within(sidebar).getByRole("tab", { name: "Settings" }));
+    expect(
+      within(sidebar).getByRole("combobox", { name: "Bonding algorithm" })
+        .textContent,
+    ).toContain("CrystalNN");
   });
 
   test("virtualizes large Objects atom groups", async () => {
@@ -2676,18 +2780,11 @@ function sceneWithPeriodicImages({
       ),
     ],
     bonds: [
-      {
-        startAtomIndex: 0,
-        endAtomIndex: 2,
-        visibilityDependencies: [],
-        visibilityDependencyGroups: [],
-      },
-      {
-        startAtomIndex: 0,
-        endAtomIndex: 3,
-        visibilityDependencies: ["oneHopBondedAtoms"],
-        visibilityDependencyGroups: [["oneHopBondedAtoms"]],
-      },
+      bond(0, 2, [], []),
+      bond(0, 3, ["oneHopBondedAtoms"], [["oneHopBondedAtoms"]]),
+    ],
+    bondFamilies: [
+      { key: "Na|Cl", elements: ["Na", "Cl"], minLength: 1, maxLength: 1 },
     ],
     polyhedra: polyhedra
       ? [
@@ -2751,6 +2848,29 @@ function polyhedron(hullAtomIndices: number[]): SceneSpec["polyhedra"][number] {
     faces: hullAtomIndices.length >= 3 ? [[0, 1, 2]] : [],
     visibilityDependencies: [],
     visibilityDependencyGroups: [],
+  };
+}
+
+function bond(
+  startAtomIndex: number,
+  endAtomIndex: number,
+  visibilityDependencies: SceneSpec["bonds"][number]["visibilityDependencies"],
+  visibilityDependencyGroups: SceneSpec["bonds"][number]["visibilityDependencyGroups"],
+): SceneSpec["bonds"][number] {
+  return {
+    id: `bond:${startAtomIndex}:${endAtomIndex}`,
+    relationId: `relation:${startAtomIndex}:${endAtomIndex}`,
+    familyKey: "Na|Cl",
+    startSiteId: "Na-0",
+    startImageOffset: [0, 0, 0],
+    endSiteId: "Cl-1",
+    endImageOffset: [0, 0, 0],
+    relativeImageOffset: [0, 0, 0],
+    length: 1,
+    startAtomIndex,
+    endAtomIndex,
+    visibilityDependencies,
+    visibilityDependencyGroups,
   };
 }
 

@@ -32,7 +32,7 @@ import { useTheme } from "@/theme/ThemeProvider";
 
 import {
   BOND_ALGORITHM_OPTIONS,
-  type BondAlgorithm,
+  type BondSpec,
   type SceneSpec,
 } from "../../api/scene";
 import {
@@ -72,6 +72,9 @@ import {
   type MeshQuality,
   type StyleState,
   type UnitCellLineStyle,
+  CUSTOM_BONDING_MODE,
+  type BondingMode,
+  type BondVisibilityOverrides,
 } from "../../model";
 import { ObjectsPanel, type ObjectsPanelTab } from "./ObjectsPanel";
 
@@ -157,6 +160,12 @@ export function InspectorSidebar({
   atomLocateRequest,
   atomsVisible,
   bondAlgorithm,
+  bondLocateRequest,
+  bondObjectsResetToken,
+  bondsVisible,
+  bondVisibilityOverrides,
+  cutoffOverrides,
+  hasCustomBondingProfile,
   distinguishSimilarColors,
   dragSensitivity,
   isCustomColorScheme,
@@ -171,12 +180,18 @@ export function InspectorSidebar({
   showCrystalAxisLabels,
   scene,
   selectedAtomId,
+  selectedBondId,
   style,
   unitCellLineStyle,
   onActiveObjectsTabChange,
   onActiveTabChange,
   onAtomLocateRequestHandled,
   onAtomSelect,
+  onBondCutoffChange,
+  onBondFamilyReset,
+  onBondFamilyVisibilityChange,
+  onBondLocateRequestHandled,
+  onBondVisibilityChange,
   onBondAlgorithmChange,
   onDistinguishSimilarColorsChange,
   onDragSensitivityChange,
@@ -195,7 +210,13 @@ export function InspectorSidebar({
   activeTab: InspectorSidebarTab;
   atomLocateRequest: { atomId: string; token: number } | null;
   atomsVisible: boolean;
-  bondAlgorithm: BondAlgorithm;
+  bondAlgorithm: BondingMode;
+  bondLocateRequest: { bondId: string; token: number } | null;
+  bondObjectsResetToken: number;
+  bondsVisible: boolean;
+  bondVisibilityOverrides: BondVisibilityOverrides;
+  cutoffOverrides: Record<string, number>;
+  hasCustomBondingProfile: boolean;
   distinguishSimilarColors: boolean;
   dragSensitivity: number;
   isCustomColorScheme: boolean;
@@ -210,13 +231,19 @@ export function InspectorSidebar({
   showCrystalAxisLabels: boolean;
   scene: SceneSpec;
   selectedAtomId: string | null;
+  selectedBondId: string | null;
   style: StyleState;
   unitCellLineStyle: UnitCellLineStyle;
   onActiveObjectsTabChange: (tab: ObjectsPanelTab) => void;
   onActiveTabChange: (tab: InspectorSidebarTab) => void;
   onAtomLocateRequestHandled: (token: number) => void;
   onAtomSelect: (atomId: string) => void;
-  onBondAlgorithmChange: (bondAlgorithm: BondAlgorithm) => void;
+  onBondAlgorithmChange: (bondAlgorithm: BondingMode) => void;
+  onBondCutoffChange: (familyKey: string, cutoff: number | null) => Promise<boolean>;
+  onBondFamilyReset: (familyKey: string) => Promise<void>;
+  onBondFamilyVisibilityChange: (familyKey: string, visible: boolean) => void;
+  onBondLocateRequestHandled: (token: number) => void;
+  onBondVisibilityChange: (bond: BondSpec, visible: boolean) => void;
   onDistinguishSimilarColorsChange: (distinguishSimilarColors: boolean) => void;
   onDragSensitivityChange: (dragSensitivity: number) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
@@ -277,6 +304,7 @@ export function InspectorSidebar({
           <TabsContent value="settings" className="m-0">
             <SettingsPanel
               bondAlgorithm={bondAlgorithm}
+              hasCustomBondingProfile={hasCustomBondingProfile}
               distinguishSimilarColors={distinguishSimilarColors}
               dragSensitivity={dragSensitivity}
               isCustomColorScheme={isCustomColorScheme}
@@ -307,13 +335,25 @@ export function InspectorSidebar({
               activeTab={activeObjectsTab}
               atomLocateRequest={atomLocateRequest}
               atomsVisible={atomsVisible}
+              bondLocateRequest={bondLocateRequest}
+              bondObjectsResetToken={bondObjectsResetToken}
+              bondsVisible={bondsVisible}
+              bondVisibilityOverrides={bondVisibilityOverrides}
+              cutoffOverrides={cutoffOverrides}
+              isSceneLoading={isSceneLoading}
               onActiveTabChange={onActiveObjectsTabChange}
               onAtomLocateRequestHandled={onAtomLocateRequestHandled}
               onAtomSelect={onAtomSelect}
+              onBondLocateRequestHandled={onBondLocateRequestHandled}
+              onBondVisibilityChange={onBondVisibilityChange}
+              onCutoffChange={onBondCutoffChange}
               onElementColorChange={onElementColorChange}
+              onFamilyReset={onBondFamilyReset}
+              onFamilyVisibilityChange={onBondFamilyVisibilityChange}
               onStyleChange={onStyleChange}
               scene={scene}
               selectedAtomId={selectedAtomId}
+              selectedBondId={selectedBondId}
               style={style}
             />
           </TabsContent>
@@ -325,6 +365,7 @@ export function InspectorSidebar({
 
 function SettingsPanel({
   bondAlgorithm,
+  hasCustomBondingProfile,
   distinguishSimilarColors,
   dragSensitivity,
   isCustomColorScheme,
@@ -349,7 +390,8 @@ function SettingsPanel({
   onShowCrystalAxisLabelsChange,
   onUnitCellLineStyleChange,
 }: {
-  bondAlgorithm: BondAlgorithm;
+  bondAlgorithm: BondingMode;
+  hasCustomBondingProfile: boolean;
   distinguishSimilarColors: boolean;
   dragSensitivity: number;
   isCustomColorScheme: boolean;
@@ -362,7 +404,7 @@ function SettingsPanel({
   showFpsOverlay: boolean;
   showCrystalAxisLabels: boolean;
   unitCellLineStyle: UnitCellLineStyle;
-  onBondAlgorithmChange: (bondAlgorithm: BondAlgorithm) => void;
+  onBondAlgorithmChange: (bondAlgorithm: BondingMode) => void;
   onDistinguishSimilarColorsChange: (distinguishSimilarColors: boolean) => void;
   onDragSensitivityChange: (dragSensitivity: number) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
@@ -621,7 +663,7 @@ function SettingsPanel({
           <Select
             value={bondAlgorithm}
             disabled={isSceneLoading}
-            onValueChange={(value) => onBondAlgorithmChange(value as BondAlgorithm)}
+            onValueChange={(value) => onBondAlgorithmChange(value as BondingMode)}
           >
             <SelectTrigger
               size="sm"
@@ -641,6 +683,14 @@ function SettingsPanel({
                     {option.label}
                   </SelectItem>
                 ))}
+                {hasCustomBondingProfile ? (
+                  <SelectItem
+                    value={CUSTOM_BONDING_MODE}
+                    className={INSPECTOR_SELECT_ITEM_CLASS}
+                  >
+                    {t("style.custom")}
+                  </SelectItem>
+                ) : null}
               </SelectGroup>
             </SelectContent>
           </Select>

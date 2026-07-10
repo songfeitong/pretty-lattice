@@ -7,6 +7,7 @@ export interface SceneSpec {
   };
   atoms: AtomSpec[];
   bonds: BondSpec[];
+  bondFamilies: BondFamilySpec[];
   polyhedra: PolyhedronSpec[];
   summary: StructureSummary;
   warnings?: AnalysisWarningSpec[];
@@ -74,10 +75,26 @@ export type ImageReason = "boundary" | "bonded";
 export type VisibilityDependency = "boundaryAtoms" | "oneHopBondedAtoms";
 
 export interface BondSpec {
+  id: string;
+  relationId: string;
+  familyKey: string;
+  startSiteId: string;
+  startImageOffset: [number, number, number];
+  endSiteId: string;
+  endImageOffset: [number, number, number];
+  relativeImageOffset: [number, number, number];
+  length: number;
   startAtomIndex: number;
   endAtomIndex: number;
   visibilityDependencies: VisibilityDependency[];
   visibilityDependencyGroups: VisibilityDependency[][];
+}
+
+export interface BondFamilySpec {
+  key: string;
+  elements: [string, string];
+  minLength: number | null;
+  maxLength: number | null;
 }
 
 export interface PolyhedronSpec {
@@ -156,7 +173,10 @@ export async function loadStaticScenePreview(): Promise<SceneSpec | null> {
 
 export async function uploadStructurePreview(
   file: File,
-  options: { bondAlgorithm?: BondAlgorithm } = {},
+  options: {
+    bondAlgorithm?: BondAlgorithm;
+    cutoffOverrides?: Record<string, number>;
+  } = {},
 ): Promise<SceneSpec> {
   if (hasStaticScenePreview()) {
     throw new StructurePreviewError(BACKEND_UNAVAILABLE_MESSAGE, "backend-unavailable");
@@ -164,13 +184,20 @@ export async function uploadStructurePreview(
 
   const endpoint = previewEndpointForOptions(options);
   let response: Response;
+  const headers: Record<string, string> = {
+    "content-type": file.type || "application/octet-stream",
+    "x-pretty-lattice-filename": encodeURIComponent(file.name),
+  };
+  if (options.cutoffOverrides) {
+    headers["x-pretty-lattice-bond-cutoff-overrides"] = JSON.stringify(
+      options.cutoffOverrides,
+    );
+  }
+
   try {
     response = await fetch(endpoint, {
       method: "POST",
-      headers: {
-        "content-type": file.type || "application/octet-stream",
-        "x-pretty-lattice-filename": encodeURIComponent(file.name),
-      },
+      headers,
       body: file,
     });
   } catch {

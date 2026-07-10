@@ -12,6 +12,7 @@ import type {
 import { exportFileStem } from "./fileNames";
 
 export async function createStructureExportFile({
+  bondVisibilityOverrides,
   cameraOrientationRef,
   componentOpacity,
   componentVisibility,
@@ -31,6 +32,7 @@ export async function createStructureExportFile({
     scene,
     componentVisibility,
     style.objectStyles,
+    bondVisibilityOverrides,
   );
   if (!visibleScene) {
     throw new Error("No structure is available to export.");

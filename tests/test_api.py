@@ -197,6 +197,82 @@ async def test_structure_preview_upload_endpoint_accepts_cutoff_dict_bond_algori
 
 
 @pytest.mark.anyio
+async def test_structure_preview_upload_endpoint_applies_sparse_family_cutoffs() -> None:
+    payload = (FIXTURE_DIR / "SrTiO3.cif").read_bytes()
+
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app()), base_url="http://testserver"
+    ) as client:
+        response = await client.post(
+            "/api/structure-preview?bondAlgorithm=crystal-nn",
+            content=payload,
+            headers={
+                "x-pretty-lattice-filename": "SrTiO3.cif",
+                "x-pretty-lattice-bond-cutoff-overrides": '{"Sr|O":2.0}',
+            },
+        )
+
+    assert response.status_code == 200
+    result = response.json()
+    assert not any(bond["familyKey"] == "Sr|O" for bond in result["bonds"])
+    assert result["bondFamilies"][0]["key"] == "Sr|O"
+    assert result["bondFamilies"][0]["minLength"] is None
+
+
+@pytest.mark.anyio
+async def test_structure_preview_upload_endpoint_rejects_invalid_family_cutoffs() -> None:
+    payload = (FIXTURE_DIR / "SrTiO3.cif").read_bytes()
+
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app()), base_url="http://testserver"
+    ) as client:
+        response = await client.post(
+            "/api/structure-preview?bondAlgorithm=crystal-nn",
+            content=payload,
+            headers={
+                "x-pretty-lattice-filename": "SrTiO3.cif",
+                "x-pretty-lattice-bond-cutoff-overrides": '{"Sr|O":0}',
+            },
+        )
+
+    assert response.status_code == 400
+    assert "positive number" in response.json()["detail"]["message"]
+
+
+@pytest.mark.anyio
+async def test_structure_preview_upload_endpoint_fails_custom_recalculation_atomically(
+    monkeypatch,
+) -> None:
+    payload = (FIXTURE_DIR / "SrTiO3.cif").read_bytes()
+
+    def fail_bonds(**_kwargs: object) -> list[dict[str, object]]:
+        raise RuntimeError("neighbor graph unavailable")
+
+    monkeypatch.setattr(connectivity_module, "build_bonds", fail_bonds)
+
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app()), base_url="http://testserver"
+    ) as client:
+        response = await client.post(
+            "/api/structure-preview?bondAlgorithm=crystal-nn",
+            content=payload,
+            headers={
+                "x-pretty-lattice-filename": "SrTiO3.cif",
+                "x-pretty-lattice-bond-cutoff-overrides": '{"Sr|O":2.0}',
+            },
+        )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == {
+        "code": "bond-recalculation-failed",
+        "message": (
+            "Custom bonding recalculation failed: Bond analysis with CrystalNN "
+            "failed: neighbor graph unavailable"
+        ),
+    }
+
+
+@pytest.mark.anyio
 async def test_structure_preview_upload_endpoint_rejects_unsupported_bond_algorithm() -> None:
     payload = (FIXTURE_DIR / "SrTiO3.cif").read_bytes()
 

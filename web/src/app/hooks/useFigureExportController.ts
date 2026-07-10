@@ -16,6 +16,7 @@ import {
   createDefaultExportSettings,
   syncExportSettingsProjectedSize,
   type ComponentOpacityState,
+  type BondVisibilityOverrides,
   type ComponentVisibilityState,
   type ExportProjectedSize,
   type ExportSettingsState,
@@ -24,6 +25,7 @@ import {
 } from "../../model";
 
 interface UseFigureExportControllerOptions {
+  bondVisibilityOverrides: BondVisibilityOverrides;
   cameraOrientationRef: RefObject<Quaternion>;
   componentOpacity: ComponentOpacityState;
   componentVisibility: ComponentVisibilityState;
@@ -37,6 +39,7 @@ interface UseFigureExportControllerOptions {
 }
 
 export function useFigureExportController({
+  bondVisibilityOverrides,
   cameraOrientationRef,
   componentOpacity,
   componentVisibility,
@@ -136,6 +139,7 @@ export function useFigureExportController({
     try {
       const settingsForExport = prepareExportSettings();
       const exportFiles = await createFigureExportFiles({
+        bondVisibilityOverrides,
         cameraOrientationRef,
         componentOpacity,
         componentVisibility,
@@ -159,6 +163,7 @@ export function useFigureExportController({
     }
   }, [
     cameraOrientationRef,
+    bondVisibilityOverrides,
     componentOpacity,
     componentVisibility,
     isExporting,

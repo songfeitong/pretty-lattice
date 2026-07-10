@@ -75,12 +75,17 @@ export function PreviewSceneContent({
   meshDetail,
   scene,
   inspectedAtomId,
+  inspectedBondId,
   interactionLocked,
   onAtomInspect,
   onAtomPulse,
+  onBondInspect,
+  onBondPulse,
   onLockedInteractionAttempt,
   polyhedronEdgeLineWidthScale = 1,
   pulseAtomId,
+  pulseBondId,
+  pulseBondToken,
   pulseToken,
   showAtoms,
   showUnitCell,
@@ -97,12 +102,17 @@ export function PreviewSceneContent({
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
   inspectedAtomId: string | null;
+  inspectedBondId: string | null;
   interactionLocked: boolean;
   onAtomInspect?: (atomId: string | null) => void;
   onAtomPulse?: (atomId: string) => void;
+  onBondInspect?: (bondId: string | null) => void;
+  onBondPulse?: (bondId: string) => void;
   onLockedInteractionAttempt?: () => void;
   polyhedronEdgeLineWidthScale?: number;
   pulseAtomId: string | null;
+  pulseBondId: string | null;
+  pulseBondToken: number;
   pulseToken: number;
   showAtoms: boolean;
   showUnitCell: boolean;
@@ -122,12 +132,17 @@ export function PreviewSceneContent({
         meshDetail={meshDetail}
         scene={scene}
         inspectedAtomId={inspectedAtomId}
+        inspectedBondId={inspectedBondId}
         interactionLocked={interactionLocked}
         onAtomInspect={onAtomInspect}
         onAtomPulse={onAtomPulse}
+        onBondInspect={onBondInspect}
+        onBondPulse={onBondPulse}
         onLockedInteractionAttempt={onLockedInteractionAttempt}
         polyhedronEdgeLineWidthScale={polyhedronEdgeLineWidthScale}
         pulseAtomId={pulseAtomId}
+        pulseBondId={pulseBondId}
+        pulseBondToken={pulseBondToken}
         pulseToken={pulseToken}
         showAtoms={showAtoms}
         showUnitCell={showUnitCell}
@@ -249,11 +264,16 @@ export function StructureSceneObjects({
   meshDetail,
   scene,
   inspectedAtomId = null,
+  inspectedBondId = null,
   onAtomInspect,
   onAtomPulse,
+  onBondInspect,
+  onBondPulse,
   onLockedInteractionAttempt,
   polyhedronEdgeLineWidthScale = 1,
   pulseAtomId = null,
+  pulseBondId = null,
+  pulseBondToken = 0,
   pulseToken = 0,
   showAtoms,
   showUnitCell,
@@ -270,11 +290,16 @@ export function StructureSceneObjects({
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
   inspectedAtomId?: string | null;
+  inspectedBondId?: string | null;
   onAtomInspect?: (atomId: string | null) => void;
   onAtomPulse?: (atomId: string) => void;
+  onBondInspect?: (bondId: string | null) => void;
+  onBondPulse?: (bondId: string) => void;
   onLockedInteractionAttempt?: () => void;
   polyhedronEdgeLineWidthScale?: number;
   pulseAtomId?: string | null;
+  pulseBondId?: string | null;
+  pulseBondToken?: number;
   pulseToken?: number;
   showAtoms: boolean;
   showUnitCell: boolean;
@@ -307,16 +332,17 @@ export function StructureSceneObjects({
       style,
     ],
   );
-  const handlePointerMissed = useCallback(() => {
+  const handleSceneClear = useCallback(() => {
     if (interactionLocked) {
       return;
     }
 
     onAtomInspect?.(null);
-  }, [interactionLocked, onAtomInspect]);
+    onBondInspect?.(null);
+  }, [interactionLocked, onAtomInspect, onBondInspect]);
 
   return (
-    <group onPointerMissed={handlePointerMissed}>
+    <group onClick={handleSceneClear} onPointerMissed={handleSceneClear}>
       <group position={groupPosition}>
         {showUnitCell ? (
           <CellFrame
@@ -341,8 +367,16 @@ export function StructureSceneObjects({
         <BatchedBonds
           bondRenderItems={bondRenderItems}
           colorMode={style.bondColorMode}
+          inspectedBondId={inspectedBondId}
+          interactionLocked={interactionLocked}
           materialFamily={materialFamilies.bond}
           meshDetail={meshDetail}
+          onInspect={onBondInspect}
+          onLockedInteractionAttempt={onLockedInteractionAttempt}
+          onPulse={onBondPulse}
+          pulseBondId={pulseBondId}
+          pulseToken={pulseBondToken}
+          selectionRingColors={atomSelectionRingColors}
           thicknessScale={style.bondThickness / 100}
           opacity={componentOpacity.bonds / 100}
         />

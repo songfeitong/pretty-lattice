@@ -97,6 +97,7 @@ function sceneWithAtoms(atoms: TestAtom[]): SceneSpec {
       visibilityDependencyGroups: isPeriodicImage ? [["boundaryAtoms"]] : [],
     })),
     bonds: [],
+    bondFamilies: [],
     polyhedra: [],
     cell: {
       vectors: [

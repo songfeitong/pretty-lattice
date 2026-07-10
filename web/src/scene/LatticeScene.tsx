@@ -103,12 +103,17 @@ export function LatticeScene({
   onCameraOrientationChange,
   onAtomInspect,
   onAtomPulse,
+  onBondInspect,
+  onBondPulse,
   onLockedInteractionAttempt,
   resetCounter,
   safeArea = EMPTY_SAFE_AREA,
   scene,
   inspectedAtomId = null,
+  inspectedBondId = null,
   pulseAtomId = null,
+  pulseBondId = null,
+  pulseBondToken = 0,
   pulseToken = 0,
   previewMeshQuality = DEFAULT_PREVIEW_MESH_QUALITY,
   previewFpsStore,
@@ -141,12 +146,17 @@ export function LatticeScene({
   onCameraOrientationChange?: () => void;
   onAtomInspect?: (atomId: string | null) => void;
   onAtomPulse?: (atomId: string) => void;
+  onBondInspect?: (bondId: string | null) => void;
+  onBondPulse?: (bondId: string) => void;
   onLockedInteractionAttempt?: () => void;
   resetCounter: number;
   safeArea?: PreviewSafeArea;
   scene: SceneSpec;
   inspectedAtomId?: string | null;
+  inspectedBondId?: string | null;
   pulseAtomId?: string | null;
+  pulseBondId?: string | null;
+  pulseBondToken?: number;
   pulseToken?: number;
   previewMeshQuality?: MeshQuality;
   previewFpsStore?: PreviewFpsStore;
@@ -237,11 +247,16 @@ export function LatticeScene({
         meshDetail={EXPORT_SCENE_MESH_DETAIL_PRESETS[previewMeshQuality]}
         scene={scene}
         inspectedAtomId={inspectedAtomId}
+        inspectedBondId={inspectedBondId}
         interactionLocked={interactionLocked}
         onAtomInspect={onAtomInspect}
         onAtomPulse={onAtomPulse}
+        onBondInspect={onBondInspect}
+        onBondPulse={onBondPulse}
         onLockedInteractionAttempt={onLockedInteractionAttempt}
         pulseAtomId={pulseAtomId}
+        pulseBondId={pulseBondId}
+        pulseBondToken={pulseBondToken}
         pulseToken={pulseToken}
         showAtoms={showAtoms}
         showUnitCell={showUnitCell}

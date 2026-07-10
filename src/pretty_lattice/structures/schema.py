@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from importlib.resources import files
 from typing import Literal, NotRequired, TypedDict, cast
 
@@ -10,13 +11,9 @@ VisibilityDependency = Literal["boundaryAtoms", "oneHopBondedAtoms"]
 
 _SCENE_CONTRACT = json.loads(files(__package__).joinpath("scene_contract.json").read_text())
 
-STRUCTURE_ATOM_COUNT_THRESHOLD = int(
-    _SCENE_CONTRACT["limits"]["structureAtomCountThreshold"]
-)
+STRUCTURE_ATOM_COUNT_THRESHOLD = int(_SCENE_CONTRACT["limits"]["structureAtomCountThreshold"])
 DEFAULT_BOND_ALGORITHM = cast(BondAlgorithm, _SCENE_CONTRACT["defaultBondAlgorithm"])
-LARGE_STRUCTURE_BOND_ALGORITHM = cast(
-    BondAlgorithm, _SCENE_CONTRACT["largeStructureBondAlgorithm"]
-)
+LARGE_STRUCTURE_BOND_ALGORITHM = cast(BondAlgorithm, _SCENE_CONTRACT["largeStructureBondAlgorithm"])
 BOND_ALGORITHM_LABELS: dict[BondAlgorithm, str] = {
     cast(BondAlgorithm, entry["value"]): str(entry["pythonLabel"])
     for entry in _SCENE_CONTRACT["bondAlgorithms"]
@@ -29,6 +26,14 @@ BOND_ALGORITHM_ALIASES: dict[str, BondAlgorithm] = {
 
 class UnsupportedBondAlgorithmError(ValueError):
     """Raised when a requested preview bond algorithm is not allowlisted."""
+
+
+class InvalidBondCutoffOverridesError(ValueError):
+    """Raised when custom family cutoff overrides are malformed or unknown."""
+
+
+class CustomBondRecalculationError(RuntimeError):
+    """Raised when a custom bonding recomputation cannot be completed atomically."""
 
 
 class CellSpec(TypedDict):
@@ -76,6 +81,15 @@ class AtomSpec(TypedDict):
 
 
 class BondSpec(TypedDict):
+    id: str
+    relationId: str
+    familyKey: str
+    startSiteId: str
+    startImageOffset: list[int]
+    endSiteId: str
+    endImageOffset: list[int]
+    relativeImageOffset: list[int]
+    length: float
     startAtomIndex: int
     endAtomIndex: int
     visibilityDependencies: list[VisibilityDependency]
@@ -90,6 +104,13 @@ class PolyhedronSpec(TypedDict):
     visibilityDependencyGroups: list[list[VisibilityDependency]]
 
 
+class BondFamilySpec(TypedDict):
+    key: str
+    elements: list[str]
+    minLength: float | None
+    maxLength: float | None
+
+
 class AnalysisWarningSpec(TypedDict):
     code: str
     message: str
@@ -99,6 +120,7 @@ class SceneSpec(TypedDict):
     cell: CellSpec
     atoms: list[AtomSpec]
     bonds: list[BondSpec]
+    bondFamilies: list[BondFamilySpec]
     polyhedra: list[PolyhedronSpec]
     summary: StructureSummarySpec
     warnings: NotRequired[list[AnalysisWarningSpec]]
@@ -129,3 +151,37 @@ def default_bond_algorithm_for_atom_count(atom_count: int) -> BondAlgorithm:
         return DEFAULT_BOND_ALGORITHM
 
     return LARGE_STRUCTURE_BOND_ALGORITHM
+
+
+def parse_bond_cutoff_overrides(value: str | None) -> dict[str, float]:
+    if value is None or value == "":
+        return {}
+
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise InvalidBondCutoffOverridesError(
+            "Bond cutoff overrides must be a JSON object."
+        ) from exc
+
+    if not isinstance(payload, dict):
+        raise InvalidBondCutoffOverridesError("Bond cutoff overrides must be a JSON object.")
+    if len(payload) > 1_024:
+        raise InvalidBondCutoffOverridesError("Bond cutoff overrides contain too many families.")
+
+    overrides: dict[str, float] = {}
+    for family_key, cutoff in payload.items():
+        if not isinstance(family_key, str) or not family_key.strip():
+            raise InvalidBondCutoffOverridesError("Each bond cutoff override needs a family key.")
+        if isinstance(cutoff, bool) or not isinstance(cutoff, (int, float)):
+            raise InvalidBondCutoffOverridesError(
+                f"Bond cutoff for '{family_key}' must be a positive number."
+            )
+        numeric_cutoff = float(cutoff)
+        if not math.isfinite(numeric_cutoff) or numeric_cutoff <= 0:
+            raise InvalidBondCutoffOverridesError(
+                f"Bond cutoff for '{family_key}' must be a positive number."
+            )
+        overrides[family_key.strip()] = numeric_cutoff
+
+    return overrides

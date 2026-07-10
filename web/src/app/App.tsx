@@ -22,6 +22,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { AtomInspectorCard } from "./AtomInspectorCard";
+import { BondInspectorCard } from "./BondInspectorCard";
 import type { SceneSpec } from "../api/scene";
 import { inspectedAtomInfoForId } from "./atomInspector";
 import {
@@ -64,6 +65,7 @@ import {
   CUSTOM_ATOM_RADIUS_MODEL,
   createDefaultComponentOpacity,
   createDefaultComponentVisibility,
+  createDefaultBondVisibilityOverrides,
   createDefaultStyle,
   baseColorSchemeForStyle,
   clearAtomOverridePropertyForElement,
@@ -82,7 +84,20 @@ import {
   previewSafeAreaForInspector,
   sceneOffsetXForInspector,
   visibleSceneForComponents,
+  inspectedBondInfoForId,
+  resetBondFamilyVisibility,
+  setBondFamilyVisible,
+  setBondInstanceVisible,
+  type BondVisibilityOverrides,
 } from "../model";
+
+type InspectedSceneObject =
+  | { kind: "atom"; id: string }
+  | { kind: "bond"; id: string }
+  | null;
+
+type PulsedSceneObject = Exclude<InspectedSceneObject, null> & { token: number };
+const EMPTY_BOND_CUTOFF_OVERRIDES: Record<string, number> = {};
 
 interface ResetLoadedPreviewOptions {
   preserveActiveCommonPanelTab?: boolean;
@@ -123,14 +138,21 @@ function AppContent() {
   const [showCrystalAxisLabels, setShowCrystalAxisLabels] = useState(
     DEFAULT_SHOW_CRYSTAL_AXIS_LABELS,
   );
-  const [inspectedAtomId, setInspectedAtomId] = useState<string | null>(null);
-  const [pulseAtom, setPulseAtom] = useState<{ atomId: string; token: number } | null>(null);
+  const [inspectedSceneObject, setInspectedSceneObject] =
+    useState<InspectedSceneObject>(null);
+  const [pulsedSceneObject, setPulsedSceneObject] =
+    useState<PulsedSceneObject | null>(null);
+  const [bondVisibilityOverrides, setBondVisibilityOverrides] =
+    useState<BondVisibilityOverrides>(createDefaultBondVisibilityOverrides);
   const [activeInspectorTab, setActiveInspectorTab] =
     useState<InspectorSidebarTab>("settings");
   const [activeObjectsTab, setActiveObjectsTab] =
     useState<ObjectsPanelTab>("atoms");
   const [atomLocateRequest, setAtomLocateRequest] =
     useState<{ atomId: string; token: number } | null>(null);
+  const [bondLocateRequest, setBondLocateRequest] =
+    useState<{ bondId: string; token: number } | null>(null);
+  const [bondObjectsResetToken, setBondObjectsResetToken] = useState(0);
   const [activeCommonPanelTab, setActiveCommonPanelTab] =
     useState<CommonPanelTab>("display");
   const [cameraInteractionStore] = useState(createCameraInteractionStore);
@@ -138,8 +160,9 @@ function AppContent() {
   const [isStructureSummaryCollapsed, setIsStructureSummaryCollapsed] = useState(true);
   const viewportSize = useViewportSize();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const inspectedAtomIdRef = useRef<string | null>(null);
+  const inspectedSceneObjectRef = useRef<InspectedSceneObject>(null);
   const previousAtomsVisibleRef = useRef(componentVisibility.atoms);
+  const previousBondsVisibleRef = useRef(componentVisibility.bonds);
   const colorSchemeSelectionRef = useRef({
     colorScheme: style.colorScheme,
     colorSchemeMode: style.colorSchemeMode,
@@ -153,27 +176,25 @@ function AppContent() {
   );
   const handlePreviewCleared = useCallback(() => {
     closeActiveColorPicker();
-    setInspectedAtomId(null);
-    setPulseAtom(null);
+    setInspectedSceneObject(null);
+    setPulsedSceneObject(null);
+    setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
     setAtomLocateRequest(null);
+    setBondLocateRequest(null);
     setIsInspectorOpen(false);
     setIsStructureSummaryCollapsed(true);
   }, [closeActiveColorPicker]);
-  const handleBondAlgorithmSceneLoaded = useCallback((nextScene: SceneSpec) => {
+  const handleBondAlgorithmSceneLoaded = useCallback((_nextScene: SceneSpec) => {
     closeActiveColorPicker();
-    setInspectedAtomId(null);
-    setPulseAtom(null);
-    setAtomLocateRequest(null);
-    setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
-    setUnitCellLineStyle(DEFAULT_UNIT_CELL_LINE_STYLE);
-    setShowCrystalAxisLabels(DEFAULT_SHOW_CRYSTAL_AXIS_LABELS);
   }, [closeActiveColorPicker]);
   const {
     bondAlgorithm,
+    customBondingProfile,
     errorKind,
     errorMessage,
     errorTitle,
     handleBondAlgorithmChange,
+    handleBondCutoffOverrideChange,
     handleFileChange,
     handleResetAllSettings,
     previewStatus,
@@ -186,9 +207,19 @@ function AppContent() {
     resetLoadedPreviewState: resetLoadedPreviewStateForPreview,
   });
   const visibleScene = useMemo(
-    () => visibleSceneForComponents(scene, componentVisibility, style.objectStyles),
-    [componentVisibility, scene, style.objectStyles],
+    () =>
+      visibleSceneForComponents(
+        scene,
+        componentVisibility,
+        style.objectStyles,
+        bondVisibilityOverrides,
+      ),
+    [bondVisibilityOverrides, componentVisibility, scene, style.objectStyles],
   );
+  const inspectedAtomId =
+    inspectedSceneObject?.kind === "atom" ? inspectedSceneObject.id : null;
+  const inspectedBondId =
+    inspectedSceneObject?.kind === "bond" ? inspectedSceneObject.id : null;
   const objectStyleAtoms = useMemo(
     () => (scene ? canonicalAtomsForObjectStyles(scene.atoms) : []),
     [scene],
@@ -196,6 +227,10 @@ function AppContent() {
   const inspectedAtomInfo = useMemo(
     () => inspectedAtomInfoForId(visibleScene, inspectedAtomId),
     [inspectedAtomId, visibleScene],
+  );
+  const inspectedBondInfo = useMemo(
+    () => inspectedBondInfoForId(visibleScene, inspectedBondId),
+    [inspectedBondId, visibleScene],
   );
   const hasVisibleScene = visibleScene !== null;
   const {
@@ -245,6 +280,7 @@ function AppContent() {
     setExportError,
     syncProjectedSizeForExportTab,
   } = useFigureExportController({
+    bondVisibilityOverrides,
     cameraOrientationRef,
     componentOpacity,
     componentVisibility,
@@ -271,8 +307,8 @@ function AppContent() {
   });
 
   useEffect(() => {
-    inspectedAtomIdRef.current = inspectedAtomId;
-  }, [inspectedAtomId]);
+    inspectedSceneObjectRef.current = inspectedSceneObject;
+  }, [inspectedSceneObject]);
 
   useEffect(() => {
     const previousSelection = colorSchemeSelectionRef.current;
@@ -306,20 +342,27 @@ function AppContent() {
   }, [componentVisibility.atoms]);
 
   useEffect(() => {
-    if (!pulseAtom) {
+    if (!previousBondsVisibleRef.current && componentVisibility.bonds) {
+      setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
+    }
+    previousBondsVisibleRef.current = componentVisibility.bonds;
+  }, [componentVisibility.bonds]);
+
+  useEffect(() => {
+    if (!pulsedSceneObject) {
       return;
     }
 
     const timeout = window.setTimeout(() => {
-      setPulseAtom((currentPulseAtom) =>
-        currentPulseAtom?.token === pulseAtom.token ? null : currentPulseAtom,
+      setPulsedSceneObject((currentPulse) =>
+        currentPulse?.token === pulsedSceneObject.token ? null : currentPulse,
       );
     }, ATOM_HIGHLIGHT_PULSE_MS);
 
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [pulseAtom]);
+  }, [pulsedSceneObject]);
 
   const resetLoadedPreviewState = useCallback(
     (
@@ -329,9 +372,12 @@ function AppContent() {
       setErrorMessage(null);
       closeActiveColorPicker();
       resetExportState();
-      setInspectedAtomId(null);
-      setPulseAtom(null);
+      setInspectedSceneObject(null);
+      setPulsedSceneObject(null);
+      setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
       setAtomLocateRequest(null);
+      setBondLocateRequest(null);
+      setBondObjectsResetToken((token) => token + 1);
       if (!options.preserveInspectorOpen) {
         setIsInspectorOpen(false);
       }
@@ -401,15 +447,32 @@ function AppContent() {
   }, []);
 
   const handleAtomPulse = useCallback((atomId: string) => {
-    if (atomId === inspectedAtomIdRef.current) {
+    const inspected = inspectedSceneObjectRef.current;
+    if (inspected?.kind === "atom" && atomId === inspected.id) {
       return;
     }
 
-    inspectedAtomIdRef.current = null;
-    setInspectedAtomId(null);
-    setPulseAtom((currentPulseAtom) => ({
-      atomId,
-      token: (currentPulseAtom?.token ?? 0) + 1,
+    inspectedSceneObjectRef.current = null;
+    setInspectedSceneObject(null);
+    setPulsedSceneObject((currentPulse) => ({
+      kind: "atom",
+      id: atomId,
+      token: (currentPulse?.token ?? 0) + 1,
+    }));
+  }, []);
+
+  const handleBondPulse = useCallback((bondId: string) => {
+    const inspected = inspectedSceneObjectRef.current;
+    if (inspected?.kind === "bond" && bondId === inspected.id) {
+      return;
+    }
+
+    inspectedSceneObjectRef.current = null;
+    setInspectedSceneObject(null);
+    setPulsedSceneObject((currentPulse) => ({
+      kind: "bond",
+      id: bondId,
+      token: (currentPulse?.token ?? 0) + 1,
     }));
   }, []);
 
@@ -426,9 +489,26 @@ function AppContent() {
     );
   }, []);
 
+  const requestBondLocateInObjects = useCallback((bondId: string) => {
+    setBondLocateRequest((currentRequest) => ({
+      bondId,
+      token: (currentRequest?.token ?? 0) + 1,
+    }));
+  }, []);
+
+  const handleBondLocateRequestHandled = useCallback((token: number) => {
+    setBondLocateRequest((currentRequest) =>
+      currentRequest?.token === token ? null : currentRequest,
+    );
+  }, []);
+
   const handleAtomInspect = useCallback((atomId: string | null) => {
-    inspectedAtomIdRef.current = atomId;
-    setInspectedAtomId(atomId);
+    const nextSelection: InspectedSceneObject = atomId
+      ? { kind: "atom", id: atomId }
+      : null;
+    inspectedSceneObjectRef.current = nextSelection;
+    setInspectedSceneObject(nextSelection);
+    setPulsedSceneObject(null);
     if (
       atomId &&
       isInspectorOpen &&
@@ -444,6 +524,28 @@ function AppContent() {
     requestAtomLocateInObjects,
   ]);
 
+  const handleBondInspect = useCallback((bondId: string | null) => {
+    const nextSelection: InspectedSceneObject = bondId
+      ? { kind: "bond", id: bondId }
+      : null;
+    inspectedSceneObjectRef.current = nextSelection;
+    setInspectedSceneObject(nextSelection);
+    setPulsedSceneObject(null);
+    if (
+      bondId &&
+      isInspectorOpen &&
+      activeInspectorTab === "objects" &&
+      activeObjectsTab === "bonds"
+    ) {
+      requestBondLocateInObjects(bondId);
+    }
+  }, [
+    activeInspectorTab,
+    activeObjectsTab,
+    isInspectorOpen,
+    requestBondLocateInObjects,
+  ]);
+
   const handleLocateAtomInObjects = useCallback((atomId: string) => {
     closeActiveColorPicker();
     setIsInspectorOpen(true);
@@ -451,6 +553,52 @@ function AppContent() {
     setActiveObjectsTab("atoms");
     requestAtomLocateInObjects(atomId);
   }, [closeActiveColorPicker, requestAtomLocateInObjects]);
+
+  const handleLocateBondInObjects = useCallback((bondId: string) => {
+    closeActiveColorPicker();
+    setIsInspectorOpen(true);
+    setActiveInspectorTab("objects");
+    setActiveObjectsTab("bonds");
+    requestBondLocateInObjects(bondId);
+  }, [closeActiveColorPicker, requestBondLocateInObjects]);
+
+  const handleBondFamilyVisibilityChange = useCallback(
+    (familyKey: string, visible: boolean) => {
+      setBondVisibilityOverrides((current) =>
+        setBondFamilyVisible(current, familyKey, visible),
+      );
+    },
+    [],
+  );
+
+  const handleBondVisibilityChange = useCallback(
+    (bond: SceneSpec["bonds"][number], visible: boolean) => {
+      setBondVisibilityOverrides((current) =>
+        setBondInstanceVisible(current, bond, visible),
+      );
+      if (!visible) {
+        inspectedSceneObjectRef.current = null;
+        setInspectedSceneObject(null);
+      }
+    },
+    [],
+  );
+
+  const handleBondFamilyReset = useCallback(
+    async (familyKey: string) => {
+      const hasCutoff = customBondingProfile?.cutoffOverrides[familyKey] !== undefined;
+      if (hasCutoff) {
+        const succeeded = await handleBondCutoffOverrideChange(familyKey, null);
+        if (!succeeded) {
+          return;
+        }
+      }
+      setBondVisibilityOverrides((current) =>
+        resetBondFamilyVisibility(current, familyKey, scene?.bonds ?? []),
+      );
+    },
+    [customBondingProfile, handleBondCutoffOverrideChange, scene?.bonds],
+  );
 
   const handleAtomRadiusModelChange = useCallback(
     (atomRadiusModel: AtomRadiusStyleModel) => {
@@ -596,14 +744,26 @@ function AppContent() {
   );
 
   useEffect(() => {
-    if (!inspectedAtomId) {
+    if (!inspectedSceneObject) {
       return;
     }
 
-    if (!visibleScene || !componentVisibility.atoms || !inspectedAtomInfo) {
-      setInspectedAtomId(null);
+    const selectionStillExists =
+      inspectedSceneObject.kind === "atom"
+        ? componentVisibility.atoms && inspectedAtomInfo !== null
+        : componentVisibility.bonds && inspectedBondInfo !== null;
+    if (!visibleScene || !selectionStillExists) {
+      inspectedSceneObjectRef.current = null;
+      setInspectedSceneObject(null);
     }
-  }, [componentVisibility.atoms, inspectedAtomId, inspectedAtomInfo, visibleScene]);
+  }, [
+    componentVisibility.atoms,
+    componentVisibility.bonds,
+    inspectedAtomInfo,
+    inspectedBondInfo,
+    inspectedSceneObject,
+    visibleScene,
+  ]);
 
   useEffect(() => {
     if (activeCommonPanelTab !== "export") {
@@ -651,6 +811,8 @@ function AppContent() {
                 }
                 onAtomInspect={handleAtomInspect}
                 onAtomPulse={handleAtomPulse}
+                onBondInspect={handleBondInspect}
+                onBondPulse={handleBondPulse}
                 onLockedInteractionAttempt={triggerLockedInteractionFeedback}
                 cameraInteractionStore={cameraInteractionStore}
                 suspendCameraOrientationUpdates={
@@ -666,8 +828,27 @@ function AppContent() {
                 safeArea={previewSafeArea}
                 scene={visibleScene}
                 inspectedAtomId={inspectedAtomId}
-                pulseAtomId={pulseAtom?.atomId ?? null}
-                pulseToken={pulseAtom?.token ?? 0}
+                inspectedBondId={inspectedBondId}
+                pulseAtomId={
+                  pulsedSceneObject?.kind === "atom"
+                    ? pulsedSceneObject.id
+                    : null
+                }
+                pulseToken={
+                  pulsedSceneObject?.kind === "atom"
+                    ? pulsedSceneObject.token
+                    : 0
+                }
+                pulseBondId={
+                  pulsedSceneObject?.kind === "bond"
+                    ? pulsedSceneObject.id
+                    : null
+                }
+                pulseBondToken={
+                  pulsedSceneObject?.kind === "bond"
+                    ? pulsedSceneObject.token
+                    : 0
+                }
                 previewMeshQuality={previewMeshQuality}
                 componentOpacity={componentOpacity}
                 dragSensitivity={viewState.dragSensitivity}
@@ -733,8 +914,20 @@ function AppContent() {
           colorOverrides={elementColorOverrides}
           info={inspectedAtomInfo}
           isInspectorOpen={isInspectorOpen}
-          onClose={() => setInspectedAtomId(null)}
+          onClose={() => setInspectedSceneObject(null)}
           onLocateInObjects={handleLocateAtomInObjects}
+          style={style}
+        />
+      ) : null}
+
+      {inspectedBondInfo ? (
+        <BondInspectorCard
+          colorScheme={legendColorScheme}
+          colorOverrides={elementColorOverrides}
+          info={inspectedBondInfo}
+          isInspectorOpen={isInspectorOpen}
+          onClose={() => setInspectedSceneObject(null)}
+          onLocateInObjects={handleLocateBondInObjects}
           style={style}
         />
       ) : null}
@@ -832,6 +1025,15 @@ function AppContent() {
                   atomLocateRequest={atomLocateRequest}
                   atomsVisible={componentVisibility.atoms}
                   bondAlgorithm={bondAlgorithm}
+                  bondLocateRequest={bondLocateRequest}
+                  bondObjectsResetToken={bondObjectsResetToken}
+                  bondsVisible={componentVisibility.bonds}
+                  bondVisibilityOverrides={bondVisibilityOverrides}
+                  cutoffOverrides={
+                    customBondingProfile?.cutoffOverrides ??
+                    EMPTY_BOND_CUTOFF_OVERRIDES
+                  }
+                  hasCustomBondingProfile={customBondingProfile !== null}
                   dragSensitivity={viewState.dragSensitivity}
                   interactionMode={viewState.interactionMode}
                   lightStrength={viewState.lightStrength}
@@ -844,6 +1046,7 @@ function AppContent() {
                   distinguishSimilarColors={style.distinguishSimilarColors}
                   scene={scene}
                   selectedAtomId={inspectedAtomId}
+                  selectedBondId={inspectedBondId}
                   showFpsOverlay={viewState.showFpsOverlay}
                   showCrystalAxisLabels={showCrystalAxisLabels}
                   style={style}
@@ -852,6 +1055,11 @@ function AppContent() {
                   onActiveTabChange={handleActiveInspectorTabChange}
                   onAtomSelect={handleAtomInspect}
                   onAtomLocateRequestHandled={handleAtomLocateRequestHandled}
+                  onBondLocateRequestHandled={handleBondLocateRequestHandled}
+                  onBondVisibilityChange={handleBondVisibilityChange}
+                  onBondCutoffChange={handleBondCutoffOverrideChange}
+                  onBondFamilyReset={handleBondFamilyReset}
+                  onBondFamilyVisibilityChange={handleBondFamilyVisibilityChange}
                   onBondAlgorithmChange={(nextBondAlgorithm) => {
                     void handleBondAlgorithmChange(nextBondAlgorithm);
                   }}
@@ -886,6 +1094,9 @@ function localizedPreviewErrorTitle(
   if (kind === "backend-unavailable") {
     return t("validation.pythonBackendUnavailable");
   }
+  if (kind === "bonding-error") {
+    return t("validation.bondingFailed");
+  }
   if (kind) {
     return t("validation.unsupportedFile");
   }
@@ -905,6 +1116,9 @@ function localizedPreviewErrorMessage(
   }
   if (kind === "parse-error") {
     return t("validation.parseError");
+  }
+  if (kind === "bonding-error") {
+    return fallbackMessage;
   }
   if (kind === "static-example") {
     return t("validation.staticExampleFailed");

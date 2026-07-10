@@ -2,15 +2,18 @@ from __future__ import annotations
 
 from urllib.parse import unquote
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Header, HTTPException, Query, Request
 
 from pretty_lattice.structures.preview_limits import (
     MAX_STRUCTURE_UPLOAD_BYTES,
     STRUCTURE_FILE_TOO_LARGE_MESSAGE,
 )
 from pretty_lattice.structures.schema import (
+    CustomBondRecalculationError,
+    InvalidBondCutoffOverridesError,
     UnsupportedBondAlgorithmError,
     normalize_bond_algorithm,
+    parse_bond_cutoff_overrides,
 )
 
 router = APIRouter()
@@ -25,11 +28,19 @@ async def health() -> dict[str, str]:
 async def create_structure_preview(
     request: Request,
     bond_algorithm: str | None = Query(default=None, alias="bondAlgorithm"),
+    bond_cutoff_overrides: str | None = Header(
+        default=None,
+        alias="x-pretty-lattice-bond-cutoff-overrides",
+    ),
 ) -> dict[str, object]:
     filename = _uploaded_filename(request)
     try:
         normalized_bond_algorithm = normalize_bond_algorithm(bond_algorithm)
     except UnsupportedBondAlgorithmError as exc:
+        raise HTTPException(status_code=400, detail={"message": str(exc)}) from exc
+    try:
+        normalized_cutoff_overrides = parse_bond_cutoff_overrides(bond_cutoff_overrides)
+    except InvalidBondCutoffOverridesError as exc:
         raise HTTPException(status_code=400, detail={"message": str(exc)}) from exc
 
     payload = await _uploaded_payload(request)
@@ -39,9 +50,17 @@ async def create_structure_preview(
             payload,
             filename=filename,
             bond_algorithm=normalized_bond_algorithm,
+            bond_cutoff_overrides=normalized_cutoff_overrides,
         )
     except StructureReadError as exc:
         raise HTTPException(status_code=400, detail={"message": str(exc)}) from exc
+    except InvalidBondCutoffOverridesError as exc:
+        raise HTTPException(status_code=400, detail={"message": str(exc)}) from exc
+    except CustomBondRecalculationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "bond-recalculation-failed", "message": str(exc)},
+        ) from exc
     except PreviewLimitExceeded as exc:
         raise HTTPException(
             status_code=413,
