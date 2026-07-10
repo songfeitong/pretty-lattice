@@ -20,6 +20,8 @@ import {
   Vector3,
 } from "three";
 
+import { PREVIEW_THEME_COLORS } from "../theme/previewTheme";
+import type { ResolvedTheme } from "../theme/themePreference";
 import type { CameraOrientationRef } from "./LatticeScene";
 import type { CameraPoseSnapshot } from "./cameraPose";
 import { CameraHeadlight } from "./CameraHeadlight";
@@ -43,8 +45,9 @@ const AXIS_HIT_RADIUS_PX = 18;
 export const ORIENTATION_GIZMO_LABEL_DISTANCE = 1.3;
 const LABEL_HIT_RADIUS_PX = 24;
 const LABEL_SCALE = 0.38;
-const LABEL_FILL_COLOR = "#343434";
-const LABEL_HALO_COLOR = "#ffffff";
+const LABEL_FILL_COLOR = PREVIEW_THEME_COLORS.light.gizmoLabel;
+const LABEL_HALO_COLOR = PREVIEW_THEME_COLORS.light.gizmoLabelHalo;
+const LABEL_HOVER_COLOR = PREVIEW_THEME_COLORS.light.gizmoLabelHover;
 const LABEL_TEXTURE_SIZE = 1024;
 const LABEL_FONT_SIZE = 608;
 const LABEL_OUTLINE_WIDTH = 66;
@@ -63,6 +66,7 @@ export function OrientationGizmo({
   orientationVersion = 0,
   showLabels = true,
   style,
+  theme = "light",
 }: {
   cameraOrientationRef: CameraOrientationRef;
   cellVectors: VectorTuple[];
@@ -72,7 +76,9 @@ export function OrientationGizmo({
   orientationVersion?: number;
   showLabels?: boolean;
   style?: CSSProperties;
+  theme?: ResolvedTheme;
 }) {
+  const previewTheme = PREVIEW_THEME_COLORS[theme];
   const visualCanvasRef = useRef<HTMLDivElement | null>(null);
   const hoveredAxisRef = useRef<OrientationGizmoAxisLabel | null>(null);
   const lastPointerRef = useRef<{ clientX: number; clientY: number } | null>(null);
@@ -249,6 +255,10 @@ export function OrientationGizmo({
             axes={axes}
             cameraOrientationRef={cameraOrientationRef}
             hoveredAxis={hoveredAxis}
+            labelColor={previewTheme.gizmoLabel}
+            labelHaloColor={previewTheme.gizmoLabelHalo}
+            labelHoverColor={previewTheme.gizmoLabelHover}
+            showLabelHalo={previewTheme.showGizmoLabelHalo}
             showLabels={showLabels}
           />
         </Canvas>
@@ -309,11 +319,19 @@ function OrientationGizmoScene({
   axes,
   cameraOrientationRef,
   hoveredAxis,
+  labelColor,
+  labelHaloColor,
+  labelHoverColor,
+  showLabelHalo,
   showLabels,
 }: {
   axes: OrientationGizmoAxisSpec[];
   cameraOrientationRef: CameraOrientationRef;
   hoveredAxis: OrientationGizmoAxisLabel | null;
+  labelColor: string;
+  labelHaloColor: string;
+  labelHoverColor: string;
+  showLabelHalo: boolean;
   showLabels: boolean;
 }) {
   const groupRef = useRef<Group | null>(null);
@@ -333,6 +351,10 @@ function OrientationGizmoScene({
       <OrientationGizmoAxes
         axes={axes}
         hoveredAxis={hoveredAxis}
+        labelColor={labelColor}
+        labelHaloColor={labelHaloColor}
+        labelHoverColor={labelHoverColor}
+        showLabelHalo={showLabelHalo}
         showLabels={showLabels}
       />
     </group>
@@ -378,6 +400,7 @@ function OrientationGizmoAxes({
   hoveredAxis,
   labelColor = LABEL_FILL_COLOR,
   labelHaloColor = LABEL_HALO_COLOR,
+  labelHoverColor = LABEL_HOVER_COLOR,
   showLabelHalo = true,
   showLabels = true,
 }: {
@@ -385,6 +408,7 @@ function OrientationGizmoAxes({
   hoveredAxis: OrientationGizmoAxisLabel | null;
   labelColor?: string;
   labelHaloColor?: string;
+  labelHoverColor?: string;
   showLabelHalo?: boolean;
   showLabels?: boolean;
 }) {
@@ -397,6 +421,7 @@ function OrientationGizmoAxes({
           key={axis.label}
           labelColor={labelColor}
           labelHaloColor={labelHaloColor}
+          labelHoverColor={labelHoverColor}
           showLabelHalo={showLabelHalo}
           showLabel={showLabels}
         />
@@ -414,6 +439,7 @@ function AxisArrow({
   hovered,
   labelColor,
   labelHaloColor,
+  labelHoverColor,
   showLabelHalo,
   showLabel,
 }: {
@@ -421,6 +447,7 @@ function AxisArrow({
   hovered: boolean;
   labelColor: string;
   labelHaloColor: string;
+  labelHoverColor: string;
   showLabelHalo: boolean;
   showLabel: boolean;
 }) {
@@ -455,6 +482,7 @@ function AxisArrow({
           label={axis.label}
           labelColor={labelColor}
           labelHaloColor={labelHaloColor}
+          labelHoverColor={labelHoverColor}
           showHalo={showLabelHalo}
           position={[0, ORIENTATION_GIZMO_LABEL_DISTANCE, 0]}
         />
@@ -468,6 +496,7 @@ function AxisLabel({
   label,
   labelColor,
   labelHaloColor,
+  labelHoverColor,
   position,
   showHalo,
 }: {
@@ -475,12 +504,13 @@ function AxisLabel({
   label: string;
   labelColor: string;
   labelHaloColor: string;
+  labelHoverColor: string;
   position: VectorTuple;
   showHalo: boolean;
 }) {
   const fillTexture = useMemo(() => createLabelAlphaMap(label, "fill"), [label]);
   const outlineTexture = useMemo(() => createLabelAlphaMap(label, "outline"), [label]);
-  const fillColor = hovered ? "#111111" : labelColor;
+  const fillColor = hovered ? labelHoverColor : labelColor;
 
   useEffect(() => () => fillTexture.dispose(), [fillTexture]);
   useEffect(() => () => outlineTexture.dispose(), [outlineTexture]);

@@ -10,6 +10,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
+import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -95,14 +96,17 @@ type ResetLoadedPreviewState = (
 
 export function App() {
   return (
-    <ColorPickerRegistryProvider>
-      <AppContent />
-    </ColorPickerRegistryProvider>
+    <ThemeProvider>
+      <ColorPickerRegistryProvider>
+        <AppContent />
+      </ColorPickerRegistryProvider>
+    </ThemeProvider>
   );
 }
 
 function AppContent() {
   const { t } = useTranslation();
+  const { resolvedTheme } = useTheme();
   const { closeActiveColorPicker } = useColorPickerRegistry();
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [componentVisibility, setComponentVisibility] = useState(
@@ -670,6 +674,7 @@ function AppContent() {
                 lightStrength={viewState.lightStrength}
                 previewFpsStore={previewFpsStore}
                 style={style}
+                theme={resolvedTheme}
                 showAtoms={componentVisibility.atoms}
                 showFpsOverlay={viewState.showFpsOverlay}
                 showUnitCell={componentVisibility.unitCell}
@@ -708,6 +713,7 @@ function AppContent() {
           onAxisClick={handleGizmoAxisClick}
           orientationVersion={cameraOrientationVersion}
           showLabels={showCrystalAxisLabels}
+          theme={resolvedTheme}
           style={orientationGizmoContainerStyle(effectivePreviewSafeArea, orientationGizmoSize)}
         />
       ) : null}

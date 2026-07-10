@@ -11,13 +11,14 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
+import { PREVIEW_THEME_COLORS, type PreviewThemeColors } from "@/theme/previewTheme";
+import { useTheme } from "@/theme/ThemeProvider";
 
 import type {
   CrystalCameraPrimaryDirection,
   CrystalCameraScreenDirection,
   VectorTuple,
 } from "../../../../model";
-import { UI_DARK_COLOR } from "../styles";
 
 const SCREEN_AXIS_CAMERA_FOV = 42.5;
 const SCREEN_AXIS_CAMERA_POSITION: VectorTuple = [0.558, 0.471, 6.139];
@@ -29,9 +30,6 @@ const SCREEN_AXIS_ARROW_LENGTH = 2.27;
 const SCREEN_AXIS_ARROW_RADIUS = 0.083;
 const SCREEN_AXIS_ARROW_SELECTED_RADIUS = 0.101;
 const SCREEN_AXIS_ORIGIN_RADIUS = 0.1;
-const SCREEN_AXIS_SELECTED_COLOR = "#505050";
-const SCREEN_AXIS_HOVER_COLOR = "#a0a0a0";
-const SCREEN_AXIS_MUTED_COLOR = "#d6d6d6";
 const SCREEN_AXIS_TRANSITION_SECONDS = 0.09;
 const SCREEN_AXIS_OUTWARD_ARROW_LENGTH = 2.56;
 const SCREEN_AXIS_OUTWARD_CONE_RADIUS = 0.1;
@@ -72,6 +70,8 @@ export function ScreenAxisChooser({
   value: CrystalCameraPrimaryDirection;
 }) {
   const { t } = useTranslation();
+  const { resolvedTheme } = useTheme();
+  const screenAxisTheme = PREVIEW_THEME_COLORS[resolvedTheme].screenAxis;
   const [hoveredAxis, setHoveredAxis] = useState<CrystalCameraScreenDirection | null>(null);
 
   return (
@@ -96,7 +96,11 @@ export function ScreenAxisChooser({
         style={{ pointerEvents: "none" }}
       >
         <ScreenAxisCameraSetup />
-        <ScreenAxisGizmoScene hoveredAxis={hoveredAxis} selectedAxis={value} />
+        <ScreenAxisGizmoScene
+          colors={screenAxisTheme}
+          hoveredAxis={hoveredAxis}
+          selectedAxis={value}
+        />
       </Canvas>
       <ScreenAxisOverlayLabel
         direction="upward"
@@ -208,9 +212,11 @@ function ScreenAxisCameraSetup() {
 }
 
 function ScreenAxisGizmoScene({
+  colors,
   hoveredAxis,
   selectedAxis,
 }: {
+  colors: PreviewThemeColors["screenAxis"];
   hoveredAxis: CrystalCameraScreenDirection | null;
   selectedAxis: CrystalCameraPrimaryDirection;
 }) {
@@ -223,6 +229,7 @@ function ScreenAxisGizmoScene({
         return (
           <ScreenAxisArrow
             axis={axis}
+            colors={colors}
             hovered={hovered}
             key={axis.direction}
             selected={selected}
@@ -231,11 +238,11 @@ function ScreenAxisGizmoScene({
       })}
       <mesh renderOrder={20}>
         <sphereGeometry args={[SCREEN_AXIS_ORIGIN_RADIUS * 1.35, 32, 16]} />
-        <meshBasicMaterial color={UI_DARK_COLOR} depthTest={false} />
+        <meshBasicMaterial color={colors.originOuter} depthTest={false} />
       </mesh>
       <mesh renderOrder={21}>
         <sphereGeometry args={[SCREEN_AXIS_ORIGIN_RADIUS, 32, 16]} />
-        <meshBasicMaterial color="#f7f7f5" depthTest={false} />
+        <meshBasicMaterial color={colors.originInner} depthTest={false} />
       </mesh>
     </group>
   );
@@ -243,10 +250,12 @@ function ScreenAxisGizmoScene({
 
 function ScreenAxisArrow({
   axis,
+  colors,
   hovered,
   selected,
 }: {
   axis: (typeof SCREEN_AXIS_GIZMO_AXES)[number];
+  colors: PreviewThemeColors["screenAxis"];
   hovered: boolean;
   selected: boolean;
 }) {
@@ -262,10 +271,10 @@ function ScreenAxisArrow({
   );
   const isHighlighted = selected || hovered;
   const axisColor = selected
-    ? SCREEN_AXIS_SELECTED_COLOR
+    ? colors.selected
     : hovered
-      ? SCREEN_AXIS_HOVER_COLOR
-      : SCREEN_AXIS_MUTED_COLOR;
+      ? colors.hover
+      : colors.muted;
   const targetColor = useMemo(() => new Color(axisColor), [axisColor]);
   const initialAxisColorRef = useRef(axisColor);
   const shaftLength = axis.direction === "outward"

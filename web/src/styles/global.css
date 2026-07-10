@@ -83,6 +83,7 @@ html[lang="zh-CN"] {
 }
 
 :root {
+  color-scheme: light;
   --radius: 0.5rem;
   --ui-dark: #282828;
   --background: #fafafa;
@@ -103,6 +104,66 @@ html[lang="zh-CN"] {
   --border: #e6e6e6;
   --input: #e6e6e6;
   --ring: var(--ui-dark);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #181818;
+  --foreground: #eeeeee;
+  --card: #383838;
+  --card-foreground: var(--foreground);
+  --popover: #404040;
+  --popover-foreground: var(--foreground);
+  --primary: #e8e8e8;
+  --primary-foreground: #181818;
+  --secondary: #424242;
+  --secondary-foreground: #e8e8e8;
+  --muted: #424242;
+  --muted-foreground: #a0a0a0;
+  --accent: #4c4c4c;
+  --accent-foreground: var(--foreground);
+  --destructive: #ff5c70;
+  --border: #545454;
+  --input: #5e5e5e;
+  --ring: #8a8a8a;
+}
+
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+
+.theme-preference-toggle {
+  view-transition-name: theme-preference-toggle;
+}
+
+::view-transition-group(theme-preference-toggle),
+::view-transition-old(theme-preference-toggle),
+::view-transition-new(theme-preference-toggle) {
+  animation: none;
+}
+
+::view-transition-old(theme-preference-toggle) {
+  opacity: 0;
+}
+
+::view-transition-new(theme-preference-toggle) {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }
 
 @layer base {

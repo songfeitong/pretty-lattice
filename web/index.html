@@ -3,6 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      (() => {
+        const storageKey = "pretty-lattice-theme";
+        let theme = "system";
+
+        try {
+          const storedTheme = window.localStorage.getItem(storageKey);
+          if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "system") {
+            theme = storedTheme;
+          }
+        } catch {}
+
+        const resolvedTheme =
+          theme === "system"
+            ? typeof window.matchMedia === "function" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : theme;
+        const root = document.documentElement;
+        root.classList.toggle("dark", resolvedTheme === "dark");
+        root.classList.toggle("light", resolvedTheme === "light");
+        root.dataset.theme = resolvedTheme;
+        root.style.colorScheme = resolvedTheme;
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
     <title>Pretty Lattice</title>
   </head>

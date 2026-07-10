@@ -14,6 +14,7 @@ import {
   DEFAULT_BOND_COLOR,
   elementColorOverridesForStyle,
 } from "../model";
+import { PREVIEW_THEME_COLORS } from "../theme/previewTheme";
 import type { ResolvedStructureMaterialFamilies } from "./materialPresetResolver";
 import type { SceneLayout } from "./sceneLayout";
 import type { VectorTuple } from "./viewMath";
@@ -36,7 +37,7 @@ export interface SceneMeshDetail {
 
 export const BOND_COLOR = DEFAULT_BOND_COLOR;
 export const BOND_TUBE_RADIAL_SEGMENTS = 24;
-export const SCENE_FOG_COLOR = "#fafafa";
+export const SCENE_FOG_COLOR = PREVIEW_THEME_COLORS.light.fog;
 const FOG_FRONT_PADDING_RATIO = 0.4;
 
 export const PREVIEW_SCENE_MESH_DETAIL: SceneMeshDetail = {
@@ -66,6 +67,7 @@ export const EXPORT_SCENE_MESH_DETAIL_PRESETS: Record<ExportMeshQuality, SceneMe
 
 export function PreviewSceneContent({
   componentOpacity,
+  fogColor,
   layout,
   materialFamilies,
   meshDetail,
@@ -82,9 +84,11 @@ export function PreviewSceneContent({
   showUnitCell,
   style,
   unitCellLineStyle = "solid",
+  unitCellLineColor,
   unitCellLineWidthScale = 1,
 }: {
   componentOpacity: ComponentOpacityState;
+  fogColor?: string;
   layout: SceneLayout;
   materialFamilies: ResolvedStructureMaterialFamilies;
   meshDetail: SceneMeshDetail;
@@ -101,11 +105,12 @@ export function PreviewSceneContent({
   showUnitCell: boolean;
   style: StyleState;
   unitCellLineStyle?: UnitCellLineStyle;
+  unitCellLineColor?: string;
   unitCellLineWidthScale?: number;
 }) {
   return (
     <>
-      <SceneFog layout={layout} style={style} />
+      <SceneFog color={fogColor} layout={layout} style={style} />
       <MemoizedStructureSceneObjects
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}
@@ -124,6 +129,7 @@ export function PreviewSceneContent({
         showUnitCell={showUnitCell}
         style={style}
         unitCellLineStyle={unitCellLineStyle}
+        unitCellLineColor={unitCellLineColor}
         unitCellLineWidthScale={unitCellLineWidthScale}
       />
     </>
@@ -131,9 +137,11 @@ export function PreviewSceneContent({
 }
 
 export function SceneFog({
+  color = SCENE_FOG_COLOR,
   layout,
   style,
 }: {
+  color?: string;
   layout: SceneLayout;
   style: StyleState;
 }) {
@@ -148,9 +156,11 @@ export function SceneFog({
             layout.depthCueingFrontOffset,
             style.fogAmount,
             style.fogStart,
+            color,
           )
         : null,
     [
+      color,
       layout.span,
       layout.depthCueingBackOffset,
       layout.depthCueingFrontOffset,
@@ -184,6 +194,7 @@ export function createSceneFog(
   frontOffset: number,
   amount: number,
   start: number,
+  color = SCENE_FOG_COLOR,
 ): Fog | null {
   const safeAmount = Number.isFinite(amount) ? amount : 0;
   const safeStart = Number.isFinite(start) ? start : 0;
@@ -218,7 +229,7 @@ export function createSceneFog(
   const back = safeCameraDistance + safeBackOffset;
   const far = near + (back - near) / normalizedAmount;
 
-  return new Fog(SCENE_FOG_COLOR, near, far);
+  return new Fog(color, near, far);
 }
 
 function lerp(start: number, end: number, amount: number): number {

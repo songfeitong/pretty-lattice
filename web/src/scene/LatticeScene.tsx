@@ -16,6 +16,8 @@ import {
 } from "../model";
 import type { PreviewFpsStore } from "../model/previewFpsStore";
 import type { InteractionMode } from "../model/viewState";
+import { PREVIEW_THEME_COLORS } from "../theme/previewTheme";
+import type { ResolvedTheme } from "../theme/themePreference";
 import { computeCrystalCameraPose, type CrystalCameraState } from "./crystalCamera";
 import { MaterialPresetLights } from "./MaterialPresetLights";
 import {
@@ -115,6 +117,7 @@ export function LatticeScene({
   showUnitCell = true,
   style,
   suspendCameraOrientationUpdates = false,
+  theme = "light",
   unitCellLineStyle = "solid",
 }: {
   cameraOrientationRef?: CameraOrientationRef;
@@ -152,8 +155,10 @@ export function LatticeScene({
   showUnitCell?: boolean;
   style: StyleState;
   suspendCameraOrientationUpdates?: boolean;
+  theme?: ResolvedTheme;
   unitCellLineStyle?: UnitCellLineStyle;
 }) {
+  const previewTheme = PREVIEW_THEME_COLORS[theme];
   const layoutSourceScene = layoutScene ?? scene;
   const structureLayout = useMemo(
     () => computeSceneStructureLayout(layoutSourceScene),
@@ -225,6 +230,7 @@ export function LatticeScene({
       />
       <PreviewSceneContent
         componentOpacity={componentOpacity}
+        fogColor={previewTheme.fog}
         layout={layout}
         materialFamilies={materialFamilies}
         meshDetail={EXPORT_SCENE_MESH_DETAIL_PRESETS[previewMeshQuality]}
@@ -240,6 +246,7 @@ export function LatticeScene({
         showUnitCell={showUnitCell}
         style={style}
         unitCellLineStyle={unitCellLineStyle}
+        unitCellLineColor={previewTheme.unitCell}
       />
       <CameraOrientationTracker
         cameraOrientationRef={cameraOrientationRef}

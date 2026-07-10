@@ -23,9 +23,11 @@ Use shadcn/ui for panels, buttons, inputs, overlays, and other application contr
 
 ## Design Style
 
-Follow the Vercel-inspired light theme in [vercel_design.md](notes/vercel_design.md) and build controls with shadcn/ui.
+Follow the Vercel-inspired neutral theme in [vercel_design.md](notes/vercel_design.md) and build controls with shadcn/ui. Support light, dark, and system theme preferences through semantic color tokens rather than component-local color overrides.
 
 The interface should be quiet, high-contrast, and mostly neutral. Use color sparingly for state, focus, and scientific meaning, not decoration.
+
+Keep UI theme colors separate from scientific colors and export settings. In dark mode, the preview background and fog use independent UI theme colors, while the unit-cell boundary and orientation-gizmo labels reuse the established black-background export contrast. Atom colors, material presets, and explicit export backgrounds remain unchanged.
 
 ## Workspace Layout
 

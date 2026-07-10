@@ -22,6 +22,7 @@ import {
   type ExportFormat,
 } from "../src/model";
 import { MATERIAL_PRESET_OPTIONS } from "../src/model/materialPresets";
+import { THEME_STORAGE_KEY } from "../src/theme/themePreference";
 import { createAppTestHarness } from "./helpers/appHarness";
 
 class MockControls {
@@ -123,12 +124,15 @@ mock.module("../src/scene/OrientationGizmo", () => ({
   OrientationGizmo: ({
     onAxisClick,
     showLabels = true,
+    theme = "light",
   }: {
     onAxisClick?: (axis: "a" | "b" | "c") => void;
     showLabels?: boolean;
+    theme?: "light" | "dark";
   }) => (
     <div
       data-show-labels={String(showLabels)}
+      data-theme={theme}
       data-testid="mock-orientation-gizmo"
     >
       <button type="button" onClick={() => onAxisClick?.("a")}>
@@ -513,6 +517,32 @@ describe("App", () => {
     expect(
       within(sidebar).getByRole("combobox", { name: "Preview quality" }).textContent,
     ).toContain("XHigh");
+  });
+
+  test("switches and persists the theme from Preferences", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user);
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    const themeGroup = within(sidebar).getByRole("radiogroup", { name: "Theme" });
+    const systemThemeButton = within(sidebar).getByRole("radio", { name: "System" });
+    const darkThemeButton = within(sidebar).getByRole("radio", { name: "Dark" });
+    expect(themeGroup.classList.contains("theme-preference-toggle")).toBe(true);
+    expect(systemThemeButton.getAttribute("data-state")).toBe("on");
+
+    act(() => darkThemeButton.focus());
+    await user.keyboard("{Enter}");
+
+    expect(darkThemeButton.getAttribute("data-state")).toBe("on");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+    expect(screen.getByTestId("mock-orientation-gizmo").dataset.theme).toBe("dark");
+
+    await user.click(darkThemeButton);
+    expect(darkThemeButton.getAttribute("data-state")).toBe("on");
   });
 
   test("defaults large preview structures to low mesh quality", async () => {

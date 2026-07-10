@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-import { PanelRight } from "lucide-react";
+import { Monitor, Moon, PanelRight, Sun, type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -23,8 +23,11 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { THEME_PREFERENCES, type ThemePreference } from "@/theme/themePreference";
+import { useTheme } from "@/theme/ThemeProvider";
 
 import {
   BOND_ALGORITHM_OPTIONS,
@@ -82,6 +85,19 @@ const INSPECTOR_SELECT_ITEM_CLASS = "min-h-6 py-0.5 text-[13px]";
 const INSPECTOR_LANGUAGE_LABEL_KEYS: Record<AppLanguage, "language.english" | "language.simplifiedChinese"> = {
   en: "language.english",
   "zh-CN": "language.simplifiedChinese",
+};
+const THEME_PREFERENCE_LABEL_KEYS: Record<
+  ThemePreference,
+  "settings.system" | "settings.light" | "settings.dark"
+> = {
+  system: "settings.system",
+  light: "settings.light",
+  dark: "settings.dark",
+};
+const THEME_PREFERENCE_ICONS: Record<ThemePreference, LucideIcon> = {
+  system: Monitor,
+  light: Sun,
+  dark: Moon,
 };
 const INTERACTION_MODE_LABEL_KEYS: Record<InteractionMode, "settings.orbit" | "settings.trackball"> = {
   orbit: "settings.orbit",
@@ -214,7 +230,7 @@ export function InspectorSidebar({
       aria-hidden={!isOpen}
       inert={!isOpen}
       className={cn(
-        "absolute inset-y-0 right-0 z-20 flex w-[372px] max-w-[calc(100vw-1rem)] flex-col border-l border-border bg-[#fdfdfd] text-foreground",
+        "absolute inset-y-0 right-0 z-20 flex w-[372px] max-w-[calc(100vw-1rem)] flex-col border-l border-border bg-card text-foreground",
         "transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
         isOpen ? "translate-x-0" : "translate-x-full",
       )}
@@ -351,10 +367,52 @@ function SettingsPanel({
 }) {
   const { t } = useTranslation();
   const appLanguage = currentAppLanguage();
+  const { setTheme, theme } = useTheme();
 
   return (
     <div className="flex flex-col gap-3">
       <InspectorSettingsSection id="inspector-preferences-settings" title={t("settings.preferences")}>
+        <InspectorSelectRow label={t("settings.theme")}>
+          <TooltipProvider>
+            <ToggleGroup
+              type="single"
+              variant="primary"
+              size="sm"
+              spacing={1}
+              value={theme}
+              aria-label={t("settings.theme")}
+              className="theme-preference-toggle grid h-6 w-full grid-cols-3"
+              onValueChange={(value) => {
+                if (value) {
+                  setTheme(value as ThemePreference);
+                }
+              }}
+            >
+              {THEME_PREFERENCES.map((preference) => {
+                const Icon = THEME_PREFERENCE_ICONS[preference];
+                const label = t(THEME_PREFERENCE_LABEL_KEYS[preference]);
+
+                return (
+                  <Tooltip key={preference}>
+                    <TooltipTrigger asChild>
+                      <span className="block min-w-0">
+                        <ToggleGroupItem
+                          value={preference}
+                          aria-label={label}
+                          className="h-6 w-full min-w-0 px-0"
+                        >
+                          <Icon aria-hidden="true" />
+                        </ToggleGroupItem>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{label}</TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </ToggleGroup>
+          </TooltipProvider>
+        </InspectorSelectRow>
+
         <InspectorSelectRow label={t("settings.language")}>
           <Select
             value={appLanguage}

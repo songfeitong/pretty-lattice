@@ -1,10 +1,12 @@
 import { Vector3 } from "three";
 
-export { atomRadiusForModel } from "../model/elementRadii";
+import { PREVIEW_THEME_COLORS } from "../theme/previewTheme";
 import { withDefaultCellVectors, type VectorTuple } from "./viewMath";
 
+export { atomRadiusForModel } from "../model/elementRadii";
+
 export const BOND_RADIUS = 0.1;
-export const CELL_FRAME_COLOR = "#444444";
+export const CELL_FRAME_COLOR = PREVIEW_THEME_COLORS.light.unitCell;
 export const CELL_FRAME_LINE_WIDTH_PIXELS = 1;
 
 export function cellCenter(vectors: VectorTuple[]): Vector3 {
