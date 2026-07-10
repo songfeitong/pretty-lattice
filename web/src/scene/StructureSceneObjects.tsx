@@ -15,6 +15,7 @@ import {
   elementColorOverridesForStyle,
 } from "../model";
 import { PREVIEW_THEME_COLORS } from "../theme/previewTheme";
+import type { PreviewThemeColors } from "../theme/previewTheme";
 import type { ResolvedStructureMaterialFamilies } from "./materialPresetResolver";
 import type { SceneLayout } from "./sceneLayout";
 import type { VectorTuple } from "./viewMath";
@@ -66,6 +67,7 @@ export const EXPORT_SCENE_MESH_DETAIL_PRESETS: Record<ExportMeshQuality, SceneMe
 };
 
 export function PreviewSceneContent({
+  atomSelectionRingColors,
   componentOpacity,
   fogColor,
   layout,
@@ -87,6 +89,7 @@ export function PreviewSceneContent({
   unitCellLineColor,
   unitCellLineWidthScale = 1,
 }: {
+  atomSelectionRingColors?: PreviewThemeColors["atomSelectionRing"];
   componentOpacity: ComponentOpacityState;
   fogColor?: string;
   layout: SceneLayout;
@@ -112,6 +115,7 @@ export function PreviewSceneContent({
     <>
       <SceneFog color={fogColor} layout={layout} style={style} />
       <MemoizedStructureSceneObjects
+        atomSelectionRingColors={atomSelectionRingColors}
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}
         materialFamilies={materialFamilies}
@@ -237,6 +241,7 @@ function lerp(start: number, end: number, amount: number): number {
 }
 
 export function StructureSceneObjects({
+  atomSelectionRingColors,
   componentOpacity,
   groupPosition,
   interactionLocked = false,
@@ -257,6 +262,7 @@ export function StructureSceneObjects({
   unitCellLineStyle = "solid",
   unitCellLineWidthScale = 1,
 }: {
+  atomSelectionRingColors?: PreviewThemeColors["atomSelectionRing"];
   componentOpacity: ComponentOpacityState;
   groupPosition: VectorTuple;
   interactionLocked?: boolean;
@@ -343,6 +349,7 @@ export function StructureSceneObjects({
         {showAtoms ? (
           <BatchedAtoms
             atoms={scene.atoms}
+            selectionRingColors={atomSelectionRingColors}
             colorScheme={colorScheme}
             colorOverrides={colorOverrides}
             inspectedAtomId={inspectedAtomId}

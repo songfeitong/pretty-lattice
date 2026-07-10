@@ -7,21 +7,26 @@ import {
   SRGBColorSpace,
 } from "three";
 
-import type { VectorTuple } from "./viewMath";
+import {
+  PREVIEW_THEME_COLORS,
+  type PreviewThemeColors,
+} from "../theme/previewTheme";
 import {
   ATOM_SELECTION_RING_SELECTED_OPACITY,
   ATOM_SELECTION_RING_SELECTED_SCALE,
   ATOM_SELECTION_RING_WORLD_SCALE,
 } from "./atomHighlight";
 import { STRUCTURE_RENDER_ORDER } from "./renderOrder";
+import type { VectorTuple } from "./viewMath";
 
-let cachedSelectionRingTexture: CanvasTexture | null | undefined;
+const cachedSelectionRingTextures = new Map<string, CanvasTexture | null>();
 
 export function AtomSelectionRing({
   materialRef,
   opacity = ATOM_SELECTION_RING_SELECTED_OPACITY,
   position,
   radius,
+  ringColors = PREVIEW_THEME_COLORS.light.atomSelectionRing,
   ringRef,
   scale = ATOM_SELECTION_RING_SELECTED_SCALE,
 }: {
@@ -29,10 +34,14 @@ export function AtomSelectionRing({
   opacity?: number;
   position?: VectorTuple;
   radius: number;
+  ringColors?: PreviewThemeColors["atomSelectionRing"];
   ringRef?: Ref<Group>;
   scale?: number;
 }) {
-  const texture = useMemo(() => selectionRingTexture(), []);
+  const texture = useMemo(
+    () => selectionRingTexture(ringColors),
+    [ringColors.edge, ringColors.halo, ringColors.highlight],
+  );
   if (!texture) {
     return null;
   }
@@ -58,13 +67,16 @@ export function AtomSelectionRing({
   );
 }
 
-function selectionRingTexture(): CanvasTexture | null {
-  if (cachedSelectionRingTexture !== undefined) {
-    return cachedSelectionRingTexture;
+function selectionRingTexture(
+  colors: PreviewThemeColors["atomSelectionRing"],
+): CanvasTexture | null {
+  const cacheKey = `${colors.halo}|${colors.highlight}|${colors.edge}`;
+  if (cachedSelectionRingTextures.has(cacheKey)) {
+    return cachedSelectionRingTextures.get(cacheKey) ?? null;
   }
   if (typeof document === "undefined") {
-    cachedSelectionRingTexture = null;
-    return cachedSelectionRingTexture;
+    cachedSelectionRingTextures.set(cacheKey, null);
+    return null;
   }
 
   const size = 512;
@@ -73,8 +85,8 @@ function selectionRingTexture(): CanvasTexture | null {
   canvas.height = size;
   const context = canvas.getContext("2d");
   if (!context) {
-    cachedSelectionRingTexture = null;
-    return cachedSelectionRingTexture;
+    cachedSelectionRingTextures.set(cacheKey, null);
+    return null;
   }
 
   const center = size / 2;
@@ -85,19 +97,19 @@ function selectionRingTexture(): CanvasTexture | null {
 
   context.beginPath();
   context.arc(center, center, radius, 0, Math.PI * 2);
-  context.strokeStyle = "rgba(15, 23, 42, 0.5)";
+  context.strokeStyle = colors.halo;
   context.lineWidth = 60;
   context.stroke();
 
   context.beginPath();
   context.arc(center, center, radius, 0, Math.PI * 2);
-  context.strokeStyle = "rgba(255, 255, 255, 0.98)";
+  context.strokeStyle = colors.highlight;
   context.lineWidth = 14;
   context.stroke();
 
   context.beginPath();
   context.arc(center, center, radius, 0, Math.PI * 2);
-  context.strokeStyle = "rgba(15, 23, 42, 0.34)";
+  context.strokeStyle = colors.edge;
   context.lineWidth = 4;
   context.stroke();
 
@@ -105,8 +117,8 @@ function selectionRingTexture(): CanvasTexture | null {
   texture.colorSpace = SRGBColorSpace;
   texture.minFilter = LinearFilter;
   texture.magFilter = LinearFilter;
-  cachedSelectionRingTexture = texture;
-  return cachedSelectionRingTexture;
+  cachedSelectionRingTextures.set(cacheKey, texture);
+  return texture;
 }
 
 function ignoreSelectionRingRaycast() {}

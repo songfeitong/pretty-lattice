@@ -1,6 +1,11 @@
 import type { ResolvedTheme } from "./themePreference";
 
 export interface PreviewThemeColors {
+  atomSelectionRing: {
+    edge: string;
+    halo: string;
+    highlight: string;
+  };
   background: string;
   fog: string;
   gizmoLabel: string;
@@ -19,6 +24,11 @@ export interface PreviewThemeColors {
 
 export const PREVIEW_THEME_COLORS: Record<ResolvedTheme, PreviewThemeColors> = {
   light: {
+    atomSelectionRing: {
+      edge: "rgba(15, 23, 42, 0.34)",
+      halo: "rgba(15, 23, 42, 0.5)",
+      highlight: "rgba(255, 255, 255, 0.98)",
+    },
     background: "#fafafa",
     fog: "#fafafa",
     gizmoLabel: "#343434",
@@ -35,6 +45,11 @@ export const PREVIEW_THEME_COLORS: Record<ResolvedTheme, PreviewThemeColors> = {
     unitCell: "#444444",
   },
   dark: {
+    atomSelectionRing: {
+      edge: "rgba(24, 24, 24, 0.3)",
+      halo: "rgba(232, 232, 232, 0.5)",
+      highlight: "rgba(255, 255, 255, 0.92)",
+    },
     background: "#181818",
     fog: "#181818",
     gizmoLabel: "#eeeeee",

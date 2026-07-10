@@ -92,6 +92,8 @@
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-tooltip: var(--tooltip);
+  --color-tooltip-foreground: var(--tooltip-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -133,6 +135,8 @@ html[lang="zh-TW"] {
   --card-foreground: var(--foreground);
   --popover: var(--ui-dark);
   --popover-foreground: #ffffff;
+  --tooltip: var(--ui-dark);
+  --tooltip-foreground: #ffffff;
   --primary: var(--ui-dark);
   --primary-foreground: #ffffff;
   --secondary: #f2f2f2;
@@ -155,6 +159,8 @@ html[lang="zh-TW"] {
   --card-foreground: var(--foreground);
   --popover: #404040;
   --popover-foreground: var(--foreground);
+  --tooltip: #e8e8e8;
+  --tooltip-foreground: #282828;
   --primary: #e8e8e8;
   --primary-foreground: #181818;
   --secondary: #424242;

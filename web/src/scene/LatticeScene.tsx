@@ -229,6 +229,7 @@ export function LatticeScene({
         safeArea={safeArea}
       />
       <PreviewSceneContent
+        atomSelectionRingColors={previewTheme.atomSelectionRing}
         componentOpacity={componentOpacity}
         fogColor={previewTheme.fog}
         layout={layout}

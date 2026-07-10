@@ -15,6 +15,7 @@ import {
 import type { AtomSpec } from "../api/scene";
 import type { ElementColorOverrides } from "../model/colorSchemes";
 import type { StyleState } from "../model";
+import type { PreviewThemeColors } from "../theme/previewTheme";
 import type { ResolvedStructureMaterialFamily } from "./materialPresetResolver";
 import { STRUCTURE_RENDER_ORDER } from "./renderOrder";
 import { StructureMaterial } from "./StructureMaterial";
@@ -69,6 +70,7 @@ export function BatchedAtoms({
   opacity,
   pulseAtomId,
   pulseToken,
+  selectionRingColors,
   style,
 }: {
   atoms: AtomSpec[];
@@ -84,6 +86,7 @@ export function BatchedAtoms({
   opacity: number;
   pulseAtomId: string | null;
   pulseToken: number;
+  selectionRingColors?: PreviewThemeColors["atomSelectionRing"];
   style: StyleState;
 }) {
   const meshRef = useRef<BatchedMesh | null>(null);
@@ -241,6 +244,7 @@ export function BatchedAtoms({
           key={inspectedItem.id}
           position={inspectedItem.position}
           radius={inspectedItem.radius}
+          ringColors={selectionRingColors}
         />
       ) : null}
     </>
@@ -419,9 +423,11 @@ function resolveActiveBatch(
 function AtomSelectionRingAnimator({
   position,
   radius,
+  ringColors,
 }: {
   position: VectorTuple;
   radius: number;
+  ringColors?: PreviewThemeColors["atomSelectionRing"];
 }) {
   const invalidate = useThree((state) => state.invalidate);
   const ringGroupRef = useRef<Group | null>(null);
@@ -472,6 +478,7 @@ function AtomSelectionRingAnimator({
       opacity={0}
       position={position}
       radius={radius}
+      ringColors={ringColors}
       ringRef={ringGroupRef}
       scale={ATOM_SELECTION_RING_PULSE_MIN_SCALE}
     />

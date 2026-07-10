@@ -163,6 +163,9 @@ describe("theme preferences", () => {
 describe("preview theme colors", () => {
   test("matches the accepted dark preview contrast", () => {
     expect(PREVIEW_THEME_COLORS.dark.background).toBe("#181818");
+    expect(PREVIEW_THEME_COLORS.dark.atomSelectionRing.halo).toBe(
+      "rgba(232, 232, 232, 0.5)",
+    );
     expect(PREVIEW_THEME_COLORS.dark.fog).toBe("#181818");
     expect(PREVIEW_THEME_COLORS.dark.unitCell).toBe("#bbbbbb");
     expect(PREVIEW_THEME_COLORS.dark.gizmoLabel).toBe("#eeeeee");
