@@ -28,7 +28,7 @@ function Switch({
       data-state={state}
       disabled={disabled}
       className={cn(
-        "inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-input p-0.5 shadow-xs outline-none transition-colors",
+        "continuous-pill inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-input p-0.5 shadow-xs outline-none transition-colors",
         "data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
         "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
         "disabled:cursor-not-allowed disabled:opacity-50",

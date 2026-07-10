@@ -26,7 +26,7 @@ export function ElementLegend({
     <nav
       aria-label={t("display.elementLegend")}
       className={cn(
-        "pointer-events-none absolute bottom-7 -translate-x-1/2 rounded-full border px-4 py-2 shadow-lg shadow-foreground/10 transition-[left,max-width] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
+        "continuous-pill pointer-events-none absolute bottom-7 -translate-x-1/2 rounded-full border px-4 py-2 shadow-lg shadow-foreground/10 transition-[left,max-width] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
         GLASS_SURFACE_CLASS,
       )}
       style={legendContainerStyle(safeArea, offsetX)}
