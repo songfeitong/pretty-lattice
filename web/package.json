@@ -18,6 +18,7 @@
     "@fontsource/geist": "^5.2.9",
     "@fontsource/geist-mono": "^5.2.8",
     "@fontsource/noto-sans-sc": "^5.2.9",
+    "@fontsource/noto-sans-tc": "^5.2.9",
     "@pdf-lib/fontkit": "^1.1.1",
     "@radix-ui/react-separator": "^1.1.10",
     "@radix-ui/react-slot": "^1.3.0",

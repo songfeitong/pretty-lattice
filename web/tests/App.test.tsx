@@ -557,13 +557,20 @@ describe("App", () => {
     expect(languageSelect.textContent).toContain("System");
 
     await user.click(languageSelect);
-    await user.click(await screen.findByRole("option", { name: "简体中文" }));
-
-    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("zh-CN");
-    expect(document.documentElement.lang).toBe("zh-CN");
     expect(
-      within(sidebar).getByRole("combobox", { name: "语言" }).textContent,
-    ).toContain("简体中文");
+      (await screen.findByRole("listbox")).querySelector(
+        '[data-slot="select-separator"]',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("option", { name: "简体中文" })).toBeTruthy();
+    await user.click(await screen.findByRole("option", { name: "繁體中文" }));
+
+    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("zh-TW");
+    expect(document.documentElement.lang).toBe("zh-TW");
+    expect(
+      within(sidebar).getByRole("combobox", { name: "語言" }).textContent,
+    ).toContain("繁體中文");
+    expect(within(sidebar).getByRole("tab", { name: "設定" })).toBeTruthy();
   });
 
   test("defaults large preview structures to low mesh quality", async () => {

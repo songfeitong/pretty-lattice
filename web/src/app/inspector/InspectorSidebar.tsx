@@ -18,6 +18,7 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -36,8 +37,8 @@ import {
 } from "../../api/scene";
 import {
   currentLanguagePreference,
-  LANGUAGE_PREFERENCES,
   setLanguagePreference,
+  SUPPORTED_LANGUAGES,
   type LanguagePreference,
 } from "../../i18n";
 import { MESH_QUALITY_LABEL_KEYS } from "../../i18n/exportSettingsText";
@@ -84,11 +85,15 @@ const INSPECTOR_SELECT_TRIGGER_CLASS =
 const INSPECTOR_SELECT_ITEM_CLASS = "min-h-6 py-0.5 text-[13px]";
 const INSPECTOR_LANGUAGE_LABEL_KEYS: Record<
   LanguagePreference,
-  "language.system" | "language.english" | "language.simplifiedChinese"
+  | "language.system"
+  | "language.english"
+  | "language.simplifiedChinese"
+  | "language.traditionalChinese"
 > = {
   system: "language.system",
   en: "language.english",
   "zh-CN": "language.simplifiedChinese",
+  "zh-TW": "language.traditionalChinese",
 };
 const THEME_PREFERENCE_LABEL_KEYS: Record<
   ThemePreference,
@@ -437,7 +442,11 @@ function SettingsPanel({
             </SelectTrigger>
             <SelectContent position="popper" className="!bg-background !text-foreground">
               <SelectGroup>
-                {LANGUAGE_PREFERENCES.map((language) => (
+                <SelectItem value="system" className={INSPECTOR_SELECT_ITEM_CLASS}>
+                  {t(INSPECTOR_LANGUAGE_LABEL_KEYS.system)}
+                </SelectItem>
+                <SelectSeparator />
+                {SUPPORTED_LANGUAGES.map((language) => (
                   <SelectItem
                     key={language}
                     value={language}

@@ -39,9 +39,19 @@ describe("i18n resources", () => {
     expect(currentAppLanguage()).toBe("zh-CN");
     expect(document.documentElement.lang).toBe("zh-CN");
     expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("zh-CN");
+
+    await setLanguagePreference("zh-TW");
+
+    expect(currentLanguagePreference()).toBe("zh-TW");
+    expect(currentAppLanguage()).toBe("zh-TW");
+    expect(document.documentElement.lang).toBe("zh-TW");
+    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("zh-TW");
   });
 
   test("matches supported system language variants in preference order", () => {
+    expect(resolveSystemLanguage(["zh-TW", "en-US"])).toBe("zh-TW");
+    expect(resolveSystemLanguage(["zh-Hant-HK", "en-US"])).toBe("zh-TW");
+    expect(resolveSystemLanguage(["zh-HK", "en-US"])).toBe("zh-TW");
     expect(resolveSystemLanguage(["zh-Hans-CN", "en-US"])).toBe("zh-CN");
     expect(resolveSystemLanguage(["fr-FR", "en-GB"])).toBe("en");
     expect(resolveSystemLanguage(["fr-FR"])).toBe("en");

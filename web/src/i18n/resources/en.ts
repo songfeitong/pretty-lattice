@@ -113,6 +113,7 @@ export const en = {
     english: "English",
     simplifiedChinese: "简体中文",
     system: "System",
+    traditionalChinese: "繁體中文",
   },
   nav: {
     commonControls: "Common controls",

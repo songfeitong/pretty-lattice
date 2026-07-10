@@ -1,7 +1,7 @@
 export const DEFAULT_LANGUAGE = "en";
 export const DEFAULT_LANGUAGE_PREFERENCE = "system";
 export const LANGUAGE_STORAGE_KEY = "pretty-lattice.language";
-export const SUPPORTED_LANGUAGES = ["en", "zh-CN"] as const;
+export const SUPPORTED_LANGUAGES = ["en", "zh-CN", "zh-TW"] as const;
 export const LANGUAGE_PREFERENCES = [
   DEFAULT_LANGUAGE_PREFERENCE,
   ...SUPPORTED_LANGUAGES,
@@ -25,6 +25,15 @@ export function resolveSystemLanguage(
 ): AppLanguage {
   for (const language of languages) {
     const normalizedLanguage = language.toLowerCase().replaceAll("_", "-");
+
+    if (
+      normalizedLanguage === "zh-tw" ||
+      normalizedLanguage === "zh-hk" ||
+      normalizedLanguage === "zh-mo" ||
+      normalizedLanguage.startsWith("zh-hant")
+    ) {
+      return "zh-TW";
+    }
 
     if (normalizedLanguage === "zh" || normalizedLanguage.startsWith("zh-")) {
       return "zh-CN";

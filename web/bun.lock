@@ -8,6 +8,7 @@
         "@fontsource/geist": "^5.2.9",
         "@fontsource/geist-mono": "^5.2.8",
         "@fontsource/noto-sans-sc": "^5.2.9",
+        "@fontsource/noto-sans-tc": "^5.2.9",
         "@pdf-lib/fontkit": "^1.1.1",
         "@radix-ui/react-separator": "^1.1.10",
         "@radix-ui/react-slot": "^1.3.0",
@@ -154,6 +155,8 @@
     "@fontsource/geist-mono": ["@fontsource/geist-mono@5.2.8", "https://registry.npmmirror.com/@fontsource/geist-mono/-/geist-mono-5.2.8.tgz", {}, "sha512-YqZUb3X42GjRaHkibUNyE8K4Rk9A6I9Ez81YpJYiuJN4ggmTW2ixoQpa9EWCPfXZtIsCQJTyrDoV9OJOZO/UcA=="],
 
     "@fontsource/noto-sans-sc": ["@fontsource/noto-sans-sc@5.2.9", "https://registry.npmmirror.com/@fontsource/noto-sans-sc/-/noto-sans-sc-5.2.9.tgz", {}, "sha512-bTUIWGBgJDpwi5qAr+x0/lcgv80IHTB9vl6s2f6EymZEa7qYV99yNRBZuKFT+SYDKVunZrjCEhWtpxqmbXWl5Q=="],
+
+    "@fontsource/noto-sans-tc": ["@fontsource/noto-sans-tc@5.2.9", "https://registry.npmmirror.com/@fontsource/noto-sans-tc/-/noto-sans-tc-5.2.9.tgz", {}, "sha512-Z+pXTvXYrip79lPV9X1lCYO3UTys55P25VqcifDStIzdZ86I4R6t8dz+NhGd09YdbvHWvOCB5Icw1m7glKHPNQ=="],
 
     "@happy-dom/global-registrator": ["@happy-dom/global-registrator@20.10.6", "https://registry.npmmirror.com/@happy-dom/global-registrator/-/global-registrator-20.10.6.tgz", { "dependencies": { "@types/node": ">=20.0.0", "happy-dom": "^20.10.6" } }, "sha512-Nu/IjRkkNxmeG2ywWsyJSO4d1BrWTqVzxCPL+gXj0b97klhmjd6wLzt6Bx/laNpkZ3WLW7zNCqmtMIbIlahqug=="],
 

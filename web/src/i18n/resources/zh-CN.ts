@@ -115,6 +115,7 @@ export const zhCN = {
     english: "English",
     simplifiedChinese: "简体中文",
     system: "跟随系统",
+    traditionalChinese: "繁體中文",
   },
   nav: {
     commonControls: "常用控制",

@@ -14,6 +14,7 @@ import {
 import { readLanguagePreference, writeLanguagePreference } from "./languagePreference";
 import { en } from "./resources/en";
 import { zhCN } from "./resources/zh-CN";
+import { zhTW } from "./resources/zh-TW";
 
 export {
   DEFAULT_LANGUAGE,
@@ -32,6 +33,9 @@ export const resources = {
   },
   "zh-CN": {
     translation: zhCN,
+  },
+  "zh-TW": {
+    translation: zhTW,
   },
 } as const;
 
