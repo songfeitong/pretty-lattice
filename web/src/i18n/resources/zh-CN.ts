@@ -159,7 +159,7 @@ export const zhCN = {
   preview: {
     crystalStructurePreview: "晶体结构预览",
     loadingStructure: "正在加载结构",
-    noStructureLoaded: "尚未加载结构",
+    noStructureLoaded: "未加载结构",
     structureFile: "结构文件",
   },
   settings: {

@@ -68,7 +68,7 @@ import {
   TOOL_ICON_BUTTON_CLASS,
 } from "../surface";
 
-export type ObjectsPanelTab = "atoms" | "bonds";
+export type ObjectsPanelTab = "atoms";
 
 interface AtomLocateRequest {
   atomId: string;
@@ -185,12 +185,6 @@ export function ObjectsPanel({
         >
           {t("objectsPanel.atoms")}
         </TabsTrigger>
-        <TabsTrigger
-          value="bonds"
-          className="!h-6 flex-none rounded-lg px-2.5 text-xs font-medium"
-        >
-          {t("objectsPanel.bonds")}
-        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="atoms" className="m-0 min-h-0">
@@ -205,10 +199,6 @@ export function ObjectsPanel({
           selectedAtomId={selectedAtomId}
           style={style}
         />
-      </TabsContent>
-
-      <TabsContent value="bonds" className="m-0 min-h-0">
-        <div className="h-24 rounded-md border border-dashed border-border/70" />
       </TabsContent>
     </Tabs>
     </TooltipProvider>

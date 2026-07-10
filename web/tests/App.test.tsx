@@ -965,8 +965,7 @@ describe("App", () => {
 
     await user.click(within(sidebar).getByRole("button", { name: "Collapse Na" }));
     expect(within(sidebar).queryByText("Na:0")).toBeNull();
-    await user.click(within(sidebar).getByRole("tab", { name: "Bonds" }));
-    await user.click(within(sidebar).getByRole("tab", { name: "Atoms" }));
+    expect(within(sidebar).queryByRole("tab", { name: "Bonds" })).toBeNull();
     expect(within(sidebar).queryByText("Na:0")).toBeNull();
     await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
 
