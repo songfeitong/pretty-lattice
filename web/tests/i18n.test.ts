@@ -1,12 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  DEFAULT_LANGUAGE,
+  DEFAULT_LANGUAGE_PREFERENCE,
   LANGUAGE_STORAGE_KEY,
   SUPPORTED_LANGUAGES,
   currentAppLanguage,
+  currentLanguagePreference,
+  resolveSystemLanguage,
   resources,
-  setAppLanguage,
+  setLanguagePreference,
 } from "../src/i18n";
 import {
   readLanguagePreference,
@@ -22,18 +24,27 @@ describe("i18n resources", () => {
     }
   });
 
-  test("defaults to English and persists explicit language changes", async () => {
+  test("defaults to the system preference and persists explicit language changes", async () => {
     window.localStorage.removeItem(LANGUAGE_STORAGE_KEY);
-    await setAppLanguage(DEFAULT_LANGUAGE);
+    await setLanguagePreference(DEFAULT_LANGUAGE_PREFERENCE);
 
-    expect(currentAppLanguage()).toBe("en");
-    expect(document.documentElement.lang).toBe("en");
+    expect(currentLanguagePreference()).toBe("system");
+    expect(currentAppLanguage()).toBe(resolveSystemLanguage());
+    expect(document.documentElement.lang).toBe(resolveSystemLanguage());
+    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("system");
 
-    await setAppLanguage("zh-CN");
+    await setLanguagePreference("zh-CN");
 
+    expect(currentLanguagePreference()).toBe("zh-CN");
     expect(currentAppLanguage()).toBe("zh-CN");
     expect(document.documentElement.lang).toBe("zh-CN");
     expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("zh-CN");
+  });
+
+  test("matches supported system language variants in preference order", () => {
+    expect(resolveSystemLanguage(["zh-Hans-CN", "en-US"])).toBe("zh-CN");
+    expect(resolveSystemLanguage(["fr-FR", "en-GB"])).toBe("en");
+    expect(resolveSystemLanguage(["fr-FR"])).toBe("en");
   });
 
   test("keeps language changes usable when browser storage throws", () => {
@@ -61,7 +72,7 @@ describe("i18n resources", () => {
     });
 
     try {
-      expect(readLanguagePreference()).toBe(DEFAULT_LANGUAGE);
+      expect(readLanguagePreference()).toBe(DEFAULT_LANGUAGE_PREFERENCE);
       expect(() => writeLanguagePreference("zh-CN")).not.toThrow();
     } finally {
       Object.defineProperty(window, "localStorage", {

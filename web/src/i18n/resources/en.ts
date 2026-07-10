@@ -112,6 +112,7 @@ export const en = {
   language: {
     english: "English",
     simplifiedChinese: "简体中文",
+    system: "System",
   },
   nav: {
     commonControls: "Common controls",

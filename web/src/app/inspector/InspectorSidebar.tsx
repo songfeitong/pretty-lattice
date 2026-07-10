@@ -35,10 +35,10 @@ import {
   type SceneSpec,
 } from "../../api/scene";
 import {
-  currentAppLanguage,
-  setAppLanguage,
-  SUPPORTED_LANGUAGES,
-  type AppLanguage,
+  currentLanguagePreference,
+  LANGUAGE_PREFERENCES,
+  setLanguagePreference,
+  type LanguagePreference,
 } from "../../i18n";
 import { MESH_QUALITY_LABEL_KEYS } from "../../i18n/exportSettingsText";
 import {
@@ -82,7 +82,11 @@ const INSPECTOR_SECTION_TITLE_CLASS =
 const INSPECTOR_SELECT_TRIGGER_CLASS =
   "!h-6 w-full !px-2 !py-0 bg-background text-[13px]";
 const INSPECTOR_SELECT_ITEM_CLASS = "min-h-6 py-0.5 text-[13px]";
-const INSPECTOR_LANGUAGE_LABEL_KEYS: Record<AppLanguage, "language.english" | "language.simplifiedChinese"> = {
+const INSPECTOR_LANGUAGE_LABEL_KEYS: Record<
+  LanguagePreference,
+  "language.system" | "language.english" | "language.simplifiedChinese"
+> = {
+  system: "language.system",
   en: "language.english",
   "zh-CN": "language.simplifiedChinese",
 };
@@ -366,7 +370,9 @@ function SettingsPanel({
   onUnitCellLineStyleChange: (lineStyle: UnitCellLineStyle) => void;
 }) {
   const { t } = useTranslation();
-  const appLanguage = currentAppLanguage();
+  const [languagePreference, setLocalLanguagePreference] = useState(
+    currentLanguagePreference,
+  );
   const { setTheme, theme } = useTheme();
 
   return (
@@ -415,9 +421,11 @@ function SettingsPanel({
 
         <InspectorSelectRow label={t("settings.language")}>
           <Select
-            value={appLanguage}
+            value={languagePreference}
             onValueChange={(value) => {
-              void setAppLanguage(value as AppLanguage);
+              const preference = value as LanguagePreference;
+              setLocalLanguagePreference(preference);
+              void setLanguagePreference(preference);
             }}
           >
             <SelectTrigger
@@ -429,7 +437,7 @@ function SettingsPanel({
             </SelectTrigger>
             <SelectContent position="popper" className="!bg-background !text-foreground">
               <SelectGroup>
-                {SUPPORTED_LANGUAGES.map((language) => (
+                {LANGUAGE_PREFERENCES.map((language) => (
                   <SelectItem
                     key={language}
                     value={language}

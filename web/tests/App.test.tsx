@@ -21,6 +21,7 @@ import {
   formatDragSensitivityPercent,
   type ExportFormat,
 } from "../src/model";
+import { LANGUAGE_STORAGE_KEY } from "../src/i18n";
 import { MATERIAL_PRESET_OPTIONS } from "../src/model/materialPresets";
 import { THEME_STORAGE_KEY } from "../src/theme/themePreference";
 import { createAppTestHarness } from "./helpers/appHarness";
@@ -543,6 +544,26 @@ describe("App", () => {
 
     await user.click(darkThemeButton);
     expect(darkThemeButton.getAttribute("data-state")).toBe("on");
+  });
+
+  test("defaults language to System and persists explicit language choices", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user);
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    const languageSelect = within(sidebar).getByRole("combobox", { name: "Language" });
+    expect(languageSelect.textContent).toContain("System");
+
+    await user.click(languageSelect);
+    await user.click(await screen.findByRole("option", { name: "简体中文" }));
+
+    expect(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("zh-CN");
+    expect(document.documentElement.lang).toBe("zh-CN");
+    expect(
+      within(sidebar).getByRole("combobox", { name: "语言" }).textContent,
+    ).toContain("简体中文");
   });
 
   test("defaults large preview structures to low mesh quality", async () => {

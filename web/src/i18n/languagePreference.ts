@@ -1,30 +1,32 @@
 import {
-  DEFAULT_LANGUAGE,
+  DEFAULT_LANGUAGE_PREFERENCE,
   LANGUAGE_STORAGE_KEY,
-  type AppLanguage,
-  isAppLanguage,
+  type LanguagePreference,
+  isLanguagePreference,
 } from "./languages";
 
-export function readLanguagePreference(): AppLanguage {
+export function readLanguagePreference(): LanguagePreference {
   if (typeof window === "undefined") {
-    return DEFAULT_LANGUAGE;
+    return DEFAULT_LANGUAGE_PREFERENCE;
   }
 
   try {
     const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    return isAppLanguage(storedLanguage) ? storedLanguage : DEFAULT_LANGUAGE;
+    return isLanguagePreference(storedLanguage)
+      ? storedLanguage
+      : DEFAULT_LANGUAGE_PREFERENCE;
   } catch {
-    return DEFAULT_LANGUAGE;
+    return DEFAULT_LANGUAGE_PREFERENCE;
   }
 }
 
-export function writeLanguagePreference(language: AppLanguage) {
+export function writeLanguagePreference(preference: LanguagePreference) {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, preference);
   } catch {
     // The language switch should still work when browser storage is unavailable.
   }
