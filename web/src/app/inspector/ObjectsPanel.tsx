@@ -1036,7 +1036,7 @@ function ColorCell({
         inputLabel={inputLabel}
         pickerId={pickerId}
         side="left"
-        triggerClassName="size-4 transition-transform duration-150 ease-out hover:scale-[1.08] motion-reduce:transition-none motion-reduce:hover:scale-100"
+        triggerClassName="size-4 transition-transform duration-150 ease-out hover:scale-[1.08] motion-reduced:transition-none motion-reduced:hover:scale-100"
         value={hexColor}
         swatchClassName="size-4 rounded-full"
         swatchStyle={{ background: lambertLegendSwatchBackground(hexColor) }}

@@ -32,12 +32,12 @@ export function PrettyLatticeLogo({
     >
       <g transform={`rotate(30 ${LOGO_CENTER_X} ${LOGO_CENTER_Y})`}>
         <polygon
-          className="fill-[#a4a7c8] transition-transform duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+          className="fill-[#a4a7c8] transition-transform duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduced:transition-none"
           points="299,176 871,176 1158,673 871,1170 299,1170 12,673"
           style={outerHexagonStyle}
         />
         <polygon
-          className="fill-[#a5dcd8] transition-transform duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+          className="fill-[#a5dcd8] transition-transform duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduced:transition-none"
           points="585,341 871,508 871,839 585,1005 299,839 299,508"
           style={innerHexagonStyle}
         />

@@ -22,6 +22,7 @@ import {
   type ExportFormat,
 } from "../src/model";
 import { LANGUAGE_STORAGE_KEY } from "../src/i18n";
+import { MOTION_STORAGE_KEY } from "../src/motion/motionPreference";
 import { MATERIAL_PRESET_OPTIONS } from "../src/model/materialPresets";
 import { THEME_STORAGE_KEY } from "../src/theme/themePreference";
 import { createAppTestHarness } from "./helpers/appHarness";
@@ -587,6 +588,27 @@ describe("App", () => {
     expect(within(sidebar).getByRole("tab", { name: "設定" })).toBeTruthy();
   });
 
+  test("defaults motion to System and persists explicit motion choices", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user);
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    const motionSelect = within(sidebar).getByRole("combobox", { name: "Motion" });
+    expect(motionSelect.textContent).toContain("System");
+
+    await user.click(motionSelect);
+    await user.click(await screen.findByRole("option", { name: "Reduced" }));
+    expect(window.localStorage.getItem(MOTION_STORAGE_KEY)).toBe("reduce");
+    expect(document.documentElement.dataset.motion).toBe("reduce");
+
+    await user.click(within(sidebar).getByRole("combobox", { name: "Motion" }));
+    await user.click(await screen.findByRole("option", { name: "Full" }));
+    expect(window.localStorage.getItem(MOTION_STORAGE_KEY)).toBe("full");
+    expect(document.documentElement.dataset.motion).toBe("full");
+  });
+
   test("defaults large preview structures to low mesh quality", async () => {
     const user = userEvent.setup();
 
@@ -767,7 +789,7 @@ describe("App", () => {
 
     expect(screen.getByText("Loading structure").isConnected).toBe(true);
     const spinner = screen.getByTestId("loading-structure-spinner");
-    expect(spinner.className).toContain("motion-safe:animate-spin");
+    expect(spinner.className).toContain("motion-enabled:animate-spin");
 
     resolveScene(sceneWithPeriodicImages());
 

@@ -39,6 +39,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useMotion } from "@/motion/MotionProvider";
+import {
+  MOTION_PREFERENCES,
+  type MotionPreference,
+} from "@/motion/motionPreference";
 import { THEME_PREFERENCES, type ThemePreference } from "@/theme/themePreference";
 import { useTheme } from "@/theme/ThemeProvider";
 
@@ -117,6 +122,14 @@ const THEME_PREFERENCE_ICONS: Record<ThemePreference, LucideIcon> = {
   system: Monitor,
   light: Sun,
   dark: Moon,
+};
+const MOTION_PREFERENCE_LABEL_KEYS: Record<
+  MotionPreference,
+  "settings.system" | "settings.reduced" | "settings.full"
+> = {
+  system: "settings.system",
+  reduce: "settings.reduced",
+  full: "settings.full",
 };
 const INTERACTION_MODE_LABEL_KEYS: Record<InteractionMode, "settings.orbit" | "settings.trackball"> = {
   orbit: "settings.orbit",
@@ -274,7 +287,7 @@ export function InspectorSidebar({
       inert={!isOpen}
       className={cn(
         "absolute inset-y-0 right-0 z-20 flex w-[372px] max-w-[calc(100vw-1rem)] flex-col border-l border-border bg-card text-foreground",
-        "transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
+        "transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduced:transition-none",
         isOpen ? "translate-x-0" : "translate-x-full",
       )}
     >
@@ -424,6 +437,7 @@ function SettingsPanel({
     currentLanguagePreference,
   );
   const { setTheme, theme } = useTheme();
+  const { motion, reducedMotion, setMotion } = useMotion();
 
   return (
     <div className="flex flex-col gap-3">
@@ -502,6 +516,34 @@ function SettingsPanel({
                     className={INSPECTOR_SELECT_ITEM_CLASS}
                   >
                     {t(INSPECTOR_LANGUAGE_LABEL_KEYS[language])}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </InspectorSelectRow>
+
+        <InspectorSelectRow label={t("settings.motion")}>
+          <Select
+            value={motion}
+            onValueChange={(value) => setMotion(value as MotionPreference)}
+          >
+            <SelectTrigger
+              size="sm"
+              aria-label={t("settings.motion")}
+              className={INSPECTOR_SELECT_TRIGGER_CLASS}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" className="!bg-background !text-foreground">
+              <SelectGroup>
+                {MOTION_PREFERENCES.map((preference) => (
+                  <SelectItem
+                    key={preference}
+                    value={preference}
+                    className={INSPECTOR_SELECT_ITEM_CLASS}
+                  >
+                    {t(MOTION_PREFERENCE_LABEL_KEYS[preference])}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -654,8 +696,8 @@ function SettingsPanel({
         </InspectorSelectRow>
 
         <InspectorSwitchRow
-          checked={mouseInertia}
-          disabled={interactionMode !== "trackball"}
+          checked={mouseInertia && !reducedMotion}
+          disabled={interactionMode !== "trackball" || reducedMotion}
           label={t("settings.mouseInertia")}
           onCheckedChange={onMouseInertiaChange}
         />

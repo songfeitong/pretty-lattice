@@ -123,6 +123,7 @@ export function LatticeScene({
   pulseToken = 0,
   previewMeshQuality = DEFAULT_PREVIEW_MESH_QUALITY,
   previewFpsStore,
+  reducedMotion = false,
   showAtoms = true,
   showFpsOverlay = false,
   showUnitCell = true,
@@ -166,6 +167,7 @@ export function LatticeScene({
   pulseToken?: number;
   previewMeshQuality?: MeshQuality;
   previewFpsStore?: PreviewFpsStore;
+  reducedMotion?: boolean;
   showAtoms?: boolean;
   showFpsOverlay?: boolean;
   showUnitCell?: boolean;
@@ -238,6 +240,7 @@ export function LatticeScene({
         interactionLocked={interactionLocked}
         interactionMode={interactionMode}
         mouseInertia={mouseInertia}
+        reducedMotion={reducedMotion}
         layout={layout}
         onCameraCommandAnimationActiveChange={
           onCameraCommandAnimationActiveChange

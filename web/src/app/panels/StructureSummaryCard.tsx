@@ -190,7 +190,7 @@ export function StructureSummaryCard({
           id={expandableContentId}
           data-slot="structure-summary-details"
           className={cn(
-            "grid overflow-hidden transition-[grid-template-rows] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+            "grid overflow-hidden transition-[grid-template-rows] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none",
             isCollapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
           )}
         >

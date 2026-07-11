@@ -275,6 +275,28 @@ describe("LatticeScene camera commands", () => {
     expect(latestControls?.zoomSpeed).toBeCloseTo(4.8);
   });
 
+  test("disables trackball inertia when reduced motion is active", () => {
+    const scene = orthogonalScene();
+
+    render(
+      <LatticeScene
+        cameraCommandVersion={0}
+        cameraInteractionStore={createCameraInteractionStore()}
+        cameraState={createDefaultCrystalCameraState(scene.cell.vectors)}
+        componentOpacity={createDefaultComponentOpacity()}
+        interactionLocked={false}
+        interactionMode="trackball"
+        mouseInertia
+        reducedMotion
+        resetCounter={0}
+        scene={scene}
+        style={createDefaultStyle()}
+      />,
+    );
+
+    expect(latestControls?.staticMoving).toBe(true);
+  });
+
   test("advances trackball inertia on every requested frame", () => {
     const scene = orthogonalScene();
 
@@ -600,6 +622,39 @@ describe("LatticeScene camera commands", () => {
     } finally {
       nowSpy.mockRestore();
     }
+  });
+
+  test("applies flagged camera commands immediately with reduced motion", () => {
+    const scene = orthogonalScene();
+    const defaultCamera = createDefaultCrystalCameraState(scene.cell.vectors);
+    const aCamera = stateWithDirectAxis(scene.cell.vectors, defaultCamera, "a");
+    const props = {
+      cameraAnimatedCommandVersion: 0,
+      cameraCommandVersion: 0,
+      cameraInteractionStore: createCameraInteractionStore(),
+      cameraState: defaultCamera,
+      componentOpacity: createDefaultComponentOpacity(),
+      interactionLocked: false,
+      interactionMode: "trackball" as const,
+      reducedMotion: true,
+      resetCounter: 0,
+      scene,
+      style: createDefaultStyle(),
+    };
+    const { rerender } = render(<LatticeScene {...props} />);
+
+    rerender(
+      <LatticeScene
+        {...props}
+        cameraAnimatedCommandVersion={1}
+        cameraCommandVersion={1}
+        cameraState={aCamera}
+      />,
+    );
+
+    expect(mockCamera.position.x).toBeGreaterThan(0);
+    expect(Math.abs(mockCamera.position.y)).toBeLessThan(1e-8);
+    expect(Math.abs(mockCamera.position.z)).toBeLessThan(1e-8);
   });
 
   test("applies external zoom without advancing control damping", () => {

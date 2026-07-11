@@ -84,6 +84,20 @@
 }
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant motion-enabled (&:where([data-motion="full"], [data-motion="full"] *));
+@custom-variant motion-reduced (&:where([data-motion="reduce"], [data-motion="reduce"] *));
+
+html[data-motion="reduce"],
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  scroll-behavior: auto !important;
+  animation-delay: 0ms !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-delay: 0ms !important;
+  transition-duration: 0.01ms !important;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -205,12 +219,10 @@ html[lang="zh-TW"] {
   opacity: 1;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
+[data-motion="reduce"]::view-transition-group(*),
+[data-motion="reduce"]::view-transition-old(*),
+[data-motion="reduce"]::view-transition-new(*) {
+  animation: none !important;
 }
 
 @layer base {
@@ -665,7 +677,7 @@ html[lang="zh-TW"] {
     }
   }
 
-  @media (prefers-reduced-motion: reduce) {
+  html[data-motion="reduce"] {
     .tool-icon-button-reset-feedback-a,
     .tool-icon-button-reset-feedback-a:hover,
     .tool-icon-button-reset-feedback-a:focus-visible {

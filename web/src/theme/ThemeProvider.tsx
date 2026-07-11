@@ -10,6 +10,8 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 
+import { useMotion } from "@/motion/MotionProvider";
+
 import {
   applyResolvedTheme,
   DARK_THEME_MEDIA_QUERY,
@@ -20,8 +22,6 @@ import {
   type ThemePreference,
   writeThemePreference,
 } from "./themePreference";
-
-const REDUCED_MOTION_MEDIA_QUERY = "(prefers-reduced-motion: reduce)";
 
 interface ThemeContextValue {
   resolvedTheme: ResolvedTheme;
@@ -36,6 +36,7 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const { reducedMotion } = useMotion();
   const [theme, setThemeState] = useState(readThemePreference);
   const [systemTheme, setSystemTheme] = useState(readSystemTheme);
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
@@ -59,7 +60,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
 
       if (theme === "system") {
-        updateThemeWithTransition(() => {
+        updateThemeWithTransition(reducedMotion, () => {
           applyResolvedTheme(nextSystemTheme);
           setSystemTheme(nextSystemTheme);
           setResolvedTheme(nextSystemTheme);
@@ -72,7 +73,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     mediaQuery.addEventListener("change", handleSystemThemeChange);
     return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
-  }, [systemTheme, theme]);
+  }, [reducedMotion, systemTheme, theme]);
 
   const setTheme = useCallback(
     (nextTheme: ThemePreference) => {
@@ -85,13 +86,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const nextResolvedTheme = resolveTheme(nextTheme, nextSystemTheme);
 
       flushSync(() => setThemeState(nextTheme));
-      updateThemeWithTransition(() => {
+      updateThemeWithTransition(reducedMotion, () => {
         applyResolvedTheme(nextResolvedTheme);
         setSystemTheme(nextSystemTheme);
         setResolvedTheme(nextResolvedTheme);
       });
     },
-    [theme],
+    [reducedMotion, theme],
   );
 
   const value = useMemo(
@@ -106,17 +107,13 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-function updateThemeWithTransition(update: () => void) {
+function updateThemeWithTransition(reducedMotion: boolean, update: () => void) {
   if (typeof document === "undefined") {
     update();
     return;
   }
 
-  const prefersReducedMotion =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia(REDUCED_MOTION_MEDIA_QUERY).matches;
-
-  if (typeof document.startViewTransition !== "function" || prefersReducedMotion) {
+  if (typeof document.startViewTransition !== "function" || reducedMotion) {
     update();
     return;
   }

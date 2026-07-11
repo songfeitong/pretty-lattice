@@ -283,14 +283,14 @@ export function CommonControlsPanel({
         <Tabs value={activeTab} onValueChange={handleTabValueChange}>
           <TabsList
             ref={tabListRef}
-            className="relative grid !h-8 w-full overflow-hidden rounded-lg bg-muted/70 p-1 transition-[grid-template-columns] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+            className="relative grid !h-8 w-full overflow-hidden rounded-lg bg-muted/70 p-1 transition-[grid-template-columns] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none"
             style={tabListStyle}
           >
             {tabIndicatorRect ? (
               <span
                 aria-hidden="true"
                 data-slot="common-controls-active-indicator"
-                className="pointer-events-none absolute inset-y-1 left-0 z-0 rounded-md bg-background shadow-sm transition-[transform,width] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                className="pointer-events-none absolute inset-y-1 left-0 z-0 rounded-md bg-background shadow-sm transition-[transform,width] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none"
                 style={{
                   transform: `translateX(${tabIndicatorRect.left}px)`,
                   width: tabIndicatorRect.width,
@@ -306,7 +306,7 @@ export function CommonControlsPanel({
                   value={value}
                   aria-label={label}
                   className={cn(
-                    "z-10 !h-6 min-w-0 rounded-lg !bg-transparent text-xs !shadow-none transition-[color,padding] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] data-[state=active]:!bg-transparent data-[state=active]:!shadow-none dark:data-[state=active]:!border-transparent motion-reduce:transition-none [&_svg]:size-3.5",
+                    "z-10 !h-6 min-w-0 rounded-lg !bg-transparent text-xs !shadow-none transition-[color,padding] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] data-[state=active]:!bg-transparent data-[state=active]:!shadow-none dark:data-[state=active]:!border-transparent motion-reduced:transition-none [&_svg]:size-3.5",
                     isActive
                       ? "px-2 text-foreground"
                       : "px-0.5 text-muted-foreground",
@@ -317,7 +317,7 @@ export function CommonControlsPanel({
                     data-slot="common-controls-tab-label"
                     data-active={isActive ? "true" : "false"}
                     className={cn(
-                      "overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                      "overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none",
                       isActive ? "max-w-16 opacity-100" : "max-w-0 opacity-0",
                     )}
                   >
@@ -342,7 +342,7 @@ export function CommonControlsPanel({
           <div
             ref={contentRef}
             data-slot="common-controls-content"
-            className="relative overflow-hidden transition-[height] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+            className="relative overflow-hidden transition-[height] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none"
             style={contentStyle}
           >
             <TabsContent

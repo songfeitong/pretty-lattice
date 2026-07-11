@@ -11,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
+import { useMotion } from "@/motion/MotionProvider";
 import { PREVIEW_THEME_COLORS, type PreviewThemeColors } from "@/theme/previewTheme";
 import { useTheme } from "@/theme/ThemeProvider";
 
@@ -70,6 +71,7 @@ export function ScreenAxisChooser({
   value: CrystalCameraPrimaryDirection;
 }) {
   const { t } = useTranslation();
+  const { reducedMotion } = useMotion();
   const { resolvedTheme } = useTheme();
   const screenAxisTheme = PREVIEW_THEME_COLORS[resolvedTheme].screenAxis;
   const [hoveredAxis, setHoveredAxis] = useState<CrystalCameraScreenDirection | null>(null);
@@ -99,6 +101,7 @@ export function ScreenAxisChooser({
         <ScreenAxisGizmoScene
           colors={screenAxisTheme}
           hoveredAxis={hoveredAxis}
+          reducedMotion={reducedMotion}
           selectedAxis={value}
         />
       </Canvas>
@@ -214,10 +217,12 @@ function ScreenAxisCameraSetup() {
 function ScreenAxisGizmoScene({
   colors,
   hoveredAxis,
+  reducedMotion,
   selectedAxis,
 }: {
   colors: PreviewThemeColors["screenAxis"];
   hoveredAxis: CrystalCameraScreenDirection | null;
+  reducedMotion: boolean;
   selectedAxis: CrystalCameraPrimaryDirection;
 }) {
   return (
@@ -232,6 +237,7 @@ function ScreenAxisGizmoScene({
             colors={colors}
             hovered={hovered}
             key={axis.direction}
+            reducedMotion={reducedMotion}
             selected={selected}
           />
         );
@@ -252,11 +258,13 @@ function ScreenAxisArrow({
   axis,
   colors,
   hovered,
+  reducedMotion,
   selected,
 }: {
   axis: (typeof SCREEN_AXIS_GIZMO_AXES)[number];
   colors: PreviewThemeColors["screenAxis"];
   hovered: boolean;
+  reducedMotion: boolean;
   selected: boolean;
 }) {
   const shaftMaterialRef = useRef<MeshBasicMaterial | null>(null);
@@ -301,7 +309,7 @@ function ScreenAxisArrow({
   }, [invalidate, targetColor, targetConeScale, targetShaftScale]);
 
   useFrame((_, delta) => {
-    const alpha = screenAxisTransitionAlpha(delta);
+    const alpha = reducedMotion ? 1 : screenAxisTransitionAlpha(delta);
     let shouldContinue = false;
 
     for (const material of [shaftMaterialRef.current, coneMaterialRef.current]) {

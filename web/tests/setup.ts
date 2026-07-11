@@ -8,6 +8,7 @@ import {
   setLanguagePreference,
 } from "../src/i18n";
 import { THEME_STORAGE_KEY } from "../src/theme/themePreference";
+import { MOTION_STORAGE_KEY } from "../src/motion/motionPreference";
 
 (import.meta.env as Record<string, string>).VITE_PRETTY_LATTICE_VERSION =
   readPrettyLatticeVersion();
@@ -22,8 +23,10 @@ afterEach(async () => {
   cleanup();
   window.localStorage.removeItem(LANGUAGE_STORAGE_KEY);
   window.localStorage.removeItem(THEME_STORAGE_KEY);
+  window.localStorage.removeItem(MOTION_STORAGE_KEY);
   document.documentElement.classList.remove("dark", "light");
   delete document.documentElement.dataset.theme;
+  delete document.documentElement.dataset.motion;
   document.documentElement.style.removeProperty("color-scheme");
   await setLanguagePreference(DEFAULT_LANGUAGE_PREFERENCE);
   window.localStorage.removeItem(LANGUAGE_STORAGE_KEY);

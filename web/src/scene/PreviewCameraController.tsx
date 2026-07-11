@@ -73,6 +73,7 @@ export function PreviewCameraController({
   dragSensitivity,
   layout,
   mouseInertia,
+  reducedMotion,
   onCameraCommandAnimationActiveChange,
   onCameraControlsInteractionActiveChange,
   resetCounter,
@@ -88,6 +89,7 @@ export function PreviewCameraController({
   dragSensitivity: number;
   layout: SceneLayout;
   mouseInertia: boolean;
+  reducedMotion: boolean;
   onCameraCommandAnimationActiveChange?: (isActive: boolean) => void;
   onCameraControlsInteractionActiveChange?: (
     isActive: boolean,
@@ -121,6 +123,7 @@ export function PreviewCameraController({
   const syncedViewScaleRef = useRef(cameraInteractionStore.getViewScaleSnapshot());
   const trackballDirectFlushPendingRef = useRef(false);
   const trackballInertiaPendingRef = useRef(false);
+  const effectiveMouseInertia = mouseInertia && !reducedMotion;
   cameraPoseRef.current = cameraPose;
   const effectiveSafeArea = useMemo(
     () => previewSafeAreaForViewport(safeArea, size.width),
@@ -252,7 +255,7 @@ export function PreviewCameraController({
       animatedCommandChanged &&
       !resetChanged &&
       !layoutSpanChanged &&
-      !prefersReducedCameraMotion();
+      !reducedMotion;
 
     lastCameraCommandVersionRef.current = cameraCommandVersion;
     lastCameraAnimatedCommandVersionRef.current = cameraAnimatedCommandVersion;
@@ -283,6 +286,7 @@ export function PreviewCameraController({
     layout.span,
     requestFrame,
     resetCounter,
+    reducedMotion,
     setCameraAnimationActive,
   ]);
 
@@ -389,7 +393,7 @@ export function PreviewCameraController({
     }
     const activePointerIds = new Set<number>();
     function markTrackballEventFlushed() {
-      if (!mouseInertia && controls instanceof TrackballControls) {
+      if (!effectiveMouseInertia && controls instanceof TrackballControls) {
         trackballDirectFlushPendingRef.current = true;
       }
     }
@@ -399,7 +403,7 @@ export function PreviewCameraController({
     }
     function handlePointerMove() {
       if (activePointerIds.size > 0) {
-        if (!mouseInertia && controls instanceof TrackballControls) {
+        if (!effectiveMouseInertia && controls instanceof TrackballControls) {
           flushTrackballControlsAfterPointerMove();
         } else {
           requestFrame();
@@ -415,7 +419,7 @@ export function PreviewCameraController({
       requestFrame();
     }
     function handleWheel() {
-      if (!mouseInertia) {
+      if (!effectiveMouseInertia) {
         flushTrackballControlsAfterWheel();
       }
       requestFrame();
@@ -453,7 +457,7 @@ export function PreviewCameraController({
       interactionLocked,
       fitZoom,
       dragSensitivity,
-      mouseInertia,
+      effectiveMouseInertia,
     );
     trackballDirectFlushPendingRef.current = false;
     trackballInertiaPendingRef.current = false;
@@ -492,7 +496,7 @@ export function PreviewCameraController({
     gl.domElement,
     dragSensitivity,
     interactionMode,
-    mouseInertia,
+    effectiveMouseInertia,
     requestFrame,
     requestCameraControlsInteractionFinish,
     resetCounter,
@@ -516,7 +520,7 @@ export function PreviewCameraController({
       interactionLocked,
       fitZoom,
       dragSensitivity,
-      mouseInertia,
+      effectiveMouseInertia,
     );
     trackballDirectFlushPendingRef.current = false;
     trackballInertiaPendingRef.current = false;
@@ -528,7 +532,7 @@ export function PreviewCameraController({
     fitZoom,
     interactionLocked,
     interactionMode,
-    mouseInertia,
+    effectiveMouseInertia,
     requestFrame,
     resetCounter,
   ]);
@@ -616,7 +620,7 @@ export function PreviewCameraController({
       Math.abs(getCameraZoomSnapshot() - previousFrameZoom) >
         CAMERA_CONTROLS_IDLE_ZOOM_EPSILON;
     const hasPendingTrackballInertia =
-      mouseInertia &&
+      effectiveMouseInertia &&
       controlsRef.current instanceof TrackballControls &&
       trackballInertiaPendingRef.current;
     if (hasPendingTrackballInertia && controlsUpdated && !cameraMoved) {
@@ -700,14 +704,6 @@ function applyCameraPoseAnimationFrame(
 
 function easeOutCubic(progress: number): number {
   return 1 - (1 - progress) ** 3;
-}
-
-function prefersReducedCameraMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
 }
 
 function syncOrthographicFrustumToCameraZoom(

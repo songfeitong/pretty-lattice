@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 
 import { AngleSlider } from "@/components/ui/angle-slider";
 import { cn } from "@/lib/utils";
+import { useMotion } from "@/motion/MotionProvider";
 
 import {
   formatRollValue,
@@ -36,6 +37,7 @@ export function RollControl({
   value: number;
 }) {
   const { t } = useTranslation();
+  const { reducedMotion } = useMotion();
   const committedValue = toPositiveRollDegrees(value);
   const [isDragging, setIsDragging] = useState(false);
   const [draftValue, setDraftValue] = useState(committedValue);
@@ -81,7 +83,7 @@ export function RollControl({
 
     const startValue = animatedValueRef.current;
     const delta = shortestRollDelta(startValue, committedValue);
-    if (Math.abs(delta) < 0.001) {
+    if (reducedMotion || Math.abs(delta) < 0.001) {
       setDisplayedRollValue(committedValue);
       return;
     }
@@ -103,7 +105,7 @@ export function RollControl({
     };
 
     animationFrameRef.current = window.requestAnimationFrame(step);
-  }, [committedValue, isDragging]);
+  }, [committedValue, isDragging, reducedMotion]);
 
   useEffect(() => {
     if (isDragging || (isValueFocused && hasValueEdited)) {

@@ -6,13 +6,19 @@
     <meta name="color-scheme" content="light dark" />
     <script>
       (() => {
-        const storageKey = "pretty-lattice-theme";
+        const themeStorageKey = "pretty-lattice-theme";
+        const motionStorageKey = "pretty-lattice-motion";
         let theme = "system";
+        let motion = "system";
 
         try {
-          const storedTheme = window.localStorage.getItem(storageKey);
+          const storedTheme = window.localStorage.getItem(themeStorageKey);
           if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "system") {
             theme = storedTheme;
+          }
+          const storedMotion = window.localStorage.getItem(motionStorageKey);
+          if (storedMotion === "reduce" || storedMotion === "full" || storedMotion === "system") {
+            motion = storedMotion;
           }
         } catch {}
 
@@ -28,6 +34,13 @@
         root.classList.toggle("light", resolvedTheme === "light");
         root.dataset.theme = resolvedTheme;
         root.style.colorScheme = resolvedTheme;
+        root.dataset.motion =
+          motion === "system"
+            ? typeof window.matchMedia === "function" &&
+              window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "reduce"
+              : "full"
+            : motion;
       })();
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />

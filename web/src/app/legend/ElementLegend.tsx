@@ -26,7 +26,7 @@ export function ElementLegend({
     <nav
       aria-label={t("display.elementLegend")}
       className={cn(
-        "continuous-pill pointer-events-none absolute bottom-7 -translate-x-1/2 rounded-full border px-4 py-2 shadow-lg shadow-foreground/10 transition-[left,max-width] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
+        "continuous-pill pointer-events-none absolute bottom-7 -translate-x-1/2 rounded-full border px-4 py-2 shadow-lg shadow-foreground/10 transition-[left,max-width] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduced:transition-none",
         GLASS_SURFACE_CLASS,
       )}
       style={legendContainerStyle(safeArea, offsetX)}
@@ -74,7 +74,7 @@ function ElementLegendColorControl({
       inputLabel={t("colorPicker.colorValue", { target: element })}
       pickerId={legendElementColorPickerId(element)}
       side="top"
-      triggerClassName="pointer-events-auto rounded-full transition-transform duration-150 ease-out hover:scale-[1.08] motion-reduce:transition-none motion-reduce:hover:scale-100"
+      triggerClassName="pointer-events-auto rounded-full transition-transform duration-150 ease-out hover:scale-[1.08] motion-reduced:transition-none motion-reduced:hover:scale-100"
       value={hexColor}
       swatchClassName="rounded-full"
       swatchStyle={legendSphereStyle(color)}

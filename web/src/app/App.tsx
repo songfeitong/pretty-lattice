@@ -10,6 +10,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
+import { MotionProvider, useMotion } from "@/motion/MotionProvider";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -111,17 +112,20 @@ type ResetLoadedPreviewState = (
 
 export function App() {
   return (
-    <ThemeProvider>
-      <ColorPickerRegistryProvider>
-        <AppContent />
-      </ColorPickerRegistryProvider>
-    </ThemeProvider>
+    <MotionProvider>
+      <ThemeProvider>
+        <ColorPickerRegistryProvider>
+          <AppContent />
+        </ColorPickerRegistryProvider>
+      </ThemeProvider>
+    </MotionProvider>
   );
 }
 
 function AppContent() {
   const { t } = useTranslation();
   const { resolvedTheme } = useTheme();
+  const { reducedMotion } = useMotion();
   const { closeActiveColorPicker } = useColorPickerRegistry();
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [componentVisibility, setComponentVisibility] = useState(
@@ -787,7 +791,7 @@ function AppContent() {
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <section
-            className="scene-stage absolute inset-0 transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+            className="scene-stage absolute inset-0 transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduced:transition-none"
             style={{ transform: `translateX(${sceneOffsetX}px)` }}
             aria-label={t("preview.crystalStructurePreview")}
             onPointerCancelCapture={handleScenePointerEndCapture}
@@ -850,6 +854,7 @@ function AppContent() {
                     : 0
                 }
                 previewMeshQuality={previewMeshQuality}
+                reducedMotion={reducedMotion}
                 componentOpacity={componentOpacity}
                 dragSensitivity={viewState.dragSensitivity}
                 lightStrength={viewState.lightStrength}
@@ -871,7 +876,7 @@ function AppContent() {
                     <span
                       aria-hidden="true"
                       data-testid="loading-structure-spinner"
-                      className="inline-flex size-3 shrink-0 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground motion-safe:animate-spin motion-safe:[animation-duration:450ms]"
+                      className="inline-flex size-3 shrink-0 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground motion-enabled:animate-spin motion-enabled:[animation-duration:450ms]"
                     />
                     {t("preview.loadingStructure")}
                   </span>

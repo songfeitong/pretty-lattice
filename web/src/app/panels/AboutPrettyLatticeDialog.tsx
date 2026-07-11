@@ -30,7 +30,7 @@ export function AboutPrettyLatticeDialog() {
           target="_blank"
           rel="noreferrer"
           aria-label={t("app.github")}
-          className="absolute right-3 top-3 grid size-7 place-items-center rounded-[10px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40 motion-reduce:transition-none [&_svg]:size-6"
+          className="absolute right-3 top-3 grid size-7 place-items-center rounded-[10px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40 motion-reduced:transition-none [&_svg]:size-6"
         >
           <GitHubMarkIcon />
         </a>
