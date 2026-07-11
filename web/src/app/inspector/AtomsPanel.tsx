@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Minus } from "lucide-react";
+import { ChevronDown, Eye, EyeOff, Minus } from "lucide-react";
 import {
   type ChangeEvent,
   type Dispatch,
@@ -14,6 +14,11 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -113,6 +118,18 @@ export function AtomsPanel({
         atomsVisible,
       ),
     [atomsVisible, colorOverrides, colorScheme, elementGroups, style],
+  );
+  const hiddenAtoms = useMemo(
+    () =>
+      hiddenAtomRowsForAtoms(
+        objectAtoms,
+        selectedAtom?.id ?? null,
+        style,
+        colorScheme,
+        colorOverrides,
+        atomsVisible,
+      ),
+    [atomsVisible, colorOverrides, colorScheme, objectAtoms, selectedAtom?.id, style],
   );
 
   useLayoutEffect(() => {
@@ -261,24 +278,6 @@ export function AtomsPanel({
             );
           const selectedGroupAtom =
             selectedAtom?.element === group.element ? selectedAtom : null;
-          const hiddenAtoms = group.atoms.flatMap((atom): HiddenAtomRow[] => {
-            if (
-              atom.id === selectedGroupAtom?.id ||
-              !atomHasExplicitHiddenOverride(style.objectStyles, atom)
-            ) {
-              return [];
-            }
-            return [{
-              atom,
-              color: resolveAtomAppearanceForRow(
-                atom,
-                style,
-                colorScheme,
-                colorOverrides,
-                atomsVisible,
-              ).color,
-            }];
-          });
 
           const elementContainer = (
             <section
@@ -290,9 +289,9 @@ export function AtomsPanel({
                 }
               }}
               aria-label={t("objectsPanel.elementGroup", { element: group.element })}
-              className="rounded-xl border border-border/60 bg-background/45 px-2.5 py-2 shadow-xs shadow-foreground/[0.025]"
+              className="overflow-hidden rounded-xl border border-border/60 bg-background/45 shadow-xs shadow-foreground/[0.025]"
             >
-              <div className="grid min-h-7 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2">
+              <div className="grid min-h-7 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-2.5 py-2">
                 <div className="flex min-w-0 items-center gap-2.5">
                   <ColorCell
                     ariaLabel={t("objectsPanel.setElementColor", { element: group.element })}
@@ -323,28 +322,21 @@ export function AtomsPanel({
                 />
               </div>
 
-              {selectedGroupAtom ? (
-                <SelectedAtomWorkspace
-                  atom={selectedGroupAtom}
-                  appearance={resolveAtomAppearanceForRow(
+              <SelectedAtomWorkspace
+                workspace={selectedGroupAtom ? {
+                  atom: selectedGroupAtom,
+                  appearance: resolveAtomAppearanceForRow(
                     selectedGroupAtom,
                     style,
                     colorScheme,
                     colorOverrides,
                     atomsVisible,
-                  )}
-                  onColorChange={(color) => setAtomColor(selectedGroupAtom, color)}
-                  onRadiusChange={(radius) => setAtomRadius(selectedGroupAtom, radius)}
-                  onVisibilityChange={(visible) => setAtomVisible(selectedGroupAtom, visible)}
-                />
-              ) : null}
-
-              {hiddenAtoms.length > 0 ? (
-                <HiddenAtoms
-                  atoms={hiddenAtoms}
-                  onRestore={restoreAtomVisibility}
-                />
-              ) : null}
+                  ),
+                  onColorChange: (color) => setAtomColor(selectedGroupAtom, color),
+                  onRadiusChange: (radius) => setAtomRadius(selectedGroupAtom, radius),
+                  onVisibilityChange: (visible) => setAtomVisible(selectedGroupAtom, visible),
+                } : null}
+              />
             </section>
           );
 
@@ -361,34 +353,84 @@ export function AtomsPanel({
             </ContextMenu>
           );
         })}
+        <HiddenAtoms atoms={hiddenAtoms} onRestore={restoreAtomVisibility} />
       </div>
     </TooltipProvider>
   );
 }
 
-function SelectedAtomWorkspace({
-  appearance,
-  atom,
-  onColorChange,
-  onRadiusChange,
-  onVisibilityChange,
-}: {
+interface SelectedAtomWorkspaceModel {
   appearance: AtomAppearance;
   atom: AtomSpec;
   onColorChange: (color: string) => void;
   onRadiusChange: (radius: number) => void;
   onVisibilityChange: (visible: boolean) => void;
+}
+
+function SelectedAtomWorkspace({
+  workspace,
+}: {
+  workspace: SelectedAtomWorkspaceModel | null;
 }) {
+  const [displayedWorkspace, setDisplayedWorkspace] = useState(workspace);
+  const [expanded, setExpanded] = useState(workspace !== null);
+  const activeWorkspace = workspace ?? displayedWorkspace;
+
+  useEffect(() => {
+    if (workspace) {
+      setDisplayedWorkspace(workspace);
+      setExpanded(true);
+      return;
+    }
+    setExpanded(false);
+  }, [workspace?.atom.id, workspace !== null]);
+
+  if (!activeWorkspace) {
+    return null;
+  }
+
+  return (
+    <div
+      data-slot="selected-atom-workspace"
+      aria-hidden={!expanded}
+      inert={!expanded}
+      className={cn(
+        "grid overflow-hidden transition-[grid-template-rows,opacity] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none",
+        expanded
+          ? "grid-rows-[1fr] opacity-100"
+          : "pointer-events-none grid-rows-[0fr] opacity-0",
+      )}
+      onTransitionEnd={(event) => {
+        if (
+          event.target === event.currentTarget &&
+          !expanded &&
+          !workspace
+        ) {
+          setDisplayedWorkspace(null);
+        }
+      }}
+    >
+      <div className="min-h-0 overflow-hidden">
+        <SelectedAtomWorkspaceContent {...activeWorkspace} />
+      </div>
+    </div>
+  );
+}
+
+function SelectedAtomWorkspaceContent({
+  appearance,
+  atom,
+  onColorChange,
+  onRadiusChange,
+  onVisibilityChange,
+}: SelectedAtomWorkspaceModel) {
   const { t } = useTranslation();
   const atomLabel = formatAtomSite(atom);
 
   return (
-    <div className="mt-2">
-      <Separator className="mb-2 opacity-70" />
-      <div className="mb-1.5 px-1 text-[10px] font-medium leading-none text-muted-foreground">
-        {t("objectsPanel.selectedAtom")}
-      </div>
-      <div className="grid min-h-7 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-1">
+    <div data-slot="selected-atom-content" className="bg-muted/45">
+      <Separator className="opacity-70" />
+      <div className="grid min-h-7 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-3.5 py-1.5">
         <div className="flex min-w-0 items-center gap-2.5">
           <ColorCell
             ariaLabel={t("objectsPanel.setAtomColor", { atom: atomLabel })}
@@ -425,51 +467,103 @@ function HiddenAtoms({
   onRestore: (atom: AtomSpec) => void;
 }) {
   const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  const previousAtomCountRef = useRef(atoms.length);
+
+  useEffect(() => {
+    const previousAtomCount = previousAtomCountRef.current;
+    previousAtomCountRef.current = atoms.length;
+
+    if (previousAtomCount === 0 && atoms.length > 0) {
+      setExpanded(true);
+    } else if (atoms.length === 0) {
+      setExpanded(false);
+    }
+  }, [atoms.length]);
+
+  if (atoms.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="mt-2">
-      <Separator className="mb-2 opacity-70" />
-      <div className="mb-1 flex items-baseline gap-1.5 px-1 text-[10px] font-medium text-muted-foreground">
-        <span>{t("objectsPanel.hiddenAtoms")}</span>
-        <span className="tabular-nums">{atoms.length}</span>
-      </div>
-      <div className="flex flex-col gap-0.5">
-        {atoms.map(({ atom, color }) => {
-          const atomLabel = formatAtomSite(atom);
-          return (
-            <div
-              key={atom.id}
-              className="flex h-7 items-center justify-between rounded-md px-1.5 text-muted-foreground hover:bg-muted/35"
-            >
-              <div className="flex min-w-0 items-center gap-2.5">
-                <StaticColorToken color={color} />
-                <span className="font-mono text-[12px]">{atomLabel}</span>
-              </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t("objectsPanel.restoreElementVisibility", { atom: atomLabel })}
-                    className={cn(
-                      TOOL_ICON_BUTTON_CLASS,
-                      "size-6 rounded-[8px] text-muted-foreground [&_svg]:size-3.5",
-                    )}
-                    onClick={() => onRestore(atom)}
-                  >
-                    <Minus aria-hidden="true" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  {t("objectsPanel.restoreElementVisibility", { atom: atomLabel })}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <Collapsible
+      open={expanded}
+      onOpenChange={setExpanded}
+      data-slot="hidden-atoms"
+      className="pt-1"
+    >
+      <Separator className="mb-1 opacity-70" />
+      <CollapsibleTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-8 w-full justify-start rounded-lg px-2 text-[11px] font-medium text-muted-foreground hover:bg-muted/35 hover:text-foreground"
+        >
+          <ChevronDown
+            data-slot="hidden-atoms-chevron"
+            aria-hidden="true"
+            className={cn(
+              "text-foreground/70 transition-transform duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none",
+              expanded ? "rotate-0" : "-rotate-90",
+            )}
+          />
+          <span className="flex items-baseline gap-1.5">
+            <span>{t("objectsPanel.hiddenAtoms")}</span>
+            <span className="tabular-nums">{atoms.length}</span>
+          </span>
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent
+        forceMount
+        aria-hidden={!expanded}
+        inert={!expanded}
+        className={cn(
+          "grid overflow-hidden transition-[grid-template-rows,opacity] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none",
+          expanded
+            ? "grid-rows-[1fr] opacity-100"
+            : "pointer-events-none grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="mt-0.5 flex flex-col gap-0.5">
+            {atoms.map(({ atom, color }) => {
+              const atomLabel = formatAtomSite(atom);
+              return (
+                <div
+                  key={atom.id}
+                  className="flex h-7 items-center justify-between rounded-md px-1.5 text-muted-foreground hover:bg-muted/35"
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <StaticColorToken color={color} />
+                    <span className="font-mono text-[12px]">{atomLabel}</span>
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("objectsPanel.restoreElementVisibility", { atom: atomLabel })}
+                        className={cn(
+                          TOOL_ICON_BUTTON_CLASS,
+                          "size-6 rounded-[8px] text-muted-foreground [&_svg]:size-3.5",
+                        )}
+                        onClick={() => onRestore(atom)}
+                      >
+                        <Minus aria-hidden="true" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                      {t("objectsPanel.restoreElementVisibility", { atom: atomLabel })}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -649,6 +743,36 @@ function groupAtomsByElement(atoms: readonly AtomSpec[]): ElementGroup[] {
     group.atoms.push(atom);
   }
   return groups;
+}
+
+function hiddenAtomRowsForAtoms(
+  atoms: readonly AtomSpec[],
+  selectedAtomId: string | null,
+  style: StyleState,
+  colorScheme: StyleState["colorScheme"],
+  colorOverrides: ReturnType<typeof elementColorOverridesForStyle>,
+  atomsVisible: boolean,
+): HiddenAtomRow[] {
+  const rows: HiddenAtomRow[] = [];
+  for (const atom of atoms) {
+    if (
+      atom.id === selectedAtomId ||
+      !atomHasExplicitHiddenOverride(style.objectStyles, atom)
+    ) {
+      continue;
+    }
+    rows.push({
+      atom,
+      color: resolveAtomAppearanceForRow(
+        atom,
+        style,
+        colorScheme,
+        colorOverrides,
+        atomsVisible,
+      ).color,
+    });
+  }
+  return rows;
 }
 
 function atomLookupForScene(scene: SceneSpec): Map<string, AtomSpec> {

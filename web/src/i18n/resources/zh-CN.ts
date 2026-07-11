@@ -146,7 +146,6 @@ export const zhCN = {
     hiddenAtoms: "隐藏的原子",
     radius: "R (Å)",
     restoreElementVisibility: "让 {{atom}} 恢复继承元素可见性",
-    selectedAtom: "当前选中的原子",
     setAtomColor: "设置 {{atom}} 颜色",
     setElementColor: "设置 {{element}} 颜色",
     automatic: "自动",

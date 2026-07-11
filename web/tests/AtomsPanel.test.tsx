@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "bun:test";
 import { useEffect, useState } from "react";
@@ -26,23 +26,39 @@ describe("AtomsPanel", () => {
 
     const sodiumGroup = screen.getByRole("region", { name: "Na atoms" });
     expect(sodiumGroup.className).toContain("rounded-xl");
-    expect(sodiumGroup.querySelector('[data-slot="separator"]')).not.toBeNull();
-    const selectedAtomLabel = screen.getByText("Selected atom");
-    expect(selectedAtomLabel.isConnected).toBe(true);
-    expect(selectedAtomLabel.parentElement?.className).not.toContain("rounded");
+    expect(sodiumGroup.className).toContain("overflow-hidden");
+    const selectedWorkspace = sodiumGroup.querySelector<HTMLElement>(
+      '[data-slot="selected-atom-workspace"]',
+    );
+    expect(selectedWorkspace).not.toBeNull();
+    expect(
+      selectedWorkspace?.querySelector('[data-slot="selected-atom-content"]')?.className,
+    ).toContain("bg-muted/45");
+    expect(selectedWorkspace?.className).toContain("duration-[320ms]");
+    expect(selectedWorkspace?.className).toContain("grid-rows-[1fr]");
+    expect(selectedWorkspace?.querySelector('[data-slot="separator"]')).not.toBeNull();
+    expect(screen.queryByText("Selected atom")).toBeNull();
     expect(screen.getByText("Na:0").isConnected).toBe(true);
     expect(screen.queryByText("Na:1")).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Na:0 visibility" }));
 
     await waitFor(() => {
-      expect(screen.queryByText("Selected atom")).toBeNull();
       expect(screen.getByText("Hidden atoms").isConnected).toBe(true);
+      expect(selectedWorkspace?.getAttribute("aria-hidden")).toBe("true");
+      expect(selectedWorkspace?.className).toContain("grid-rows-[0fr]");
     });
-    expect(screen.getByText("Na:0").isConnected).toBe(true);
+    const hiddenAtomsSection = document.querySelector<HTMLElement>('[data-slot="hidden-atoms"]');
+    expect(hiddenAtomsSection).not.toBeNull();
+    expect(within(hiddenAtomsSection!).getByText("Na:0").isConnected).toBe(true);
     expect(screen.queryByText("Na:1")).toBeNull();
-    expect(sodiumGroup.querySelectorAll('[data-slot="atom-color-token"]')).toHaveLength(1);
+    expect(sodiumGroup.querySelector('[data-slot="atom-color-token"]')).toBeNull();
+    expect(screen.getByRole("button", { name: "Hidden atoms 1" }).getAttribute("aria-expanded"))
+      .toBe("true");
+    expect(document.querySelectorAll('[data-slot="atom-color-token"]')).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Set Na:0 color" })).toBeNull();
+
+    fireEvent.transitionEnd(selectedWorkspace!, { propertyName: "grid-template-rows" });
 
     await user.click(
       screen.getByRole("button", {
@@ -81,7 +97,21 @@ describe("AtomsPanel", () => {
     expect(screen.getByRole("button", { name: "Na visibility" }).getAttribute("aria-pressed")).toBe(
       "false",
     );
+
+    const hiddenAtomsToggle = screen.getByRole("button", { name: "Hidden atoms 1" });
+    expect(hiddenAtomsToggle.getAttribute("aria-expanded")).toBe("false");
+    expect(hiddenAtomsToggle.querySelector('[data-slot="hidden-atoms-chevron"]')).not.toBeNull();
+    const hiddenAtomsContent = document.querySelector<HTMLElement>(
+      '[data-slot="collapsible-content"]',
+    );
+    expect(hiddenAtomsContent?.getAttribute("aria-hidden")).toBe("true");
+    expect(hiddenAtomsContent?.hasAttribute("inert")).toBe(true);
+    expect(hiddenAtomsContent?.className).toContain("grid-rows-[0fr]");
+    await user.click(hiddenAtomsToggle);
     expect(screen.getByText("Na:1").isConnected).toBe(true);
+    expect(hiddenAtomsContent?.getAttribute("aria-hidden")).toBe("false");
+    expect(hiddenAtomsContent?.hasAttribute("inert")).toBe(false);
+    expect(hiddenAtomsContent?.className).toContain("grid-rows-[1fr]");
 
     await user.click(
       screen.getByRole("button", {

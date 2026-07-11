@@ -144,7 +144,6 @@ export const en = {
     hiddenAtoms: "Hidden atoms",
     radius: "R (Å)",
     restoreElementVisibility: "Restore {{atom}} to element visibility",
-    selectedAtom: "Selected atom",
     setAtomColor: "Set {{atom}} color",
     setElementColor: "Set {{element}} color",
     automatic: "Automatic",

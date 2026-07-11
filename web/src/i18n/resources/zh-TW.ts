@@ -146,7 +146,6 @@ export const zhTW = {
     hiddenAtoms: "隱藏的原子",
     radius: "R (Å)",
     restoreElementVisibility: "讓 {{atom}} 恢復繼承元素可見性",
-    selectedAtom: "目前選取的原子",
     setAtomColor: "設定 {{atom}} 顏色",
     setElementColor: "設定 {{element}} 顏色",
     automatic: "自動",

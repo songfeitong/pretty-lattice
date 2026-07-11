@@ -61,8 +61,11 @@ Atoms 面板只管理 canonical unit-cell sites。周期镜像不作为独立可
 场景中存在 selected atom 时，对应元素容器内出现一个临时 selected workspace。它位于
 元素 header 下方、Hidden atoms 之前。
 
-Selected workspace 不是另一张 card。它只用一条分隔线与元素 header 分开，内容直接排在
-元素容器内；不增加圆角、边框或独立底色，避免无意义的嵌套 surface。
+Selected workspace 不是另一张 card，也不增加 `Selected atom` 标题、圆角或独立边框。
+它作为元素容器的下半区使用轻微 muted 灰色底色；顶部分隔线和底色延伸到元素容器的左右
+内边缘，底色延伸到容器底部，让当前原子状态比普通 header 更容易辨认。Selected workspace
+出现和消失时使用 `320ms` 的高度与透明度过渡；退场结束后才卸载原子控件，并遵守全局
+reduced motion 设置。
 
 Workspace 显示并允许编辑：
 
@@ -88,8 +91,15 @@ Hidden atoms 只包含具有显式 atom-level `visible: false` override 的 cano
 
 这保证隐藏整个元素或全局关闭 atoms 时不会重新产生大型原子列表。
 
-某个元素存在 individually hidden atoms 时，在该元素容器底部显示 `Hidden atoms` 区域。
-Rows 按 canonical site 原始顺序排列。每行只显示：
+存在 individually hidden atoms 时，在所有元素容器之后显示一个统一、可收起的
+`Hidden atoms · N` 恢复区。Hidden atoms 不再分散在各元素容器内，也不按元素增加二级分组。
+
+恢复区初始默认收起。当前会话中 hidden atom 数量从 0 变为非零时自动展开一次，让刚执行
+Hide 的用户可以立即撤销；之后尊重用户手动选择的展开状态。数量归零时整个区域消失并重置
+为收起状态。手动展开和收起使用 `320ms` 的高度与透明度过渡，标题左侧的 chevron 同步
+旋转，并遵守全局 reduced motion 设置。
+
+Rows 按元素首次出现顺序及各元素 canonical site 原始顺序组成一个扁平列表。每行只显示：
 
 - 只读的原子颜色 token；保留当前有效颜色，但不能打开颜色编辑器。
 - `元素:site index`。
