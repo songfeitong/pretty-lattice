@@ -6,6 +6,8 @@ design decisions before implementation.
 
 ## UI Specs
 
+- [状态管理与全局 Undo/Redo（暂停）](state-management-and-undo-redo.md)：保留五类状态
+  边界与统一历史的产品语义；Zustand/Immer 等技术方案待重新评估。
 - [原子对象与场景交互](object-styles-panel.md)：`Objects > Atoms` 的元素容器、
   selected atom workspace、hidden atom recovery 与原子信息卡片联动。
 - [Bond Objects 与场景交互](bond-objects-and-interaction.md)：Objects > Bonds、
