@@ -1161,7 +1161,7 @@ describe("App", () => {
     expect(within(sidebar).getByText("Length (Å)").isConnected).toBe(true);
     expect(within(sidebar).getByText("Na").isConnected).toBe(true);
     expect(within(sidebar).getByText("Cl").isConnected).toBe(true);
-    expect(within(sidebar).getByText("1").isConnected).toBe(true);
+    expect(within(sidebar).getByText("1.00").isConnected).toBe(true);
     const bondFamilyRow = within(sidebar)
       .getByRole("button", { name: "Expand Na–Cl" })
       .closest("tr");
@@ -1188,7 +1188,7 @@ describe("App", () => {
     await user.click(familyVisibility());
     expect(familyVisibility().getAttribute("aria-pressed")).toBe("false");
     expect(fetchCalls).toHaveLength(1);
-    expect(within(sidebar).getByText("1").isConnected).toBe(true);
+    expect(within(sidebar).getByText("1.00").isConnected).toBe(true);
 
     await openPreviewContextMenu();
     await user.click(await screen.findByRole("menuitem", { name: "Export" }));

@@ -131,7 +131,7 @@ const OBJECTS_HEADER_TEXT_CLASS =
 const OBJECTS_CELL_CLASS = "h-8 px-1.5 py-0 align-middle";
 const OBJECTS_TABLE_HEADER_HEIGHT = 28;
 const OBJECTS_ATOM_ROW_HEIGHT = 32;
-const OBJECTS_ELEMENT_ROW_HEIGHT = 36;
+const OBJECTS_ELEMENT_ROW_HEIGHT = 40;
 const OBJECTS_TABLE_VIRTUAL_OVERSCAN = 8;
 const OBJECTS_TABLE_DEFAULT_VIEWPORT_HEIGHT = 640;
 const RADIUS_STEP = 0.01;
@@ -752,9 +752,9 @@ function ObjectsAtomsTable({
     <div ref={tableContainerRef} className={cn("min-h-0", OBJECTS_BODY_TEXT_CLASS)}>
       <Table className="table-fixed border-separate border-spacing-0 text-[13px]">
         <colgroup>
-          <col className="w-[61%]" />
+          <col className="w-[65%]" />
           <col className="w-[23%]" />
-          <col className="w-[16%]" />
+          <col className="w-[12%]" />
         </colgroup>
         <TableHeader>
           <TableRow className="border-border/70 hover:bg-transparent">
@@ -764,10 +764,16 @@ function ObjectsAtomsTable({
                 className={cn(
                   "h-7 px-1.5 py-0",
                   OBJECTS_HEADER_TEXT_CLASS,
+                  column.id === "site" ? "pl-[2.625rem]" : null,
+                  column.id === "radius" ? "text-right" : null,
                   column.id === "visible" ? "text-center" : null,
                 )}
               >
-                {objectsAtomColumnHeader(column.id, t)}
+                {column.id === "visible" ? (
+                  <span className="sr-only">{objectsAtomColumnHeader(column.id, t)}</span>
+                ) : (
+                  objectsAtomColumnHeader(column.id, t)
+                )}
               </TableHead>
             ))}
           </TableRow>
@@ -822,7 +828,8 @@ function ObjectsAtomsTable({
                     key={`${tableRow.id}:${column.id}`}
                     className={cn(
                       OBJECTS_CELL_CLASS,
-                      item.kind === "element" ? "h-9" : null,
+                      item.kind === "element" ? "h-10" : null,
+                      column.id === "radius" ? "text-right" : null,
                       column.id === "visible" ? "text-center" : null,
                     )}
                   >
@@ -1051,7 +1058,7 @@ function RadiusCell({
       inputMode="decimal"
       aria-label={ariaLabel}
       value={displayedValue}
-      className="h-[22px] w-12 rounded-md px-1.5 py-0 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]"
+      className="h-[22px] w-11 rounded-md px-1.5 py-0 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]"
       onBlur={handleBlur}
       onChange={handleChange}
       onClick={(event) => event.stopPropagation()}

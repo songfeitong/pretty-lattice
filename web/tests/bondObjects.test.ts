@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test";
 
-import type { SceneSpec } from "../src/api/scene";
+import type { BondFamilySpec, SceneSpec } from "../src/api/scene";
 import {
   bondInspectorCopyText,
   createDefaultBondVisibilityOverrides,
+  createDefaultComponentVisibility,
+  formatBondFamilyLength,
   inspectedBondInfoForId,
   resetBondFamilyVisibility,
   setBondFamilyVisible,
   setBondInstanceVisible,
   visibleSceneForComponents,
-  createDefaultComponentVisibility,
 } from "../src/model";
 
 describe("bond objects", () => {
@@ -64,6 +65,29 @@ describe("bond objects", () => {
     );
   });
 });
+
+describe("formatBondFamilyLength", () => {
+  test("preserves a range when distinct endpoints round to the same display value", () => {
+    expect(formatBondFamilyLength(bondFamily(1.001, 1.004))).toBe("1.00–1.00");
+  });
+
+  test("shows one value when the original endpoints are equal", () => {
+    expect(formatBondFamilyLength(bondFamily(1, 1))).toBe("1.00");
+  });
+
+  test("shows an em dash when the range is unavailable", () => {
+    expect(formatBondFamilyLength(bondFamily(null, null))).toBe("—");
+  });
+});
+
+function bondFamily(minLength: number | null, maxLength: number | null): BondFamilySpec {
+  return {
+    elements: ["Na", "Cl"],
+    key: "Na|Cl",
+    maxLength,
+    minLength,
+  };
+}
 
 function bondScene(): SceneSpec {
   return {

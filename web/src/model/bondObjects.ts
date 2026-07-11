@@ -167,9 +167,11 @@ export function formatBondFamilyLength(family: BondFamilySpec): string {
   if (family.minLength === null || family.maxLength === null) {
     return "—";
   }
-  const minimum = formatCompactLength(family.minLength);
-  const maximum = formatCompactLength(family.maxLength);
-  return minimum === maximum ? minimum : `${minimum}–${maximum}`;
+  const minimum = formatBondListLength(family.minLength);
+  const maximum = formatBondListLength(family.maxLength);
+  return family.minLength === family.maxLength
+    ? minimum
+    : `${minimum}–${maximum}`;
 }
 
 export function formatCellOffset(offset: readonly number[]): string {
@@ -185,6 +187,6 @@ export function bondInspectorCopyText(info: InspectedBondInfo): string {
   ].join("\n");
 }
 
-function formatCompactLength(length: number): string {
-  return length.toFixed(3).replace(/\.?0+$/, "");
+function formatBondListLength(length: number): string {
+  return length.toFixed(2);
 }

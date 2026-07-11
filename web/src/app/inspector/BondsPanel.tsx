@@ -158,9 +158,9 @@ export function BondsPanel({
   return (
     <Table className="table-fixed border-separate border-spacing-0 text-[13px]">
       <colgroup>
-        <col className="w-[49%]" />
-        <col className="w-[28%]" />
-        <col className="w-[23%]" />
+        <col className="w-[52%]" />
+        <col className="w-[32%]" />
+        <col className="w-[16%]" />
       </colgroup>
       <TableHeader>
         <TableRow className="border-border/70 hover:bg-transparent">
@@ -171,7 +171,7 @@ export function BondsPanel({
             {t("objectsPanel.length")}
           </TableHead>
           <TableHead className="h-7 px-1.5 py-0 text-center text-[12px] font-medium text-muted-foreground">
-            {t("objectsPanel.visible")}
+            <span className="sr-only">{t("objectsPanel.visible")}</span>
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -278,7 +278,7 @@ function FamilyRows({
           separated ? "[&>td]:border-t [&>td]:border-border/45" : null,
         )}
       >
-        <TableCell className="h-9 px-1.5 py-0">
+        <TableCell className="h-10 px-1.5 py-0">
           <BondPairLabel
             endColor={tokenColor(family.elements[1])}
             endLabel={family.elements[1]}
@@ -313,10 +313,10 @@ function FamilyRows({
             startLabel={family.elements[0]}
           />
         </TableCell>
-        <TableCell className="h-9 px-1.5 py-0 font-mono text-[12px] tabular-nums">
+        <TableCell className="h-10 px-1.5 py-0 font-mono text-[12px] tabular-nums">
           {formatBondFamilyLength(family)}
         </TableCell>
-        <TableCell className="h-9 px-1 py-0">
+        <TableCell className="h-10 px-1 py-0">
           <div className="flex items-center justify-center gap-0.5">
             <VisibilityButton
               label={t("objectsPanel.visibility", {
@@ -551,7 +551,7 @@ function ContextualBondRow({
         />
       </TableCell>
       <TableCell className="h-8 px-1.5 py-0 font-mono text-[12px] tabular-nums">
-        {bond.length.toFixed(3)}
+        {bond.length.toFixed(2)}
       </TableCell>
       <TableCell className="h-8 px-1.5 py-0 text-center">
         <VisibilityButton
