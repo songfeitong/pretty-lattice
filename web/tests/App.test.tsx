@@ -964,7 +964,7 @@ describe("App", () => {
     );
   });
 
-  test("shows unit-cell atoms in Objects and keeps Display atoms visibility one-way", async () => {
+  test("shows element containers in Objects and keeps Display atoms visibility one-way", async () => {
     const user = userEvent.setup();
 
     await renderLoadedStructure(user);
@@ -973,20 +973,16 @@ describe("App", () => {
     await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
 
     expect(within(sidebar).getByRole("tab", { name: "Atoms" })).toBeTruthy();
-    expect(within(sidebar).getByText("R (Å)").isConnected).toBe(true);
-    expect(within(sidebar).queryByText("Color")).toBeNull();
+    expect(within(sidebar).getAllByText("R (Å)")).toHaveLength(2);
     expect(within(sidebar).queryByText("Na:0")).toBeNull();
     expect(within(sidebar).queryByText(/image/)).toBeNull();
 
-    const collapsedSodiumElementRow = within(sidebar).getByText("Na").closest("tr");
-    const collapsedChlorineElementRow = within(sidebar).getByText("Cl").closest("tr");
-    expect(collapsedSodiumElementRow?.className).toContain("bg-transparent");
-    expect(collapsedSodiumElementRow?.classList.contains("bg-muted/30")).toBe(false);
-    expect(collapsedSodiumElementRow?.className).not.toContain("border-t");
-    expect(collapsedChlorineElementRow?.className).toContain("[&>td]:border-t");
-    expect(collapsedChlorineElementRow?.className).toContain(
-      "[&>td]:border-border/45",
-    );
+    const sodiumContainer = within(sidebar).getByRole("region", { name: "Na atoms" });
+    const chlorineContainer = within(sidebar).getByRole("region", { name: "Cl atoms" });
+    expect(sodiumContainer.className).toContain("rounded-xl");
+    expect(chlorineContainer.className).toContain("rounded-xl");
+    expect(within(sidebar).queryByRole("button", { name: "Expand Na" })).toBeNull();
+
     const sodiumRadiusInput = within(sidebar).getByRole("textbox", {
       name: "Na radius",
     }) as HTMLInputElement;
@@ -996,15 +992,7 @@ describe("App", () => {
     await user.tab();
     expect(sodiumRadiusInput.value).toBe(initialSodiumRadius);
 
-    await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
-
-    const sodiumAtomLabel = within(sidebar).getByText("Na:0");
-    const sodiumElementLabel = within(sidebar).getByText("Na");
-    expect(sodiumElementLabel.closest("tr")?.className).toContain("bg-muted/30");
-    expect(sodiumAtomLabel.isConnected).toBe(true);
-    expect(sodiumElementLabel.parentElement?.classList.contains("gap-x-2.5")).toBe(true);
-    expect(sodiumAtomLabel.parentElement?.classList.contains("gap-x-2.5")).toBe(true);
-    const sodiumColorToken = sodiumAtomLabel.previousElementSibling?.querySelector(
+    const sodiumColorToken = sodiumContainer.querySelector(
       '[data-color-picker-trigger=""] > span',
     );
     expect(sodiumColorToken?.classList.contains("size-4")).toBe(true);
@@ -1013,15 +1001,7 @@ describe("App", () => {
     expect(
       sodiumColorToken?.parentElement?.classList.contains("hover:scale-[1.08]"),
     ).toBe(true);
-    expect(within(sidebar).queryByText("Na: 0")).toBeNull();
-    expect(within(sidebar).queryByText("Na 0")).toBeNull();
-    expect(within(sidebar).queryByText("Na-0")).toBeNull();
-    expect(
-      within(sidebar).queryByRole("button", {
-        name: "Apply Na style to all atoms",
-      }),
-    ).toBeNull();
-    fireEvent.contextMenu(sodiumElementLabel.closest("tr")!);
+    fireEvent.contextMenu(sodiumContainer);
     expect(
       (await screen.findByRole("menuitem", {
         name: "Apply to all Na atoms",
@@ -1053,66 +1033,20 @@ describe("App", () => {
     });
     await user.click(within(leftControls).getByRole("tab", { name: "Display" }));
 
-    await user.click(within(sidebar).getByRole("button", { name: "Set Na:0 color" }));
-    expect(await screen.findByLabelText("Na:0 color value")).toBeTruthy();
-    await waitFor(() => {
-      expect(screen.queryByLabelText("Cl color value")).toBeNull();
-      expect(screen.queryAllByLabelText(/color value$/)).toHaveLength(1);
-    });
-
-    const sodiumRow = within(sidebar).getByText("Na:0").closest("tr");
-    expect(sodiumRow).not.toBeNull();
-    await user.click(sodiumRow!);
-    expect(screen.queryByRole("complementary", { name: "Selected atom" })).toBeNull();
-    await user.dblClick(sodiumRow!);
-    const atomInfo = screen.getByRole("complementary", { name: "Selected atom" });
-    expect(atomInfo.isConnected).toBe(true);
-    expect(within(atomInfo).getByText("Na:0").isConnected).toBe(true);
-    expect(within(atomInfo).queryByText(/idx/)).toBeNull();
-
-    await user.click(within(sidebar).getByRole("button", { name: "Collapse Na" }));
-    expect(within(sidebar).queryByText("Na:0")).toBeNull();
-    expect(within(sidebar).getByRole("tab", { name: "Bonds" })).toBeTruthy();
-    expect(within(sidebar).queryByText("Na:0")).toBeNull();
-    await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
-
     const sodiumElementVisibility = () =>
       within(sidebar).getByRole("button", {
         name: "Na visibility",
-      });
-    const sodiumAtomVisibility = () =>
-      within(sidebar).getByRole("button", {
-        name: "Na:0 visibility",
       });
     const chlorineElementVisibility = () =>
       within(sidebar).getByRole("button", {
         name: "Cl visibility",
       });
     expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("true");
-    expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("true");
     expect(chlorineElementVisibility().getAttribute("aria-pressed")).toBe("true");
 
     await user.click(sodiumElementVisibility());
     await waitFor(() => {
       expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
-      expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("false");
-    });
-
-    await user.click(sodiumAtomVisibility());
-    await waitFor(() => {
-      expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
-      expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("true");
-    });
-
-    fireEvent.contextMenu(sodiumElementLabel.closest("tr")!);
-    await user.click(
-      await screen.findByRole("menuitem", {
-        name: "Apply to all Na atoms",
-      }),
-    );
-    await waitFor(() => {
-      expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
-      expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("false");
     });
 
     const commonControls = screen.getByRole("complementary", { name: "Common controls" });
@@ -1120,13 +1054,11 @@ describe("App", () => {
     await user.click(atomsCheckbox);
     await waitFor(() => {
       expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("false");
-      expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("false");
     });
 
     await user.click(atomsCheckbox);
     await waitFor(() => {
       expect(sodiumElementVisibility().getAttribute("aria-pressed")).toBe("true");
-      expect(sodiumAtomVisibility().getAttribute("aria-pressed")).toBe("true");
     });
 
     await user.click(sodiumElementVisibility());
@@ -1272,7 +1204,7 @@ describe("App", () => {
     ).toContain("CrystalNN");
   });
 
-  test("virtualizes large Objects atom groups", async () => {
+  test("keeps large Objects atom groups compact without rendering atom rows", async () => {
     const user = userEvent.setup();
 
     await renderLoadedStructure(user, largeSodiumScene(2000));
@@ -1280,23 +1212,12 @@ describe("App", () => {
     const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
     await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
 
-    const inspectorBody = sidebar.querySelector('[data-slot="inspector-body"]');
-    expect(inspectorBody).toBeInstanceOf(HTMLElement);
-    expect(inspectorBody?.classList.contains("stable-scrollbar-gutter")).toBe(true);
-    Object.defineProperty(inspectorBody, "clientHeight", {
-      configurable: true,
-      value: 320,
-    });
-
-    await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
-
-    await waitFor(() => {
-      expect(within(sidebar).getByText("Na:0").isConnected).toBe(true);
-    });
+    expect(within(sidebar).getByRole("region", { name: "Na atoms" }).isConnected).toBe(true);
+    expect(within(sidebar).getByText("2000").isConnected).toBe(true);
+    expect(within(sidebar).queryByRole("button", { name: "Expand Na" })).toBeNull();
+    expect(within(sidebar).queryByText("Na:0")).toBeNull();
     expect(within(sidebar).queryByText("Na:1999")).toBeNull();
-    const initialRenderedAtomLabels = within(sidebar).queryAllByText(/^Na:\d+$/);
-    expect(initialRenderedAtomLabels.length).toBeGreaterThan(0);
-    expect(initialRenderedAtomLabels.length).toBeLessThan(40);
+    expect(within(sidebar).queryAllByText(/^Na:\d+$/)).toHaveLength(0);
   });
 
   test("exports without carrying renderer state", async () => {

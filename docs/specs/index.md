@@ -6,8 +6,8 @@ design decisions before implementation.
 
 ## UI Specs
 
-- [Object Styles Panel](object-styles-panel.md): right-sidebar Objects tab for
-  per-element and per-atom visual overrides.
+- [原子对象与场景交互](object-styles-panel.md)：`Objects > Atoms` 的元素容器、
+  selected atom workspace、hidden atom recovery 与原子信息卡片联动。
 - [Bond Objects 与场景交互](bond-objects-and-interaction.md)：Objects > Bonds、
   单根 bond 的只读检查与场景交互、family visibility，以及已有 family 的
   custom maximum length。

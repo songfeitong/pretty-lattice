@@ -87,6 +87,7 @@ import {
   hasPolyhedra,
   previewSafeAreaForInspector,
   sceneOffsetXForInspector,
+  setAtomOverrideProperty,
   visibleSceneForComponents,
   inspectedBondInfoForId,
   resetBondFamilyVisibility,
@@ -592,6 +593,20 @@ function AppContent() {
     requestBondLocateInObjects(bondId);
   }, [closeActiveColorPicker, requestBondLocateInObjects]);
 
+  const handleHideAtom = useCallback((atomId: string) => {
+    setStyle((currentStyle) => ({
+      ...currentStyle,
+      objectStyles: setAtomOverrideProperty(
+        currentStyle.objectStyles,
+        atomId,
+        "visible",
+        false,
+      ),
+    }));
+    inspectedSceneObjectRef.current = null;
+    setInspectedSceneObject(null);
+  }, []);
+
   const handleBondFamilyVisibilityChange = useCallback(
     (familyKey: string, visible: boolean) => {
       setBondVisibilityOverrides((current) =>
@@ -947,6 +962,7 @@ function AppContent() {
           info={inspectedAtomInfo}
           isInspectorOpen={isInspectorOpen}
           onClose={() => setInspectedSceneObject(null)}
+          onHide={handleHideAtom}
           onLocateInObjects={handleLocateAtomInObjects}
           style={style}
         />
@@ -1091,7 +1107,6 @@ function AppContent() {
                   unitCellLineStyle={unitCellLineStyle}
                   onActiveObjectsTabChange={handleActiveObjectsTabChange}
                   onActiveTabChange={handleActiveInspectorTabChange}
-                  onAtomSelect={handleAtomInspect}
                   onAtomLocateRequestHandled={handleAtomLocateRequestHandled}
                   onBondLocateRequestHandled={handleBondLocateRequestHandled}
                   onBondVisibilityChange={handleBondVisibilityChange}

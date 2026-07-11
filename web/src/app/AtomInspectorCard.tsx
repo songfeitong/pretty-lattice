@@ -1,4 +1,4 @@
-import { Copy, SquareMousePointer, X } from "lucide-react";
+import { Copy, EyeOff, SquareMousePointer, X } from "lucide-react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -26,6 +26,7 @@ export function AtomInspectorCard({
   info,
   isInspectorOpen,
   onClose,
+  onHide,
   onLocateInObjects,
   style,
 }: {
@@ -34,6 +35,7 @@ export function AtomInspectorCard({
   info: InspectedAtomInfo;
   isInspectorOpen: boolean;
   onClose: () => void;
+  onHide: (atomId: string) => void;
   onLocateInObjects?: (atomId: string) => void;
   style: StyleState;
 }) {
@@ -60,7 +62,7 @@ export function AtomInspectorCard({
         GLASS_SURFACE_CLASS,
       )}
     >
-      <div className="grid h-7 grid-cols-[1.5rem_0.875rem_minmax(7rem,1fr)_1.5rem_1.5rem] items-center gap-2">
+      <div className="grid h-7 grid-cols-[1.5rem_0.875rem_minmax(7rem,1fr)_1.5rem_1.5rem_1.5rem] items-center gap-2">
         <TooltipProvider delayDuration={500}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -87,6 +89,24 @@ export function AtomInspectorCard({
         <span className="min-w-0 whitespace-nowrap text-[0.78rem] font-semibold text-foreground">
           {canonicalAtom.element}:{atomSiteIndex(canonicalAtom)}
         </span>
+
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t("actions.hideAtom")}
+                className={cn(TOOL_ICON_BUTTON_CLASS, "size-6 rounded-[9px] [&_svg]:size-3.25")}
+                onClick={() => onHide(canonicalAtom.siteId)}
+              >
+                <EyeOff aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{t("actions.hideAtom")}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         <TooltipProvider delayDuration={500}>
           <Tooltip>

@@ -212,7 +212,6 @@ export function InspectorSidebar({
   onActiveObjectsTabChange,
   onActiveTabChange,
   onAtomLocateRequestHandled,
-  onAtomSelect,
   onBondCutoffChange,
   onBondFamilyReset,
   onBondFamilyVisibilityChange,
@@ -265,7 +264,6 @@ export function InspectorSidebar({
   onActiveObjectsTabChange: (tab: ObjectsPanelTab) => void;
   onActiveTabChange: (tab: InspectorSidebarTab) => void;
   onAtomLocateRequestHandled: (token: number) => void;
-  onAtomSelect: (atomId: string) => void;
   onBondAlgorithmChange: (bondAlgorithm: BondingMode) => void;
   onBondCutoffChange: (familyKey: string, cutoff: number | null) => Promise<boolean>;
   onBondFamilyReset: (familyKey: string) => Promise<void>;
@@ -375,7 +373,6 @@ export function InspectorSidebar({
               isSceneLoading={isSceneLoading}
               onActiveTabChange={onActiveObjectsTabChange}
               onAtomLocateRequestHandled={onAtomLocateRequestHandled}
-              onAtomSelect={onAtomSelect}
               onBondLocateRequestHandled={onBondLocateRequestHandled}
               onBondAlgorithmChange={onBondAlgorithmChange}
               onBondVisibilityChange={onBondVisibilityChange}

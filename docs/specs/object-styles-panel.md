@@ -1,316 +1,237 @@
-# Object Styles Panel
+# 原子对象与场景交互
 
-Status: draft product spec
-Scope: first implementation slice for the right-sidebar Objects tab
+状态：已实现
 
-## Purpose
+范围：`Objects > Atoms`、元素级与单原子显示样式、原子信息卡片，以及场景选择与
+Objects 的联动。
 
-The Objects panel gives users VESTA-like fine control over renderable scene
-objects while keeping the Pretty Lattice interface compact and modern. The
-first slice focuses on atoms: per-element and per-atom radius, color, and
-visibility. Bonds get a placeholder tab only.
+## 目的
 
-The panel belongs in the right inspector sidebar next to Settings. It is a
-low-frequency object-style surface, not a primary scene interaction control.
+`Objects > Atoms` 是低频但精确的显示样式工作区，不是原子数据浏览器。用户首先在
+三维场景中识别并选中原子，再在 Objects 中编辑当前对象。面板不渲染无法单凭编号理解的
+完整原子列表。
 
-## Navigation
+界面分为三个层级：
 
-The right inspector sidebar has top-level tabs:
+1. 常驻的元素容器，负责批量控制。
+2. 当前 selected atom 的临时工作面板，负责单原子控制。
+3. individually hidden atoms 的轻量恢复项，负责清除单原子隐藏状态。
 
-- Settings
-- Objects
+信息卡片保持以只读信息为主，只额外提供一个可逆的 Hide 快捷操作。颜色、半径等属性编辑
+继续位于 Objects。
 
-The Objects tab has nested tabs:
+## 对象身份与周期镜像
 
-- Atoms
-- Bonds
+Atoms 面板只管理 canonical unit-cell sites。周期镜像不作为独立可编辑对象出现，而是通过
+共享 `siteId` 继承 canonical site 的颜色、半径和可见性。
 
-The Bonds tab is intentionally empty in the first slice. It exists only to
-reserve the shape of the panel.
+用户选中周期镜像时：
 
-The follow-up Bonds behavior is specified separately in
-[Bond Objects 与场景交互](bond-objects-and-interaction.md).
+- 信息卡片显示被点击实例的实际 fractional/cartesian coordinates 和 cell offset。
+- Objects 中出现对应 canonical site 的 selected workspace。
+- Objects 中的样式修改作用于该 canonical site 及其所有周期镜像。
 
-Use the default shadcn Tabs visual treatment for the nested Atoms/Bonds tabs,
-with compact sizing aligned to the Common panel tabs: 32px tab-list height,
-24px trigger height, small text, and medium weight. Do not use icons here. Do
-not use the top-level inspector line-tab treatment for this nested control,
-and do not hide inactive tab text.
+原子标签使用 `元素:site index`，例如 `Li:15`。不要显示后端 `siteId` 的连字符形式。
 
-## Atoms Table
+## 元素容器
 
-Atoms are displayed as a data table built from shadcn Table and TanStack Table
-patterns. The table is domain-specific; do not introduce a generic app-wide
-DataTable abstraction unless this table shape is reused elsewhere.
+每种元素显示为一个独立的圆角矩形容器。元素顺序采用 canonical atoms 在 `scene.atoms`
+中的首次出现顺序。
 
-Columns:
+元素容器使用轻边框、克制的 surface background 和元素间 gap，不使用 table 分割线。
+没有展开按钮，也没有 collapsed/expanded 状态。
 
-- Site
-- R (Å)
-- Color
-- Visible
+容器 header 常驻显示：
 
-Do not add search, jump, pagination, inherit/custom labels, mixed indicators,
-or atom row menus in the first slice.
+- 元素颜色 token；点击后使用现有颜色选择器编辑整个元素。
+- 元素符号。
+- canonical site 数量。
+- 当前元素级有效半径，单位为 Å。
+- 当前元素级有效可见性。
 
-### Grouping
+元素 header 是批量控制面。编辑某一属性时，将该属性应用到该元素的所有 atoms，并清除
+该元素下对应的单原子 overrides。颜色、半径和可见性相互独立，不得因编辑一个属性清除
+另外两个属性。
 
-Rows are grouped by element. Element groups are ordered by the first occurrence
-of canonical unit-cell atoms in `scene.atoms`. Atom rows inside each element
-group keep the same canonical-atom order as `scene.atoms`.
+元素容器保留 context menu 中的 `Apply to all atoms`。该操作将 header 当前的颜色、半径
+和可见性应用到该元素，并清除该元素下所有对应的单原子 overrides。
 
-The Atoms table lists unit-cell atoms only. Periodic image atoms are not shown
-as separate editable rows. Periodic images inherit the style of their
-corresponding unit-cell atom through the shared `siteId`.
+## Selected atom workspace
 
-Atom labels use a colon between element and site index without an intervening
-space, for example `Li:15`. This label is rendered in monospace in Objects and
-in the selected-atom information card.
-Do not display the backend `siteId` delimiter form such as `Li-15` in the
-Objects table, because hyphenated labels are reserved for bond-like notation.
+场景中存在 selected atom 时，对应元素容器内出现一个临时 selected workspace。它位于
+元素 header 下方、Hidden atoms 之前。
 
-Element groups are collapsed by default. Users can expand individual element
-groups.
+Selected workspace 不是另一张 card。它只用一条分隔线与元素 header 分开，内容直接排在
+元素容器内；不增加圆角、边框或独立底色，避免无意义的嵌套 surface。
 
-Element rows are editable group rows, not passive section headers. Editing an
-element row applies the change to every atom in that element group.
+Workspace 显示并允许编辑：
 
-Element rows use a subtly stronger muted background than atom rows, so the
-grouping is visible while remaining quiet. The element atom count aligns in a
-fixed-width numeric column, independent of whether the element symbol has one
-or two letters. The count is left-aligned and close to two-letter symbols, not
-spread far to the right.
+- 原子颜色 token 和 `元素:site index` 标签。
+- 单原子有效半径。
+- 单原子有效可见性。
 
-Expanded atom rows align their label text to the element label text, not to the
-left edge of the expander icon. For example, `Sr:0` starts at the same x
-position as the parent `Sr` text.
+单原子颜色和半径编辑保留为 atom-level overrides。Selection 清除后 workspace 消失，但
+overrides 继续生效；该原子仍可在场景中重新选中。
 
-## Editing Semantics
+界面中最多存在一个 selected workspace。选中另一原子时，workspace 移动到对应元素容器。
+不保留最近选中过的 atoms。
 
-Objects uses a two-level override model:
+## Hidden atom recovery rows
 
-1. Element-level style.
-2. Atom-level style.
+Hidden atoms 只包含具有显式 atom-level `visible: false` override 的 canonical sites。
 
-Atom rows display effective values. They do not expose whether a value is
-inherited or overridden.
+以下 effective hidden 状态不得展开为 hidden atom rows：
 
-Editing an element row for one property applies that property to every atom in
-the element group and clears the corresponding atom-level overrides for that
-element. Editing color clears color overrides only. Editing radius clears radius
-overrides only. Editing visibility clears visibility overrides only.
+- `Display > Atoms` 全局关闭。
+- 元素级 visibility 关闭。
+- 其他上层显示规则导致的隐藏。
 
-Single atom rows can still be edited after an element-level change. For example,
-an element can be hidden, and then one atom under that element can be made
-visible again.
+这保证隐藏整个元素或全局关闭 atoms 时不会重新产生大型原子列表。
 
-Element rows never show mixed state. They always show the element-level value.
+某个元素存在 individually hidden atoms 时，在该元素容器底部显示 `Hidden atoms` 区域。
+Rows 按 canonical site 原始顺序排列。每行只显示：
 
-## Radius
+- 只读的原子颜色 token；保留当前有效颜色，但不能打开颜色编辑器。
+- `元素:site index`。
+- `Minus` 恢复按钮。
 
-Radius values are absolute display radii in Angstrom.
+Hidden recovery row 不提供颜色编辑、半径或 selection，不打开信息卡片，也不使用 selected
+background。按钮 tooltip 使用“恢复元素可见性”的语义。
 
-The radius cell uses an inline numeric input. The input contains only the
-number. The unit appears only in the column header as `R (Å)`.
+点击 `Minus` 删除该 atom 的 visibility override，使它重新继承元素可见性：
 
-The radius input follows the compact numerical-input sizing used in the Pose
-panel: 22px control height, small monospace numerals, and no unit inside the
-input.
+- 元素可见时，该原子重新出现在场景和导出中。
+- 元素隐藏时，该原子继续随元素隐藏。
+- 无论最终 effective visibility 如何，该 row 都因 explicit override 被删除而消失。
 
-Editing any element or atom radius switches the global atom radius model to
-Custom. Custom radius mode records the effective display radii at the moment it
-is created.
+## 原子信息卡片
 
-Preset radius modes:
+双击场景原子后显示信息卡片。Header 顺序为：
 
-- Uniform
-- Atomic
-- Van der Waals
-- Ionic
+```text
+close   ● Na:2                   eye-off   copy   locate
+```
 
-Custom radius mode:
+右侧三个操作中，Hide 位于最左侧并使用 `EyeOff`。Close 继续使用 `X`；不要使用第二个
+`X` 表示 Hide。
 
-- Stores absolute display radii.
-- Disables the global atom Size slider.
-- Treats the entered radius as the final rendered radius.
+卡片提供：
 
-When switching from a preset radius mode to Custom, bake the current effective
-display radii into the custom radius table. For example, if Atomic radius is
-shown at 40 percent size, Custom starts from those currently displayed radii,
-not from the unscaled Atomic data.
+- Close。
+- Hide atom。
+- Copy。
+- Locate in Objects。
 
-When switching from Custom back to any preset radius mode, clear all radius
-overrides and restore the atom Size value that was active when Custom was
-entered.
+Hide 是卡片唯一会改变场景的快捷操作。它写入 canonical site 的 atom-level
+`visible: false`，因此同一 site 的所有周期镜像一起隐藏。随后清除 selection、关闭卡片，
+并在对应元素容器中生成 hidden recovery row。Hide 不自动打开 Objects sidebar。
 
-Changing the global radius preset clears existing radius overrides.
+卡片内容始终显示：
 
-## Color
+```text
+Fractional          1.250, 0.500, -0.852
+Cartesian (Å)        6.005, 2.300, -11.176
+Cell offset         1, 0, -1
+```
 
-The Color cell is a swatch button. Clicking the swatch opens the existing color
-picker popover. The table does not show hex values or color names.
+- 坐标属于被点击的可见 atom instance，而不是 canonical unit-cell atom。
+- Fractional coordinates 允许超出 `[0, 1)`。
+- Cartesian label 使用 thin space `U+2009` 和 Å。
+- Cell offset 始终显示，包括 `0, 0, 0`。
+- 屏幕坐标显示三位小数。
+- Copy 使用同一 instance coordinates，保留六位小数。
 
-Objects swatches are flat color chips. Do not use the legend's Lambert-style
-highlighted swatch background in the table.
+## 场景选择与 Locate
 
-Only one Objects color picker may be open at a time. Opening another element or
-atom color picker closes the previously open one, matching the legend behavior.
+场景的 selected atom id 是唯一 selection source。Objects 不维护独立 selection。
 
-Element color edits in Objects and element color edits from the legend are the
-same operation. They must write through the same element-color override path and
-produce identical preview, legend, inspector, bond, polyhedra, and export
-colors.
+场景交互：
 
-Editing an element color:
+- 单击 atom：pulse feedback。
+- 双击 atom：选中并打开信息卡片。
+- 点击非 selectable scene space：清除 selection。
 
-- Switches the color scheme to Custom if needed.
-- Applies the color to every atom of that element.
-- Clears atom-level color overrides for that element.
-- Updates the legend color for that element.
+Objects 联动：
 
-Editing an atom color:
+- 如果 sidebar 已经打开在 `Objects > Atoms`，双击场景原子后滚动 inspector body，
+  使对应元素容器和 selected workspace 可见。
+- 如果 sidebar 关闭、位于 Settings 或位于 `Objects > Bonds`，双击本身不自动打开或切换。
+- 信息卡片的 Locate 明确打开 Inspector、切换到 `Objects > Atoms` 并滚动到 workspace。
+- 只滚动 inspector body，不使用 page-level `scrollIntoView`。
 
-- Affects only that atom.
-- Does not affect the legend.
+隐藏 selected atom 后清除 selection。Selected workspace 与信息卡片消失，该 atom 转入
+hidden recovery rows。
 
-Changing the global color scheme clears existing color overrides. Custom color
-mode disables auto-distinguish similar colors, because user-specified colors
-should not be modified automatically.
+## 样式覆盖模型
 
-## Visibility
+最终 atom appearance 按以下优先级解析：
 
-Visibility uses an eye icon button, not a checkbox.
+1. 全局 preset 或 custom table。
+2. Element-level override。
+3. Atom-level override。
 
-Visible state:
+Preview、export、legend、bonds、polyhedra、信息卡片 token 和 Objects 必须共享同一套最终
+appearance 解析。
 
-- Eye icon.
-- Normal foreground color.
+### 半径
 
-Invisible state:
+半径是最终显示半径，单位为 Å。输入使用紧凑数值控件。
 
-- Eye-off icon.
-- Muted gray icon color.
+编辑任意元素或 atom 半径时切换全局 radius model 为 Custom。进入 Custom 时烘焙当前
+有效显示半径；从 Custom 切回 preset 时清除 radius overrides，并恢复进入 Custom 前的
+atom size。
 
-Invisible does not mean disabled. Hidden element and atom rows keep radius and
-color editable. Row text should not be dimmed just because the object is hidden.
+### 颜色
 
-Element visibility follows the same override rules as radius and color.
-Toggling an element's visibility applies to all atoms of that element and clears
-their visibility overrides. A hidden element can still have one atom manually
-made visible afterward.
+元素颜色修改与 legend 修改是同一操作，必须写入共享 updater。元素修改会清除该元素的
+atom color overrides；单原子修改只影响对应 canonical site。
 
-The global Display > Atoms control participates in effective visibility:
+手动编辑颜色时切换到 Custom color mode。切换回任何 preset color scheme 时清除已有
+color overrides。
 
-- Turning Display > Atoms off makes every element and atom row read as
-  invisible in Objects.
-- Turning Display > Atoms back on clears all object-level visibility overrides
-  so every unit-cell atom becomes visible again.
-- This reset affects visibility only. Radius and color overrides remain intact.
-- Object-level visibility edits do not write back to Display > Atoms. Turning
-  every unit-cell atom invisible in Objects leaves Display > Atoms on, so users
-  can re-enable individual atoms from Objects without first visiting Display.
+全应用中只能有一个 rich color picker 处于打开状态。切换 scene、离开 owning panel、
+Locate 改变 sidebar context 或切换回 preset 时关闭 active picker。
 
-## Apply To All Atoms
+### 可见性
 
-Atom rows do not have an overflow menu or reset controls.
+元素与 selected workspace 使用 Eye/EyeOff 控件。隐藏只改变显示状态，不修改结构数据、
+bonding definition 或派生 connectivity。
 
-Element rows provide one secondary action: Apply to all atoms. It appears as a
-persistent icon button. The button has no visible text; it shows its
-border/background on hover or focus and uses a tooltip labeled "Apply to all
-atoms". The action applies the element row's current radius, color, and
-visibility to every atom in that element group and clears all corresponding
-atom-level overrides for that element.
+`Display > Atoms` 关闭时，所有元素和 atom 的 effective visibility 为 false；重新打开时
+清除所有 object-level visibility overrides，使 atoms 恢复为统一可见状态。颜色和半径
+overrides 不受影响。
 
-This action is a cleanup affordance for returning an element group to a uniform
-state.
+## Reset 与生命周期
 
-## Scene Selection Linkage
+- Reset all 清除所有 object style overrides。
+- 更换结构清除 selection、Locate request、active picker 和 object overrides。
+- 更换 radius preset 清除 radius overrides。
+- 更换 color preset 清除 color overrides。
+- Element `Apply to all atoms` 清除该元素的 selected/hidden atoms 所依赖的对应 overrides；
+  hidden recovery rows 随 visibility override 被清除而消失。
 
-The scene's selected atom id is the single source of truth for atom selection.
-Objects must not introduce a separate table selection state.
+## 性能与实现边界
 
-Current scene behavior remains:
+Atoms 面板不再构造完整 atom rows，不使用 TanStack Table、分页、搜索、展开状态或虚拟列表。
+元素容器数量由结构中的元素种类决定；child content 只来自一个 selected atom 和显式
+individually hidden atoms。
 
-- Single click atom: pulse feedback.
-- Double click atom: inspect/select atom.
-- Clicking non-selectable scene space clears atom selection.
+前端 presentation state 继续持有 object styles。Backend scene contract 只需提供稳定
+`siteId`、site index、元素和周期镜像身份。
 
-Objects linkage:
+Canvas 使用 demand rendering。任何会改变 effective visibility、颜色或半径的 React
+commit 都必须请求 frame，保证 preview 与 export 同步。
 
-- If the user is already in Objects > Atoms, double-clicking a scene atom
-  expands the corresponding element group, scrolls to the atom row, and
-  highlights that row.
-- If the sidebar is closed, or open on Settings, double-clicking a scene atom
-  must not open the sidebar or switch to Objects.
-- AtomInspectorCard may provide an explicit action to open Objects > Atoms and
-  locate the selected atom.
-- Locating an atom from AtomInspectorCard uses the normal sidebar opening state.
-  The follow-up row reveal must scroll only the inspector body vertically, not
-  call page-level `scrollIntoView`, so opening the sidebar does not jolt the
-  preview or floating cards.
-- Double-clicking an atom row's non-control selection area sets the scene
-  selected atom id. Single-clicking an atom row does not select it.
-- Radius, color, and visibility controls inside a row must not also trigger row
-  selection.
-- Element rows do not select scene atoms.
-- If the currently selected atom becomes effectively hidden, clear the scene
-  selected atom id. The table may keep focus on the row.
+## 验收要点
 
-## Reset And Global Style Interaction
-
-Changing global style presets clears corresponding object overrides:
-
-- Changing color scheme clears color overrides.
-- Changing radius model clears radius overrides.
-- Reset all clears all object overrides.
-
-Custom radius disables the global atom Size slider. Custom color disables
-auto-distinguish similar colors.
-
-## First Slice Exclusions
-
-Do not implement these in the first slice:
-
-- Search or jump.
-- Pagination.
-- Mixed-state indicators.
-- Inherit/custom badges.
-- Atom row overflow menus.
-- Per-atom reset actions.
-- Full bond editing.
-- Polyhedra or cell object tabs.
-- Automatic sidebar opening when a scene atom is double-clicked.
-
-## Implementation Notes
-
-Use shadcn Table primitives for semantic table structure and TanStack Table for
-row and column modeling. The table is specific to Objects > Atoms and can live
-near the inspector sidebar implementation.
-
-Keep object-style state in the frontend presentation layer. The backend scene
-contract should continue to provide atom identity, element identity, geometry,
-and analysis data, not user-edited visual overrides.
-
-Legend element color editing and Objects element color editing must share a
-single updater. Avoid duplicate color state.
-
-All rich color pickers share a single app-level active picker id. Opening any
-picker closes the previously active picker, including pickers in Legend,
-Objects, and common Style controls. Close the active picker when the scene is
-cleared or reloaded, when an owning panel/tab is dismissed or switched away,
-when Locate in objects changes the right-sidebar context, and when the global
-color scheme changes to a preset.
-
-The scene render path should resolve final atom appearance from:
-
-1. The active global preset or custom table.
-2. Element-level overrides.
-3. Atom-level overrides.
-
-This resolution should be shared by preview, export, legend, bonds, polyhedra,
-and AtomInspectorCard wherever applicable.
-
-The preview Canvas runs on demand. Any React commit that can change the rendered
-scene subtree or effective object visibility must request a demand frame, so
-objects appear and disappear immediately without waiting for the next camera
-interaction.
+- Atoms 不显示完整 atom list，也不存在元素展开和虚拟滚动逻辑。
+- 每种元素显示为独立圆角容器，header 可编辑元素颜色、半径和可见性。
+- 只有当前 selected atom 显示完整单原子 workspace。
+- 只有显式 `visible: false` atoms 显示轻量 hidden recovery rows。
+- Hidden row 的 `Minus` 清除 visibility override，而不是强制写入 `visible: true`。
+- 信息卡片使用 `EyeOff` 快捷隐藏，位于 Copy 与 Locate 之前。
+- Hide 后 selection/card/workspace 清除，hidden recovery row 出现。
+- 周期镜像坐标显示 instance position，样式编辑作用于 canonical site。
+- Locate 只滚动 inspector body。
+- Preview 与 export 的颜色、半径和可见性一致。
+- 使用 Bun tests、typecheck 和 build 验证；不默认使用 browser 或 Playwright。

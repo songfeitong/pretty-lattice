@@ -209,6 +209,36 @@ export function clearAtomOverridePropertyForElement(
   };
 }
 
+export function clearAtomOverridePropertyForAtom(
+  objectStyles: ObjectStyleState,
+  atom: AtomSpec,
+  property: ObjectStyleProperty,
+): ObjectStyleState {
+  const atomIds = new Set([atom.id, atomObjectStyleKey(atom)]);
+  const atomOverrides: Record<string, AtomObjectStyleOverride> = {};
+
+  for (const [atomId, override] of Object.entries(objectStyles.atomOverrides)) {
+    const nextOverride = atomIds.has(atomId)
+      ? removeAtomOverrideProperty(override, property)
+      : override;
+    if (hasAtomOverride(nextOverride)) {
+      atomOverrides[atomId] = nextOverride;
+    }
+  }
+
+  return {
+    ...objectStyles,
+    atomOverrides,
+  };
+}
+
+export function atomHasExplicitHiddenOverride(
+  objectStyles: ObjectStyleState,
+  atom: AtomSpec,
+): boolean {
+  return atomOverrideForAtom(objectStyles, atom)?.visible === false;
+}
+
 export function setAtomOverrideProperty(
   objectStyles: ObjectStyleState,
   atomId: string,
