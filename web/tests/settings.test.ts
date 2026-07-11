@@ -533,6 +533,7 @@ describe("settings", () => {
     expect(sceneOffsetXForInspector(false, 1200)).toBe(0);
     expect(sceneOffsetXForInspector(true, 760)).toBe(0);
     expect(sceneOffsetXForInspector(true, 1200)).toBe(INSPECTOR_OPEN_SCENE_OFFSET_X_PX);
+    expect(INSPECTOR_OPEN_SCENE_OFFSET_X_PX).toBe(-116);
   });
 });
 

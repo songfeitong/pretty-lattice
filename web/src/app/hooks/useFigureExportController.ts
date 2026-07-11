@@ -21,6 +21,7 @@ import {
   type ExportProjectedSize,
   type ExportSettingsState,
   type StyleState,
+  type StructureLineWidthState,
   type UnitCellLineStyle,
 } from "../../model";
 
@@ -34,6 +35,7 @@ interface UseFigureExportControllerOptions {
   selectedFileName: string | null;
   showCrystalAxisLabels: boolean;
   style: StyleState;
+  structureLineWidth: StructureLineWidthState;
   unitCellLineStyle: UnitCellLineStyle;
   visibleScene: SceneSpec | null;
 }
@@ -48,6 +50,7 @@ export function useFigureExportController({
   selectedFileName,
   showCrystalAxisLabels,
   style,
+  structureLineWidth,
   unitCellLineStyle,
   visibleScene,
 }: UseFigureExportControllerOptions) {
@@ -149,6 +152,7 @@ export function useFigureExportController({
         settings: settingsForExport,
         showCrystalAxisLabels,
         style,
+        structureLineWidth,
         unitCellLineStyle,
       });
       await downloadFigureExportFiles(exportFiles, selectedFileName);
@@ -173,6 +177,7 @@ export function useFigureExportController({
     selectedFileName,
     showCrystalAxisLabels,
     style,
+    structureLineWidth,
     unitCellLineStyle,
   ]);
 

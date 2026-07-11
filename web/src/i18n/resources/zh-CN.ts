@@ -199,6 +199,7 @@ export const zhCN = {
     orbit: "Orbit",
     general: "常规",
     previewQuality: "预览质量",
+    polyhedraEdgeWidth: "多面体边线宽",
     rendering: "渲染",
     reduced: "减少",
     showCrystalAxisLabels: "显示晶轴标签",
@@ -209,6 +210,7 @@ export const zhCN = {
     trackball: "Trackball",
     dark: "深色",
     unitCellLineStyle: "晶胞线型",
+    unitCellLineWidth: "晶胞线宽",
     value: "{{label}} 数值",
   },
   style: {

@@ -52,6 +52,7 @@ export async function createFigureExportFiles({
   settings,
   showCrystalAxisLabels,
   style,
+  structureLineWidth,
   unitCellLineStyle,
 }: CreateFigureExportOptions): Promise<FigureExportFile[]> {
   const validation = validateExportSettings(settings);
@@ -72,6 +73,7 @@ export async function createFigureExportFiles({
         settings,
         showCrystalAxisLabels,
         style,
+        structureLineWidth,
         unitCellLineStyle,
       }),
     ];
@@ -93,6 +95,7 @@ export async function createFigureExportFiles({
         settings,
         showCrystalAxisLabels,
         style,
+        structureLineWidth,
         unitCellLineStyle,
       }),
     );
@@ -143,6 +146,7 @@ export async function createFigureExportFile({
   settings,
   showCrystalAxisLabels,
   style,
+  structureLineWidth,
   unitCellLineStyle,
 }: CreateFigureExportOptions): Promise<FigureExportFile> {
   return createStructureExportFile({
@@ -156,6 +160,7 @@ export async function createFigureExportFile({
     settings,
     showCrystalAxisLabels,
     style,
+    structureLineWidth,
     unitCellLineStyle,
   });
 }

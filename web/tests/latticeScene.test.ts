@@ -416,6 +416,12 @@ describe("computeSceneLayout", () => {
     expect(
       structureLineWidthScale(exportFramePlanWithBounds(5000, 5000), 1),
     ).toBeCloseTo(5);
+    expect(
+      structureLineWidthScale(exportFramePlanWithBounds(2000, 2000), 1, 1.5),
+    ).toBeCloseTo(3);
+    expect(
+      structureLineWidthScale(exportFramePlanWithBounds(2000, 2000), 2, 0.5),
+    ).toBeCloseTo(1);
   });
 
   test("builds bicolor bonds as one open cylinder side with a hard color boundary", () => {

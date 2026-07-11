@@ -10,6 +10,7 @@ import type {
   ComponentVisibilityState,
   ExportSettingsState,
   StyleState,
+  StructureLineWidthState,
   UnitCellLineStyle,
 } from "../model";
 import {
@@ -45,6 +46,7 @@ interface CombinedExportRasterOptions {
   settings: ExportSettingsState;
   showCrystalAxisLabels: boolean;
   style: StyleState;
+  structureLineWidth: StructureLineWidthState;
   unitCellLineStyle: UnitCellLineStyle;
   visibleScene: SceneSpec | null;
 }
@@ -65,6 +67,7 @@ export async function renderCombinedExportRaster({
   settings,
   showCrystalAxisLabels,
   style,
+  structureLineWidth,
   unitCellLineStyle,
   visibleScene,
 }: CombinedExportRasterOptions): Promise<RasterExportImage> {
@@ -83,6 +86,7 @@ export async function renderCombinedExportRaster({
       lightStrength,
       settings,
       style,
+      structureLineWidth,
       unitCellLineStyle,
       visibleScene,
     });

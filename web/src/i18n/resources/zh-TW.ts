@@ -199,6 +199,7 @@ export const zhTW = {
     orbit: "Orbit",
     general: "一般",
     previewQuality: "預覽品質",
+    polyhedraEdgeWidth: "多面體邊線寬",
     rendering: "算繪",
     reduced: "減少",
     showCrystalAxisLabels: "顯示晶軸標籤",
@@ -209,6 +210,7 @@ export const zhTW = {
     trackball: "Trackball",
     dark: "深色",
     unitCellLineStyle: "晶胞線條樣式",
+    unitCellLineWidth: "晶胞線寬",
     value: "{{label}} 數值",
   },
   style: {

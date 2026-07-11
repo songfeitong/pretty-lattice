@@ -21,6 +21,7 @@ export async function createStructureExportFile({
   scene,
   settings,
   style,
+  structureLineWidth,
   unitCellLineStyle,
 }: CreateFigureExportOptions): Promise<FigureExportFile> {
   const validation = validateExportSettings(settings);
@@ -46,6 +47,7 @@ export async function createStructureExportFile({
     lightStrength,
     settings,
     style,
+    structureLineWidth,
     unitCellLineStyle,
     visibleScene,
   });

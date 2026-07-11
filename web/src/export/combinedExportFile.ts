@@ -19,6 +19,7 @@ export async function createCombinedExportFile({
   settings,
   showCrystalAxisLabels,
   style,
+  structureLineWidth,
   unitCellLineStyle,
 }: CreateFigureExportOptions): Promise<FigureExportFile> {
   const visibleScene = visibleSceneForComponents(
@@ -37,6 +38,7 @@ export async function createCombinedExportFile({
     settings,
     showCrystalAxisLabels,
     style,
+    structureLineWidth,
     unitCellLineStyle,
     visibleScene,
   });

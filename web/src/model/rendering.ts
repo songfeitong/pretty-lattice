@@ -4,8 +4,20 @@ import { STRUCTURE_ATOM_COUNT_THRESHOLD } from "./structureLimits";
 
 export type UnitCellLineStyle = "solid" | "dashed";
 
+export interface StructureLineWidthState {
+  polyhedra: number;
+  unitCell: number;
+}
+
 export const DEFAULT_PREVIEW_MESH_QUALITY: MeshQuality = "medium";
 export const DEFAULT_UNIT_CELL_LINE_STYLE: UnitCellLineStyle = "solid";
+export const DEFAULT_STRUCTURE_LINE_WIDTH: StructureLineWidthState = {
+  polyhedra: 1,
+  unitCell: 1,
+};
+export const STRUCTURE_LINE_WIDTH_MIN = 0.5;
+export const STRUCTURE_LINE_WIDTH_MAX = 5;
+export const STRUCTURE_LINE_WIDTH_STEP = 0.5;
 export const DEFAULT_SHOW_CRYSTAL_AXIS_LABELS = true;
 export const LARGE_SCENE_PREVIEW_MESH_QUALITY: MeshQuality = "low";
 

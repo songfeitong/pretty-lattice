@@ -73,6 +73,7 @@ import {
   clearObjectStyleProperty,
   canonicalAtomsForObjectStyles,
   DEFAULT_SHOW_CRYSTAL_AXIS_LABELS,
+  DEFAULT_STRUCTURE_LINE_WIDTH,
   DEFAULT_UNIT_CELL_LINE_STYLE,
   createCustomAtomRadii,
   createCustomColormapFromStyle,
@@ -80,6 +81,7 @@ import {
   elementColorOverridesForStyle,
   type AtomRadiusStyleModel,
   type MeshQuality,
+  type StructureLineWidthState,
   type UnitCellLineStyle,
   hasPolyhedra,
   previewSafeAreaForInspector,
@@ -139,6 +141,8 @@ function AppContent() {
   const [unitCellLineStyle, setUnitCellLineStyle] = useState<UnitCellLineStyle>(
     DEFAULT_UNIT_CELL_LINE_STYLE,
   );
+  const [structureLineWidth, setStructureLineWidth] =
+    useState<StructureLineWidthState>(DEFAULT_STRUCTURE_LINE_WIDTH);
   const [showCrystalAxisLabels, setShowCrystalAxisLabels] = useState(
     DEFAULT_SHOW_CRYSTAL_AXIS_LABELS,
   );
@@ -293,6 +297,7 @@ function AppContent() {
     selectedFileName,
     showCrystalAxisLabels,
     style,
+    structureLineWidth,
     unitCellLineStyle,
     visibleScene,
   });
@@ -390,6 +395,7 @@ function AppContent() {
       setStyle(createDefaultStyle());
       setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
       setUnitCellLineStyle(DEFAULT_UNIT_CELL_LINE_STYLE);
+      setStructureLineWidth(DEFAULT_STRUCTURE_LINE_WIDTH);
       setShowCrystalAxisLabels(DEFAULT_SHOW_CRYSTAL_AXIS_LABELS);
       if (!options.preserveActiveCommonPanelTab) {
         setActiveCommonPanelTab("display");
@@ -860,6 +866,7 @@ function AppContent() {
                 lightStrength={viewState.lightStrength}
                 previewFpsStore={previewFpsStore}
                 style={style}
+                structureLineWidth={structureLineWidth}
                 theme={resolvedTheme}
                 showAtoms={componentVisibility.atoms}
                 showFpsOverlay={viewState.showFpsOverlay}
@@ -1055,6 +1062,7 @@ function AppContent() {
                   showFpsOverlay={viewState.showFpsOverlay}
                   showCrystalAxisLabels={showCrystalAxisLabels}
                   style={style}
+                  structureLineWidth={structureLineWidth}
                   unitCellLineStyle={unitCellLineStyle}
                   onActiveObjectsTabChange={handleActiveObjectsTabChange}
                   onActiveTabChange={handleActiveInspectorTabChange}
@@ -1079,6 +1087,7 @@ function AppContent() {
                   onShowFpsOverlayChange={handleShowFpsOverlayChange}
                   onShowCrystalAxisLabelsChange={setShowCrystalAxisLabels}
                   onStyleChange={setStyle}
+                  onStructureLineWidthChange={setStructureLineWidth}
                   onUnitCellLineStyleChange={setUnitCellLineStyle}
                 />
               </div>

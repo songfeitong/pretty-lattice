@@ -7,6 +7,7 @@ import type {
   ExportFormat,
   ExportSettingsState,
   StyleState,
+  StructureLineWidthState,
   UnitCellLineStyle,
 } from "../model";
 
@@ -21,6 +22,7 @@ export interface CreateFigureExportOptions {
   settings: ExportSettingsState;
   showCrystalAxisLabels: boolean;
   style: StyleState;
+  structureLineWidth: StructureLineWidthState;
   unitCellLineStyle: UnitCellLineStyle;
 }
 

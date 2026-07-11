@@ -8,6 +8,7 @@ import type {
   ExportMeshQuality,
   ExportSupersampling,
   StyleState,
+  StructureLineWidthState,
   UnitCellLineStyle,
 } from "../model";
 import type { CameraPoseSnapshot } from "./cameraPose";
@@ -79,6 +80,7 @@ export interface RenderStructureRasterOptions {
   showAtoms: boolean;
   showUnitCell: boolean;
   style: StyleState;
+  structureLineWidth: StructureLineWidthState;
   supersampling: ExportSupersampling;
   unitCellLineColor?: string;
   unitCellLineStyle: UnitCellLineStyle;
@@ -112,6 +114,7 @@ export async function renderStructureRasterImage({
   showAtoms,
   showUnitCell,
   style,
+  structureLineWidth,
   supersampling,
   unitCellLineColor,
   unitCellLineStyle,
@@ -148,7 +151,16 @@ export async function renderStructureRasterImage({
     width: renderWidth,
   });
   const meshDetail = EXPORT_SCENE_MESH_DETAIL_PRESETS[meshQuality];
-  const lineWidthScale = structureLineWidthScale(exportFramePlan, supersampling);
+  const polyhedronEdgeLineWidthScale = structureLineWidthScale(
+    exportFramePlan,
+    supersampling,
+    structureLineWidth.polyhedra,
+  );
+  const unitCellLineWidthScale = structureLineWidthScale(
+    exportFramePlan,
+    supersampling,
+    structureLineWidth.unitCell,
+  );
   const root = createRoot(canvas);
   let rootState: RootState | null = null;
   let resolveMounted: (() => void) | null = null;
@@ -193,14 +205,14 @@ export async function renderStructureRasterImage({
           layout={layout}
           materialFamilies={materialFamilies}
           meshDetail={meshDetail}
-          polyhedronEdgeLineWidthScale={lineWidthScale}
+          polyhedronEdgeLineWidthScale={polyhedronEdgeLineWidthScale}
           scene={scene}
           showAtoms={showAtoms}
           showUnitCell={showUnitCell}
           style={style}
           unitCellLineColor={unitCellLineColor}
           unitCellLineStyle={unitCellLineStyle}
-          unitCellLineWidthScale={lineWidthScale}
+          unitCellLineWidthScale={unitCellLineWidthScale}
         />
         <RenderReady onReady={() => resolveMounted?.()} />
       </>,
@@ -229,6 +241,7 @@ export async function renderStructureRasterImage({
 export function structureLineWidthScale(
   framePlan: StructureExportFramePlan,
   supersampling: number,
+  baseLineWidth = 1,
 ): number {
   const referenceSize = structureFrameReferenceSize(framePlan, supersampling);
   const finalLineWidth = referenceSize
@@ -238,7 +251,7 @@ export function structureLineWidthScale(
       )
     : 2;
 
-  return finalLineWidth * Math.max(1, supersampling);
+  return finalLineWidth * baseLineWidth * Math.max(1, supersampling);
 }
 
 function structureFrameContentBounds(

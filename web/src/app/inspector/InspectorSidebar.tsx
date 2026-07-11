@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { NumberStepper } from "@/components/ui/number-stepper";
 import { Separator } from "@/components/ui/separator";
 import {
   Select,
@@ -82,8 +83,12 @@ import {
 import { useAutoBlurSlider } from "../controls/commonPanel/sharedControls";
 import {
   MESH_QUALITY_OPTIONS,
+  STRUCTURE_LINE_WIDTH_MAX,
+  STRUCTURE_LINE_WIDTH_MIN,
+  STRUCTURE_LINE_WIDTH_STEP,
   type MeshQuality,
   type StyleState,
+  type StructureLineWidthState,
   type UnitCellLineStyle,
   type BondingMode,
   type BondVisibilityOverrides,
@@ -202,6 +207,7 @@ export function InspectorSidebar({
   selectedAtomId,
   selectedBondId,
   style,
+  structureLineWidth,
   unitCellLineStyle,
   onActiveObjectsTabChange,
   onActiveTabChange,
@@ -224,6 +230,7 @@ export function InspectorSidebar({
   onShowCrystalAxisLabelsChange,
   onElementColorChange,
   onStyleChange,
+  onStructureLineWidthChange,
   onUnitCellLineStyleChange,
 }: {
   activeObjectsTab: ObjectsPanelTab;
@@ -253,6 +260,7 @@ export function InspectorSidebar({
   selectedAtomId: string | null;
   selectedBondId: string | null;
   style: StyleState;
+  structureLineWidth: StructureLineWidthState;
   unitCellLineStyle: UnitCellLineStyle;
   onActiveObjectsTabChange: (tab: ObjectsPanelTab) => void;
   onActiveTabChange: (tab: InspectorSidebarTab) => void;
@@ -275,6 +283,7 @@ export function InspectorSidebar({
   onShowCrystalAxisLabelsChange: (showCrystalAxisLabels: boolean) => void;
   onElementColorChange: (element: string, color: string) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
+  onStructureLineWidthChange: Dispatch<SetStateAction<StructureLineWidthState>>;
   onUnitCellLineStyleChange: (lineStyle: UnitCellLineStyle) => void;
 }) {
   const { t } = useTranslation();
@@ -286,7 +295,7 @@ export function InspectorSidebar({
       aria-hidden={!isOpen}
       inert={!isOpen}
       className={cn(
-        "absolute inset-y-0 right-0 z-20 flex w-[372px] max-w-[calc(100vw-1rem)] flex-col border-l border-border bg-card text-foreground",
+        "absolute inset-y-0 right-0 z-20 flex w-[360px] max-w-[calc(100vw-1rem)] flex-col border-l border-border bg-card text-foreground",
         "transition-transform duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduced:transition-none",
         isOpen ? "translate-x-0" : "translate-x-full",
       )}
@@ -336,6 +345,7 @@ export function InspectorSidebar({
               fogAffectsUnitCell={fogAffectsUnitCell}
               showFpsOverlay={showFpsOverlay}
               showCrystalAxisLabels={showCrystalAxisLabels}
+              structureLineWidth={structureLineWidth}
               unitCellLineStyle={unitCellLineStyle}
               onDistinguishSimilarColorsChange={onDistinguishSimilarColorsChange}
               onDragSensitivityChange={onDragSensitivityChange}
@@ -346,6 +356,7 @@ export function InspectorSidebar({
               onFogAffectsUnitCellChange={onFogAffectsUnitCellChange}
               onShowFpsOverlayChange={onShowFpsOverlayChange}
               onShowCrystalAxisLabelsChange={onShowCrystalAxisLabelsChange}
+              onStructureLineWidthChange={onStructureLineWidthChange}
               onUnitCellLineStyleChange={onUnitCellLineStyleChange}
             />
           </TabsContent>
@@ -397,6 +408,7 @@ function SettingsPanel({
   fogAffectsUnitCell,
   showFpsOverlay,
   showCrystalAxisLabels,
+  structureLineWidth,
   unitCellLineStyle,
   onDistinguishSimilarColorsChange,
   onDragSensitivityChange,
@@ -407,6 +419,7 @@ function SettingsPanel({
   onFogAffectsUnitCellChange,
   onShowFpsOverlayChange,
   onShowCrystalAxisLabelsChange,
+  onStructureLineWidthChange,
   onUnitCellLineStyleChange,
 }: {
   distinguishSimilarColors: boolean;
@@ -420,6 +433,7 @@ function SettingsPanel({
   fogAffectsUnitCell: boolean;
   showFpsOverlay: boolean;
   showCrystalAxisLabels: boolean;
+  structureLineWidth: StructureLineWidthState;
   unitCellLineStyle: UnitCellLineStyle;
   onDistinguishSimilarColorsChange: (distinguishSimilarColors: boolean) => void;
   onDragSensitivityChange: (dragSensitivity: number) => void;
@@ -430,6 +444,7 @@ function SettingsPanel({
   onFogAffectsUnitCellChange: (fogAffectsUnitCell: boolean) => void;
   onShowFpsOverlayChange: (showFpsOverlay: boolean) => void;
   onShowCrystalAxisLabelsChange: (showCrystalAxisLabels: boolean) => void;
+  onStructureLineWidthChange: Dispatch<SetStateAction<StructureLineWidthState>>;
   onUnitCellLineStyleChange: (lineStyle: UnitCellLineStyle) => void;
 }) {
   const { t } = useTranslation();
@@ -565,6 +580,12 @@ function SettingsPanel({
           onCheckedChange={onShowCrystalAxisLabelsChange}
         />
 
+        <InspectorSwitchRow
+          checked={fogAffectsUnitCell}
+          label={t("settings.applyDepthFadingToUnitCell")}
+          onCheckedChange={onFogAffectsUnitCellChange}
+        />
+
         <InspectorSelectRow label={t("settings.unitCellLineStyle")}>
           <Select
             value={unitCellLineStyle}
@@ -590,11 +611,35 @@ function SettingsPanel({
           </Select>
         </InspectorSelectRow>
 
-        <InspectorSwitchRow
-          checked={fogAffectsUnitCell}
-          label={t("settings.applyDepthFadingToUnitCell")}
-          onCheckedChange={onFogAffectsUnitCellChange}
-        />
+        <InspectorSelectRow label={t("settings.unitCellLineWidth")}>
+          <NumberStepper
+            aria-label={t("settings.unitCellLineWidth")}
+            className="justify-self-end"
+            min={STRUCTURE_LINE_WIDTH_MIN}
+            max={STRUCTURE_LINE_WIDTH_MAX}
+            step={STRUCTURE_LINE_WIDTH_STEP}
+            suffix="px"
+            value={structureLineWidth.unitCell}
+            onValueChange={(unitCell) =>
+              onStructureLineWidthChange((current) => ({ ...current, unitCell }))
+            }
+          />
+        </InspectorSelectRow>
+
+        <InspectorSelectRow label={t("settings.polyhedraEdgeWidth")}>
+          <NumberStepper
+            aria-label={t("settings.polyhedraEdgeWidth")}
+            className="justify-self-end"
+            min={STRUCTURE_LINE_WIDTH_MIN}
+            max={STRUCTURE_LINE_WIDTH_MAX}
+            step={STRUCTURE_LINE_WIDTH_STEP}
+            suffix="px"
+            value={structureLineWidth.polyhedra}
+            onValueChange={(polyhedra) =>
+              onStructureLineWidthChange((current) => ({ ...current, polyhedra }))
+            }
+          />
+        </InspectorSelectRow>
 
         <InspectorSwitchRow
           checked={isCustomColorScheme ? false : distinguishSimilarColors}

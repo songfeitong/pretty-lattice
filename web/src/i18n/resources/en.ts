@@ -197,6 +197,7 @@ export const en = {
     orbit: "Orbit",
     general: "General",
     previewQuality: "Preview quality",
+    polyhedraEdgeWidth: "Polyhedra edge width",
     rendering: "Rendering",
     reduced: "Reduced",
     showCrystalAxisLabels: "Show crystal axis labels",
@@ -207,6 +208,7 @@ export const en = {
     trackball: "Trackball",
     dark: "Dark",
     unitCellLineStyle: "Unit cell line style",
+    unitCellLineWidth: "Unit cell line width",
     value: "{{label}} value",
   },
   style: {

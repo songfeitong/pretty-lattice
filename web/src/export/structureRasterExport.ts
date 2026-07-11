@@ -6,6 +6,7 @@ import type {
   ComponentVisibilityState,
   ExportSettingsState,
   StyleState,
+  StructureLineWidthState,
   UnitCellLineStyle,
 } from "../model";
 import {
@@ -22,6 +23,7 @@ export async function renderExportRaster({
   lightStrength,
   settings,
   style,
+  structureLineWidth,
   unitCellLineStyle,
   visibleScene,
 }: {
@@ -31,6 +33,7 @@ export async function renderExportRaster({
   lightStrength: number;
   settings: ExportSettingsState;
   style: StyleState;
+  structureLineWidth: StructureLineWidthState;
   unitCellLineStyle: UnitCellLineStyle;
   visibleScene: SceneSpec;
 }): Promise<RasterExportImage> {
@@ -48,6 +51,7 @@ export async function renderExportRaster({
     showAtoms: componentVisibility.atoms,
     showUnitCell: componentVisibility.unitCell,
     style,
+    structureLineWidth,
     supersampling: settings.supersampling,
     unitCellLineColor:
       settings.background === "black" ? DARK_BACKGROUND_UNIT_CELL_LINE_COLOR : undefined,

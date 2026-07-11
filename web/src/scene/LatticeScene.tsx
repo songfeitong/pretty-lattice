@@ -9,8 +9,10 @@ import {
   DEFAULT_DRAG_SENSITIVITY,
   DEFAULT_MOUSE_INERTIA,
   DEFAULT_PREVIEW_MESH_QUALITY,
+  DEFAULT_STRUCTURE_LINE_WIDTH,
   type ComponentOpacityState,
   type MeshQuality,
+  type StructureLineWidthState,
   type StyleState,
   type UnitCellLineStyle,
 } from "../model";
@@ -128,6 +130,7 @@ export function LatticeScene({
   showFpsOverlay = false,
   showUnitCell = true,
   style,
+  structureLineWidth = DEFAULT_STRUCTURE_LINE_WIDTH,
   suspendCameraOrientationUpdates = false,
   theme = "light",
   unitCellLineStyle = "solid",
@@ -172,6 +175,7 @@ export function LatticeScene({
   showFpsOverlay?: boolean;
   showUnitCell?: boolean;
   style: StyleState;
+  structureLineWidth?: StructureLineWidthState;
   suspendCameraOrientationUpdates?: boolean;
   theme?: ResolvedTheme;
   unitCellLineStyle?: UnitCellLineStyle;
@@ -274,8 +278,10 @@ export function LatticeScene({
         showAtoms={showAtoms}
         showUnitCell={showUnitCell}
         style={style}
+        polyhedronEdgeLineWidthScale={structureLineWidth.polyhedra}
         unitCellLineStyle={unitCellLineStyle}
         unitCellLineColor={previewTheme.unitCell}
+        unitCellLineWidthScale={structureLineWidth.unitCell}
       />
       <CameraOrientationTracker
         cameraOrientationRef={cameraOrientationRef}

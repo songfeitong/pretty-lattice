@@ -868,7 +868,7 @@ describe("App", () => {
     const fpsOverlay = screen.getByTestId("fps-overlay");
     expect(fpsOverlay.textContent).toBe("fps 0");
 
-    expect(legend.getAttribute("style")).toContain("calc(50% + 0px)");
+    expect(legend.getAttribute("style")).toContain("calc(50% + 6px)");
     expect(inspectorButton.getAttribute("aria-expanded")).toBe("true");
     expect(inspectorButton.className).toContain("tool-icon-button-active");
 
@@ -1321,6 +1321,12 @@ describe("App", () => {
     const unitCellLineSelect = within(inspector).getByRole("combobox", {
       name: "Unit cell line style",
     });
+    const unitCellLineWidthInput = within(inspector).getByRole("textbox", {
+      name: "Unit cell line width",
+    }) as HTMLInputElement;
+    const polyhedraEdgeWidthInput = within(inspector).getByRole("textbox", {
+      name: "Polyhedra edge width",
+    }) as HTMLInputElement;
 
     expect(showCrystalAxisLabelsSwitch.getAttribute("aria-checked")).toBe("true");
     expect(depthFadingUnitCellSwitch.getAttribute("aria-checked")).toBe("false");
@@ -1343,6 +1349,16 @@ describe("App", () => {
     expect(distinguishSimilarColorsSwitch.getAttribute("aria-checked")).toBe("true");
 
     expect(unitCellLineSelect.textContent).toContain("Solid");
+    expect(unitCellLineWidthInput.value).toBe("1.0");
+    expect(polyhedraEdgeWidthInput.value).toBe("1.0");
+    await user.click(
+      within(inspector).getByRole("button", { name: "Unit cell line width +0.5" }),
+    );
+    await user.click(
+      within(inspector).getByRole("button", { name: "Polyhedra edge width -0.5" }),
+    );
+    expect(unitCellLineWidthInput.value).toBe("1.5");
+    expect(polyhedraEdgeWidthInput.value).toBe("0.5");
     await user.click(unitCellLineSelect);
     await user.click(await screen.findByRole("option", { name: "Dashed" }));
 
@@ -1361,6 +1377,10 @@ describe("App", () => {
     expect(exportZipDownloads).toHaveLength(0);
     expect(exportRequests[0]?.showCrystalAxisLabels).toBe(false);
     expect(exportRequests[0]?.unitCellLineStyle).toBe("dashed");
+    expect(exportRequests[0]?.structureLineWidth).toEqual({
+      polyhedra: 0.5,
+      unitCell: 1.5,
+    });
     expect(exportRequests[0]?.style.fogAffectsUnitCell).toBe(true);
     expect(exportRequests[0]?.style.distinguishSimilarColors).toBe(true);
   });
