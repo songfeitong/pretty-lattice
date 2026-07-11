@@ -279,7 +279,7 @@ describe("computeSceneLayout", () => {
     );
   });
 
-  test("uses atom positions for the depth cueing front and back references", () => {
+  test("uses atom positions for the depth fading front and back references", () => {
     const scene = sceneWithOffCenterAtoms();
     const layout = computeSceneLayout(scene);
     const outward = new Vector3(...layout.standardPose.outward).normalize();
@@ -293,8 +293,8 @@ describe("computeSceneLayout", () => {
       -Math.min(0, ...projections),
     );
 
-    expect(layout.depthCueingFrontOffset).toBeCloseTo(expectedFrontOffset);
-    expect(layout.depthCueingBackOffset).toBeCloseTo(expectedBackOffset);
+    expect(layout.depthFadingFrontOffset).toBeCloseTo(expectedFrontOffset);
+    expect(layout.depthFadingBackOffset).toBeCloseTo(expectedBackOffset);
   });
 
   test("tracks the standard-view projected fit size for slender unit cells", () => {
@@ -483,7 +483,7 @@ describe("computeSceneLayout", () => {
     expect(camera.far).toBeGreaterThanOrEqual(1000);
   });
 
-  test("maps depth cueing start and amount to a linear scene fog range", () => {
+  test("maps depth fading start and amount to a linear scene fog range", () => {
     expect(createSceneFog(40, 10, 6, 1, 0, 25)).toBeNull();
 
     const earlyFog = createSceneFog(40, 10, 6, 1, 50, 0);

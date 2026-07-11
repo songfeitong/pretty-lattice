@@ -27,8 +27,8 @@ const NARROW_VIEWPORT_SAFE_AREA: PreviewSafeArea = {
 
 export interface SceneStructureLayout {
   cameraFitBounds: CameraFitBounds;
-  depthCueingBackOffset: number;
-  depthCueingFrontOffset: number;
+  depthFadingBackOffset: number;
+  depthFadingFrontOffset: number;
   groupPosition: VectorTuple;
   span: number;
   standardPose: StandardCameraPose;
@@ -73,7 +73,7 @@ export function computeSceneStructureLayout(
     span,
   );
 
-  const depthCueingRange = computeDepthCueingRange(
+  const depthFadingRange = computeDepthFadingRange(
     scene,
     groupPosition,
     standardPose,
@@ -86,15 +86,15 @@ export function computeSceneStructureLayout(
       groupPosition,
       defaultCameraPose,
     ),
-    depthCueingBackOffset: depthCueingRange.backOffset,
-    depthCueingFrontOffset: depthCueingRange.frontOffset,
+    depthFadingBackOffset: depthFadingRange.backOffset,
+    depthFadingFrontOffset: depthFadingRange.frontOffset,
     groupPosition,
     span,
     standardPose,
   };
 }
 
-function computeDepthCueingRange(
+function computeDepthFadingRange(
   scene: SceneSpec,
   groupPosition: VectorTuple,
   standardPose: Pick<StandardCameraPose, "outward">,

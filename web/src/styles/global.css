@@ -304,8 +304,13 @@ html[lang="zh-TW"] {
     transition: none !important;
   }
 
+  [data-inspector-sidebar-tabs][data-variant="line"] > [data-slot="tabs-trigger"] > svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
   [data-inspector-sidebar-tabs][data-variant="line"] > [data-slot="tabs-trigger"]::after {
-    inset-inline: -0.125rem !important;
+    inset-inline: 0 !important;
     bottom: -0.25rem !important;
     transition: none !important;
   }

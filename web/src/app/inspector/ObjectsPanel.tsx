@@ -30,6 +30,15 @@ import {
 } from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import {
   Table,
   TableBody,
   TableCell,
@@ -40,7 +49,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
-import type { AtomSpec, BondSpec, SceneSpec } from "../../api/scene";
+import {
+  BOND_ALGORITHM_OPTIONS,
+  type AtomSpec,
+  type BondSpec,
+  type SceneSpec,
+} from "../../api/scene";
 import { lambertLegendSwatchBackground } from "../../scene/renderAppearance";
 import {
   objectsAtomColorPickerId,
@@ -54,6 +68,7 @@ import {
   clampAtomRadius,
   clearAtomOverridePropertyForElement,
   clearObjectStyleProperty,
+  CUSTOM_BONDING_MODE,
   createCustomAtomRadii,
   createCustomColormapFromStyle,
   elementColorOverridesForStyle,
@@ -63,6 +78,7 @@ import {
   type AtomAppearance,
   type StyleState,
   type BondVisibilityOverrides,
+  type BondingMode,
 } from "../../model";
 import { HexColorPicker, normalizeHexColor } from "../controls/HexColorPicker";
 import {
@@ -145,15 +161,18 @@ export function ObjectsPanel({
   activeTab,
   atomLocateRequest,
   atomsVisible,
+  bondAlgorithm,
   bondLocateRequest,
   bondsVisible,
   bondVisibilityOverrides,
   cutoffOverrides,
+  hasCustomBondingProfile,
   isSceneLoading,
   onActiveTabChange,
   onAtomLocateRequestHandled,
   onAtomSelect,
   onBondLocateRequestHandled,
+  onBondAlgorithmChange,
   onBondVisibilityChange,
   onCutoffChange,
   onElementColorChange,
@@ -169,15 +188,18 @@ export function ObjectsPanel({
   activeTab: ObjectsPanelTab;
   atomLocateRequest: AtomLocateRequest | null;
   atomsVisible: boolean;
+  bondAlgorithm: BondingMode;
   bondLocateRequest: BondLocateRequest | null;
   bondsVisible: boolean;
   bondVisibilityOverrides: BondVisibilityOverrides;
   cutoffOverrides: Record<string, number>;
+  hasCustomBondingProfile: boolean;
   isSceneLoading: boolean;
   onActiveTabChange: (tab: ObjectsPanelTab) => void;
   onAtomLocateRequestHandled: (token: number) => void;
   onAtomSelect: (atomId: string) => void;
   onBondLocateRequestHandled: (token: number) => void;
+  onBondAlgorithmChange: (bondAlgorithm: BondingMode) => void;
   onBondVisibilityChange: (bond: BondSpec, visible: boolean) => void;
   onCutoffChange: (familyKey: string, cutoff: number | null) => Promise<boolean>;
   onElementColorChange: (element: string, color: string) => void;
@@ -229,6 +251,46 @@ export function ObjectsPanel({
         />
       </TabsContent>
       <TabsContent value="bonds" className="m-0 min-h-0">
+        <div className="mb-3 grid min-h-8 grid-cols-[minmax(0,1fr)_9.5rem] items-center gap-2 text-[13px]">
+          <span className="leading-tight text-foreground">
+            {t("settings.bondingAlgorithm")}
+          </span>
+          <Select
+            value={bondAlgorithm}
+            disabled={isSceneLoading}
+            onValueChange={(value) => onBondAlgorithmChange(value as BondingMode)}
+          >
+            <SelectTrigger
+              size="sm"
+              aria-label={t("settings.bondingAlgorithm")}
+              className="!h-6 w-full !px-2 !py-0 bg-background text-[13px]"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" className="!bg-background !text-foreground">
+              <SelectGroup>
+                {BOND_ALGORITHM_OPTIONS.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="min-h-6 py-0.5 text-[13px]"
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+                {hasCustomBondingProfile ? (
+                  <SelectItem
+                    value={CUSTOM_BONDING_MODE}
+                    className="min-h-6 py-0.5 text-[13px]"
+                  >
+                    {t("style.custom")}
+                  </SelectItem>
+                ) : null}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <Separator className="mb-3" />
         <BondsPanel
           bondLocateRequest={bondLocateRequest}
           bondsVisible={bondsVisible}

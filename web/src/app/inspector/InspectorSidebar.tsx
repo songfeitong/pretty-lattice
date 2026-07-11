@@ -9,7 +9,19 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Monitor, Moon, PanelRight, Sun, type LucideIcon } from "lucide-react";
+import {
+  Boxes,
+  Monitor,
+  Moon,
+  MonitorCog,
+  MousePointer2,
+  Palette,
+  PanelRight,
+  Settings,
+  Sun,
+  UserRoundCog,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -30,11 +42,7 @@ import { cn } from "@/lib/utils";
 import { THEME_PREFERENCES, type ThemePreference } from "@/theme/themePreference";
 import { useTheme } from "@/theme/ThemeProvider";
 
-import {
-  BOND_ALGORITHM_OPTIONS,
-  type BondSpec,
-  type SceneSpec,
-} from "../../api/scene";
+import { type BondSpec, type SceneSpec } from "../../api/scene";
 import {
   currentLanguagePreference,
   setLanguagePreference,
@@ -72,7 +80,6 @@ import {
   type MeshQuality,
   type StyleState,
   type UnitCellLineStyle,
-  CUSTOM_BONDING_MODE,
   type BondingMode,
   type BondVisibilityOverrides,
 } from "../../model";
@@ -286,12 +293,14 @@ export function InspectorSidebar({
               value="settings"
               className="h-8 flex-none px-0 text-[0.875rem] font-semibold"
             >
+              <Settings aria-hidden="true" />
               {t("nav.settings")}
             </TabsTrigger>
             <TabsTrigger
               value="objects"
               className="h-8 flex-none px-0 text-[0.875rem] font-semibold"
             >
+              <Boxes aria-hidden="true" />
               {t("nav.objects")}
             </TabsTrigger>
           </TabsList>
@@ -303,8 +312,6 @@ export function InspectorSidebar({
         >
           <TabsContent value="settings" className="m-0">
             <SettingsPanel
-              bondAlgorithm={bondAlgorithm}
-              hasCustomBondingProfile={hasCustomBondingProfile}
               distinguishSimilarColors={distinguishSimilarColors}
               dragSensitivity={dragSensitivity}
               isCustomColorScheme={isCustomColorScheme}
@@ -317,7 +324,6 @@ export function InspectorSidebar({
               showFpsOverlay={showFpsOverlay}
               showCrystalAxisLabels={showCrystalAxisLabels}
               unitCellLineStyle={unitCellLineStyle}
-              onBondAlgorithmChange={onBondAlgorithmChange}
               onDistinguishSimilarColorsChange={onDistinguishSimilarColorsChange}
               onDragSensitivityChange={onDragSensitivityChange}
               onInteractionModeChange={onInteractionModeChange}
@@ -336,15 +342,18 @@ export function InspectorSidebar({
               atomLocateRequest={atomLocateRequest}
               atomsVisible={atomsVisible}
               bondLocateRequest={bondLocateRequest}
+              bondAlgorithm={bondAlgorithm}
               bondObjectsResetToken={bondObjectsResetToken}
               bondsVisible={bondsVisible}
               bondVisibilityOverrides={bondVisibilityOverrides}
               cutoffOverrides={cutoffOverrides}
+              hasCustomBondingProfile={hasCustomBondingProfile}
               isSceneLoading={isSceneLoading}
               onActiveTabChange={onActiveObjectsTabChange}
               onAtomLocateRequestHandled={onAtomLocateRequestHandled}
               onAtomSelect={onAtomSelect}
               onBondLocateRequestHandled={onBondLocateRequestHandled}
+              onBondAlgorithmChange={onBondAlgorithmChange}
               onBondVisibilityChange={onBondVisibilityChange}
               onCutoffChange={onBondCutoffChange}
               onElementColorChange={onElementColorChange}
@@ -364,8 +373,6 @@ export function InspectorSidebar({
 }
 
 function SettingsPanel({
-  bondAlgorithm,
-  hasCustomBondingProfile,
   distinguishSimilarColors,
   dragSensitivity,
   isCustomColorScheme,
@@ -378,7 +385,6 @@ function SettingsPanel({
   showFpsOverlay,
   showCrystalAxisLabels,
   unitCellLineStyle,
-  onBondAlgorithmChange,
   onDistinguishSimilarColorsChange,
   onDragSensitivityChange,
   onInteractionModeChange,
@@ -390,8 +396,6 @@ function SettingsPanel({
   onShowCrystalAxisLabelsChange,
   onUnitCellLineStyleChange,
 }: {
-  bondAlgorithm: BondingMode;
-  hasCustomBondingProfile: boolean;
   distinguishSimilarColors: boolean;
   dragSensitivity: number;
   isCustomColorScheme: boolean;
@@ -404,7 +408,6 @@ function SettingsPanel({
   showFpsOverlay: boolean;
   showCrystalAxisLabels: boolean;
   unitCellLineStyle: UnitCellLineStyle;
-  onBondAlgorithmChange: (bondAlgorithm: BondingMode) => void;
   onDistinguishSimilarColorsChange: (distinguishSimilarColors: boolean) => void;
   onDragSensitivityChange: (dragSensitivity: number) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
@@ -424,7 +427,11 @@ function SettingsPanel({
 
   return (
     <div className="flex flex-col gap-3">
-      <InspectorSettingsSection id="inspector-preferences-settings" title={t("settings.preferences")}>
+      <InspectorSettingsSection
+        id="inspector-general-settings"
+        icon={UserRoundCog}
+        title={t("settings.general")}
+      >
         <InspectorSelectRow label={t("settings.theme")}>
           <TooltipProvider>
             <ToggleGroup
@@ -505,7 +512,11 @@ function SettingsPanel({
 
       <Separator />
 
-      <InspectorSettingsSection id="inspector-appearance-settings" title={t("settings.appearance")}>
+      <InspectorSettingsSection
+        id="inspector-appearance-settings"
+        icon={Palette}
+        title={t("settings.appearance")}
+      >
         <InspectorSwitchRow
           checked={showCrystalAxisLabels}
           label={t("settings.showCrystalAxisLabels")}
@@ -539,7 +550,7 @@ function SettingsPanel({
 
         <InspectorSwitchRow
           checked={fogAffectsUnitCell}
-          label={t("settings.applyDepthCueingToUnitCell")}
+          label={t("settings.applyDepthFadingToUnitCell")}
           onCheckedChange={onFogAffectsUnitCellChange}
         />
 
@@ -567,7 +578,11 @@ function SettingsPanel({
 
       <Separator />
 
-      <InspectorSettingsSection id="inspector-rendering-settings" title={t("settings.rendering")}>
+      <InspectorSettingsSection
+        id="inspector-rendering-settings"
+        icon={MonitorCog}
+        title={t("settings.rendering")}
+      >
         <InspectorSelectRow label={t("settings.previewQuality")}>
           <Select
             value={previewMeshQuality}
@@ -605,7 +620,11 @@ function SettingsPanel({
 
       <Separator />
 
-      <InspectorSettingsSection id="inspector-interaction-settings" title={t("settings.interaction")}>
+      <InspectorSettingsSection
+        id="inspector-interaction-settings"
+        icon={MousePointer2}
+        title={t("settings.interaction")}
+      >
         <InspectorSelectRow label={t("settings.mouseControl")}>
           <Select
             value={interactionMode}
@@ -656,62 +675,28 @@ function SettingsPanel({
         />
       </InspectorSettingsSection>
 
-      <Separator />
-
-      <InspectorSettingsSection id="inspector-analysis-settings" title={t("settings.analysis")}>
-        <InspectorSelectRow label={t("settings.bondingAlgorithm")}>
-          <Select
-            value={bondAlgorithm}
-            disabled={isSceneLoading}
-            onValueChange={(value) => onBondAlgorithmChange(value as BondingMode)}
-          >
-            <SelectTrigger
-              size="sm"
-              aria-label={t("settings.bondingAlgorithm")}
-              className={INSPECTOR_SELECT_TRIGGER_CLASS}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper" className="!bg-background !text-foreground">
-              <SelectGroup>
-                {BOND_ALGORITHM_OPTIONS.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className={INSPECTOR_SELECT_ITEM_CLASS}
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))}
-                {hasCustomBondingProfile ? (
-                  <SelectItem
-                    value={CUSTOM_BONDING_MODE}
-                    className={INSPECTOR_SELECT_ITEM_CLASS}
-                  >
-                    {t("style.custom")}
-                  </SelectItem>
-                ) : null}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </InspectorSelectRow>
-      </InspectorSettingsSection>
     </div>
   );
 }
 
 function InspectorSettingsSection({
   children,
+  icon: Icon,
   id,
   title,
 }: {
   children: ReactNode;
+  icon: LucideIcon;
   id: string;
   title: string;
 }) {
   return (
     <section aria-labelledby={id} className="flex flex-col gap-3">
-      <h2 id={id} className={INSPECTOR_SECTION_TITLE_CLASS}>
+      <h2
+        id={id}
+        className={cn(INSPECTOR_SECTION_TITLE_CLASS, "flex items-center gap-1.5")}
+      >
+        <Icon aria-hidden="true" className="size-3.5 shrink-0" />
         {title}
       </h2>
       <div className="flex flex-col gap-1">{children}</div>

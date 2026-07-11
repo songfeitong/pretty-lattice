@@ -267,6 +267,14 @@ async function renderLoadedStructure(user: ReturnType<typeof userEvent.setup>, s
   await appHarness.renderLoadedStructure(user, scene);
 }
 
+async function openBondObjectsTab(
+  user: ReturnType<typeof userEvent.setup>,
+  sidebar: HTMLElement,
+) {
+  await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
+  await user.click(within(sidebar).getByRole("tab", { name: "Bonds" }));
+}
+
 beforeEach(() => {
   Object.defineProperty(navigator, "gpu", {
     configurable: true,
@@ -494,10 +502,14 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
     const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    expect(within(sidebar).getByRole("heading", { name: "General" })).toBeTruthy();
     expect(within(sidebar).getByRole("heading", { name: "Appearance" })).toBeTruthy();
     expect(within(sidebar).getByRole("heading", { name: "Rendering" })).toBeTruthy();
     expect(within(sidebar).getByRole("heading", { name: "Interaction" })).toBeTruthy();
-    expect(within(sidebar).getByRole("heading", { name: "Analysis" })).toBeTruthy();
+    expect(within(sidebar).queryByRole("heading", { name: "Analysis" })).toBeNull();
+    expect(
+      within(sidebar).queryByRole("combobox", { name: "Bonding algorithm" }),
+    ).toBeNull();
     expect(
       within(sidebar).queryByRole("combobox", {
         name: "Atom rendering mode",
@@ -522,7 +534,7 @@ describe("App", () => {
     ).toContain("XHigh");
   });
 
-  test("switches and persists the theme from Preferences", async () => {
+  test("switches and persists the theme from General", async () => {
     const user = userEvent.setup();
 
     await renderLoadedStructure(user);
@@ -612,6 +624,8 @@ describe("App", () => {
     expect(fetchCalls[0]?.input).toBe("/api/structure-preview");
 
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await openBondObjectsTab(user, sidebar);
     expect(screen.getByRole("combobox", { name: "Bonding algorithm" }).textContent).toContain(
       "CrystalNN",
     );
@@ -1101,8 +1115,7 @@ describe("App", () => {
     await renderLoadedStructure(user, scene);
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
     const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
-    await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
-    await user.click(within(sidebar).getByRole("tab", { name: "Bonds" }));
+    await openBondObjectsTab(user, sidebar);
 
     expect(within(sidebar).getByText("Length (Å)").isConnected).toBe(true);
     expect(within(sidebar).getByText("Na").isConnected).toBe(true);
@@ -1155,7 +1168,6 @@ describe("App", () => {
       '{"Na|Cl":0.8}',
     );
 
-    await user.click(within(sidebar).getByRole("tab", { name: "Settings" }));
     expect(
       within(sidebar).getByRole("combobox", { name: "Bonding algorithm" })
         .textContent,
@@ -1168,8 +1180,7 @@ describe("App", () => {
     await renderLoadedStructure(user, sceneWithPeriodicImages());
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
     const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
-    await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
-    await user.click(within(sidebar).getByRole("tab", { name: "Bonds" }));
+    await openBondObjectsTab(user, sidebar);
     await user.click(
       within(sidebar).getByRole("button", { name: "Expand Na–Cl" }),
     );
@@ -1191,7 +1202,6 @@ describe("App", () => {
     );
     expect(screen.getByTestId("lattice-canvas").isConnected).toBe(true);
     expect(within(sidebar).getByText("Automatic").isConnected).toBe(true);
-    await user.click(within(sidebar).getByRole("tab", { name: "Settings" }));
     expect(
       within(sidebar).getByRole("combobox", { name: "Bonding algorithm" })
         .textContent,
@@ -1240,8 +1250,8 @@ describe("App", () => {
     const showCrystalAxisLabelsSwitch = within(inspector).getByRole("switch", {
       name: "Show crystal axis labels",
     });
-    const depthCueingUnitCellSwitch = within(inspector).getByRole("switch", {
-      name: "Apply depth cueing to unit cell",
+    const depthFadingUnitCellSwitch = within(inspector).getByRole("switch", {
+      name: "Apply depth fading to unit cell",
     });
     const distinguishSimilarColorsSwitch = within(inspector).getByRole("switch", {
       name: "Distinguish similar colors",
@@ -1251,7 +1261,7 @@ describe("App", () => {
     });
 
     expect(showCrystalAxisLabelsSwitch.getAttribute("aria-checked")).toBe("true");
-    expect(depthCueingUnitCellSwitch.getAttribute("aria-checked")).toBe("false");
+    expect(depthFadingUnitCellSwitch.getAttribute("aria-checked")).toBe("false");
     expect(distinguishSimilarColorsSwitch.getAttribute("aria-checked")).toBe("true");
     await user.click(within(inspector).getByText("Distinguish similar colors"));
     expect(distinguishSimilarColorsSwitch.getAttribute("aria-checked")).toBe("true");
@@ -1263,8 +1273,8 @@ describe("App", () => {
     expect(screen.getByTestId("mock-orientation-gizmo").getAttribute("data-show-labels")).toBe(
       "false",
     );
-    await user.click(depthCueingUnitCellSwitch);
-    expect(depthCueingUnitCellSwitch.getAttribute("aria-checked")).toBe("true");
+    await user.click(depthFadingUnitCellSwitch);
+    expect(depthFadingUnitCellSwitch.getAttribute("aria-checked")).toBe("true");
     await user.click(distinguishSimilarColorsSwitch);
     expect(distinguishSimilarColorsSwitch.getAttribute("aria-checked")).toBe("false");
     await user.click(distinguishSimilarColorsSwitch);
@@ -1479,22 +1489,22 @@ describe("App", () => {
       name: "Material",
     });
     const fogSwitch = within(commonControls).getByRole("switch", {
-      name: "Depth cueing",
+      name: "Depth fading",
     });
     const fogStartSlider = within(commonControls).getByRole("slider", {
-      name: "Depth cueing start",
+      name: "Depth fading start",
     }) as HTMLInputElement;
     const fogStartInput = within(commonControls).getByRole("textbox", {
-      name: "Depth cueing start value",
+      name: "Depth fading start value",
     }) as HTMLInputElement;
     const fogAmountSlider = within(commonControls).getByRole("slider", {
-      name: "Depth cueing amount",
+      name: "Depth fading amount",
     }) as HTMLInputElement;
     const fogAmountInput = within(commonControls).getByRole("textbox", {
-      name: "Depth cueing amount value",
+      name: "Depth fading amount value",
     }) as HTMLInputElement;
     const resetFogButton = within(commonControls).getByRole("button", {
-      name: "Reset depth cueing",
+      name: "Reset depth fading",
     }) as HTMLButtonElement;
 
     expect(atomRadiusSlider.min).toBe("0");
@@ -2508,6 +2518,8 @@ describe("App", () => {
     expect(fetchCalls).toHaveLength(1);
 
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await openBondObjectsTab(user, sidebar);
     queueFetchResponse(jsonResponse(sceneWithPeriodicImages()));
 
     await user.click(screen.getByRole("combobox", { name: "Bonding algorithm" }));
@@ -2534,6 +2546,8 @@ describe("App", () => {
 
     await renderLoadedStructure(user);
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await openBondObjectsTab(user, sidebar);
     queueFetchResponse(jsonResponse(sceneWithPeriodicImages({ atomCount: 6 })));
 
     await user.click(screen.getByRole("combobox", { name: "Bonding algorithm" }));
@@ -2584,6 +2598,8 @@ describe("App", () => {
 
     await renderLoadedStructure(user);
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await openBondObjectsTab(user, sidebar);
     await user.click(screen.getByRole("combobox", { name: "Bonding algorithm" }));
     await user.click(await screen.findByRole("option", { name: "Minimum distance" }));
 

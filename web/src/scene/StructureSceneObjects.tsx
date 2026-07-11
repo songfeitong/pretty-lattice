@@ -173,8 +173,8 @@ export function SceneFog({
         ? createSceneFog(
             layout.standardPose.distance,
             layout.span,
-            layout.depthCueingBackOffset,
-            layout.depthCueingFrontOffset,
+            layout.depthFadingBackOffset,
+            layout.depthFadingFrontOffset,
             style.fogAmount,
             style.fogStart,
             color,
@@ -183,8 +183,8 @@ export function SceneFog({
     [
       color,
       layout.span,
-      layout.depthCueingBackOffset,
-      layout.depthCueingFrontOffset,
+      layout.depthFadingBackOffset,
+      layout.depthFadingFrontOffset,
       layout.standardPose.distance,
       style.fogAmount,
       style.fogEnabled,

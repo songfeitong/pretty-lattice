@@ -12,7 +12,7 @@
   // Three.js property names where possible. JSON can express numbers, booleans,
   // strings, arrays, and plain objects; runtime objects such as Texture, Color
   // instances, and Vector classes are not loaded from this template yet. Depth
-  // cueing/fog is controlled globally by the scene and should not be set here.
+  // Depth fading/fog is controlled globally by the scene and should not be set here.
   "material": {
     "type": "MeshStandardMaterial",
     "props": {

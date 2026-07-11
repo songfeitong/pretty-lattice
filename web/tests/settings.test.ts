@@ -56,7 +56,7 @@ describe("settings", () => {
     expect(DEFAULT_UNIT_CELL_LINE_STYLE).toBe("solid");
   });
 
-  test("defaults style controls to 40 percent atoms, 100 percent bonds, bicolor bonds, and enabled depth cueing", () => {
+  test("defaults style controls to 40 percent atoms, 100 percent bonds, bicolor bonds, and enabled depth fading", () => {
     expect(createDefaultStyle()).toEqual({
       atomRadius: 40,
       atomRadiusModel: "uniform",

@@ -332,11 +332,11 @@ export function StyleTabContent({
               id="style-fog-label"
               className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "whitespace-nowrap leading-tight text-muted-foreground")}
             >
-              {t("style.depthCueing")}
+              {t("style.depthFading")}
             </h2>
             <Switch
               checked={style.fogEnabled}
-              aria-label={t("style.depthCueing")}
+              aria-label={t("style.depthFading")}
               className="h-4 w-7 p-0.5"
               thumbClassName="size-3 data-[state=checked]:translate-x-3"
               onCheckedChange={setFogEnabled}
@@ -348,7 +348,7 @@ export function StyleTabContent({
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label={t("actions.resetDepthCueing")}
+                  aria-label={t("actions.resetDepthFading")}
                   className={cn(
                     TOOL_ICON_BUTTON_CLASS,
                     fogResetFeedbackPhase === "a"
@@ -364,12 +364,12 @@ export function StyleTabContent({
                 </Button>
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top">{t("actions.resetDepthCueing")}</TooltipContent>
+            <TooltipContent side="top">{t("actions.resetDepthFading")}</TooltipContent>
           </Tooltip>
         </div>
         <div className={cn("mt-1", COMMON_PANEL_ROW_STACK_CLASS, style.fogEnabled ? null : "opacity-55")}>
           <PercentSliderRow
-            accessibleLabel={t("style.depthCueing")}
+            accessibleLabel={t("style.depthFading")}
             allowZero
             disabled={!style.fogEnabled}
             label={t("style.start")}
@@ -380,7 +380,7 @@ export function StyleTabContent({
             onValueChange={setFogStart}
           />
           <PercentSliderRow
-            accessibleLabel={t("style.depthCueing")}
+            accessibleLabel={t("style.depthFading")}
             allowZero
             disabled={!style.fogEnabled}
             label={t("style.amount")}
