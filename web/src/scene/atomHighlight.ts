@@ -5,7 +5,7 @@ export const SELECTION_HIGHLIGHT_COLOR = "#ffd200";
 export const ATOM_HIGHLIGHT_PULSE_MS = 240;
 export const ATOM_HIGHLIGHT_SELECTED_COLOR_MIX = 0.26;
 export const ATOM_HIGHLIGHT_PULSE_COLOR_MIX = 0.34;
-export const SELECTION_HANDOFF_MS = 150;
+export const SELECTION_HANDOFF_MS = 120;
 export const SELECTION_HANDOFF_WHITE_MIX = 0.2;
 
 export function easeOutCubic(progress: number): number {

@@ -497,7 +497,7 @@ function AtomSelectionRimAnimator({
       position={position}
       raycast={ignoreAtomSelectionRimRaycast}
       renderOrder={STRUCTURE_RENDER_ORDER.atomSelectionRim}
-      scale={radius * 1.01}
+      scale={radius * 1.04}
     >
       <sphereGeometry args={[1, sphereWidthSegments, sphereHeightSegments]} />
       <shaderMaterial
@@ -535,7 +535,7 @@ const ATOM_SELECTION_RIM_FRAGMENT_SHADER = `
   void main() {
     vec3 viewDirection = normalize(-vViewPosition);
     float facing = abs(dot(normalize(vViewNormal), viewDirection));
-    float rim = smoothstep(0.20, 0.70, 1.0 - facing);
+    float rim = smoothstep(0.20, 0.75, 1.0 - facing);
     float alpha = rim * selectionOpacity;
     if (alpha < 0.01) discard;
     gl_FragColor = vec4(selectionColor, alpha);
