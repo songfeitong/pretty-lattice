@@ -4,6 +4,6 @@ export const STRUCTURE_RENDER_ORDER = {
   unitCellFrame: 12,
   polyhedronSurface: 20,
   polyhedronEdge: 21,
-  atomSelectionRing: 40,
-  bondSelectionHalo: 41,
+  atomSelectionRim: 40,
+  bondSelectionHighlight: 41,
 } as const;

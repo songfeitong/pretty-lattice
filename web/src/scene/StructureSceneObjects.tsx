@@ -15,7 +15,6 @@ import {
   elementColorOverridesForStyle,
 } from "../model";
 import { PREVIEW_THEME_COLORS } from "../theme/previewTheme";
-import type { PreviewThemeColors } from "../theme/previewTheme";
 import type { ResolvedStructureMaterialFamilies } from "./materialPresetResolver";
 import type { SceneLayout } from "./sceneLayout";
 import type { VectorTuple } from "./viewMath";
@@ -47,7 +46,10 @@ export const PREVIEW_SCENE_MESH_DETAIL: SceneMeshDetail = {
   sphereWidthSegments: 32,
 };
 
-export const EXPORT_SCENE_MESH_DETAIL_PRESETS: Record<ExportMeshQuality, SceneMeshDetail> = {
+export const EXPORT_SCENE_MESH_DETAIL_PRESETS: Record<
+  ExportMeshQuality,
+  SceneMeshDetail
+> = {
   low: {
     bondRadialSegments: 12,
     sphereHeightSegments: 16,
@@ -67,13 +69,13 @@ export const EXPORT_SCENE_MESH_DETAIL_PRESETS: Record<ExportMeshQuality, SceneMe
 };
 
 export function PreviewSceneContent({
-  atomSelectionRingColors,
   componentOpacity,
   fogColor,
   layout,
   materialFamilies,
   meshDetail,
   scene,
+  selectionHighlightColor,
   inspectedAtomId,
   inspectedBondId,
   interactionLocked,
@@ -94,13 +96,13 @@ export function PreviewSceneContent({
   unitCellLineColor,
   unitCellLineWidthScale = 1,
 }: {
-  atomSelectionRingColors?: PreviewThemeColors["atomSelectionRing"];
   componentOpacity: ComponentOpacityState;
   fogColor?: string;
   layout: SceneLayout;
   materialFamilies: ResolvedStructureMaterialFamilies;
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
+  selectionHighlightColor?: string;
   inspectedAtomId: string | null;
   inspectedBondId: string | null;
   interactionLocked: boolean;
@@ -125,12 +127,12 @@ export function PreviewSceneContent({
     <>
       <SceneFog color={fogColor} layout={layout} style={style} />
       <MemoizedStructureSceneObjects
-        atomSelectionRingColors={atomSelectionRingColors}
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}
         materialFamilies={materialFamilies}
         meshDetail={meshDetail}
         scene={scene}
+        selectionHighlightColor={selectionHighlightColor}
         inspectedAtomId={inspectedAtomId}
         inspectedBondId={inspectedBondId}
         interactionLocked={interactionLocked}
@@ -239,11 +241,7 @@ export function createSceneFog(
     firstStartOffset,
     safeBackOffset - frontPadding,
   );
-  const startOffset = lerp(
-    firstStartOffset,
-    lastStartOffset,
-    normalizedStart,
-  );
+  const startOffset = lerp(firstStartOffset, lastStartOffset, normalizedStart);
   const near = safeCameraDistance + startOffset;
   const back = safeCameraDistance + safeBackOffset;
   const far = near + (back - near) / normalizedAmount;
@@ -256,13 +254,13 @@ function lerp(start: number, end: number, amount: number): number {
 }
 
 export function StructureSceneObjects({
-  atomSelectionRingColors,
   componentOpacity,
   groupPosition,
   interactionLocked = false,
   materialFamilies,
   meshDetail,
   scene,
+  selectionHighlightColor,
   inspectedAtomId = null,
   inspectedBondId = null,
   onAtomInspect,
@@ -282,13 +280,13 @@ export function StructureSceneObjects({
   unitCellLineStyle = "solid",
   unitCellLineWidthScale = 1,
 }: {
-  atomSelectionRingColors?: PreviewThemeColors["atomSelectionRing"];
   componentOpacity: ComponentOpacityState;
   groupPosition: VectorTuple;
   interactionLocked?: boolean;
   materialFamilies: ResolvedStructureMaterialFamilies;
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
+  selectionHighlightColor?: string;
   inspectedAtomId?: string | null;
   inspectedBondId?: string | null;
   onAtomInspect?: (atomId: string | null) => void;
@@ -324,13 +322,7 @@ export function StructureSceneObjects({
         colorOverrides,
         style,
       }),
-    [
-      colorScheme,
-      colorOverrides,
-      scene.atoms,
-      scene.bonds,
-      style,
-    ],
+    [colorScheme, colorOverrides, scene.atoms, scene.bonds, style],
   );
   const handleSceneClear = useCallback(() => {
     if (interactionLocked) {
@@ -376,14 +368,13 @@ export function StructureSceneObjects({
           onPulse={onBondPulse}
           pulseBondId={pulseBondId}
           pulseToken={pulseBondToken}
-          selectionRingColors={atomSelectionRingColors}
+          selectionHighlightColor={selectionHighlightColor}
           thicknessScale={style.bondThickness / 100}
           opacity={componentOpacity.bonds / 100}
         />
         {showAtoms ? (
           <BatchedAtoms
             atoms={scene.atoms}
-            selectionRingColors={atomSelectionRingColors}
             colorScheme={colorScheme}
             colorOverrides={colorOverrides}
             inspectedAtomId={inspectedAtomId}
@@ -395,6 +386,7 @@ export function StructureSceneObjects({
             onLockedInteractionAttempt={onLockedInteractionAttempt}
             pulseAtomId={pulseAtomId}
             pulseToken={pulseToken}
+            selectionHighlightColor={selectionHighlightColor}
             opacity={componentOpacity.atoms / 100}
             style={style}
           />

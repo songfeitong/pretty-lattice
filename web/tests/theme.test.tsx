@@ -67,7 +67,8 @@ describe("theme preferences", () => {
       value: (update: () => void) => {
         transitionCount += 1;
         stateAtTransitionStart = screen.getByTestId("theme-state").textContent;
-        rootThemeAtTransitionStart = document.documentElement.dataset.theme ?? "";
+        rootThemeAtTransitionStart =
+          document.documentElement.dataset.theme ?? "";
         update();
         return {};
       },
@@ -88,15 +89,23 @@ describe("theme preferences", () => {
       expect(screen.getByTestId("theme-state").textContent).toBe("dark:dark");
     } finally {
       if (originalDescriptor) {
-        Object.defineProperty(document, "startViewTransition", originalDescriptor);
+        Object.defineProperty(
+          document,
+          "startViewTransition",
+          originalDescriptor,
+        );
       } else {
-        delete (document as unknown as { startViewTransition?: unknown }).startViewTransition;
+        delete (document as unknown as { startViewTransition?: unknown })
+          .startViewTransition;
       }
     }
   });
 
   test("wraps system theme changes in a view transition", () => {
-    const originalMatchMediaDescriptor = Object.getOwnPropertyDescriptor(window, "matchMedia");
+    const originalMatchMediaDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "matchMedia",
+    );
     const originalTransitionDescriptor = Object.getOwnPropertyDescriptor(
       document,
       "startViewTransition",
@@ -109,11 +118,18 @@ describe("theme preferences", () => {
       configurable: true,
       value: (query: string) =>
         ({
-          matches: query === "(prefers-color-scheme: dark)" ? systemIsDark : false,
+          matches:
+            query === "(prefers-color-scheme: dark)" ? systemIsDark : false,
           media: query,
           onchange: null,
-          addEventListener: (event: string, listener: (event: MediaQueryListEvent) => void) => {
-            if (query === "(prefers-color-scheme: dark)" && event === "change") {
+          addEventListener: (
+            event: string,
+            listener: (event: MediaQueryListEvent) => void,
+          ) => {
+            if (
+              query === "(prefers-color-scheme: dark)" &&
+              event === "change"
+            ) {
               systemThemeListener = listener;
             }
           },
@@ -149,12 +165,21 @@ describe("theme preferences", () => {
       expect(screen.getByTestId("theme-state").textContent).toBe("system:dark");
     } finally {
       if (originalMatchMediaDescriptor) {
-        Object.defineProperty(window, "matchMedia", originalMatchMediaDescriptor);
+        Object.defineProperty(
+          window,
+          "matchMedia",
+          originalMatchMediaDescriptor,
+        );
       }
       if (originalTransitionDescriptor) {
-        Object.defineProperty(document, "startViewTransition", originalTransitionDescriptor);
+        Object.defineProperty(
+          document,
+          "startViewTransition",
+          originalTransitionDescriptor,
+        );
       } else {
-        delete (document as unknown as { startViewTransition?: unknown }).startViewTransition;
+        delete (document as unknown as { startViewTransition?: unknown })
+          .startViewTransition;
       }
     }
   });
@@ -163,9 +188,8 @@ describe("theme preferences", () => {
 describe("preview theme colors", () => {
   test("matches the accepted dark preview contrast", () => {
     expect(PREVIEW_THEME_COLORS.dark.background).toBe("#181818");
-    expect(PREVIEW_THEME_COLORS.dark.atomSelectionRing.halo).toBe(
-      "rgba(232, 232, 232, 0.5)",
-    );
+    expect(PREVIEW_THEME_COLORS.light.selectionHighlight).toBe("#e6b800");
+    expect(PREVIEW_THEME_COLORS.dark.selectionHighlight).toBe("#ffd200");
     expect(PREVIEW_THEME_COLORS.dark.fog).toBe("#181818");
     expect(PREVIEW_THEME_COLORS.dark.unitCell).toBe("#bbbbbb");
     expect(PREVIEW_THEME_COLORS.dark.gizmoLabel).toBe("#eeeeee");

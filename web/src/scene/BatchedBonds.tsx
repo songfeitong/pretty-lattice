@@ -1,9 +1,15 @@
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import {
-  BackSide,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
+import {
   BatchedMesh,
   BufferGeometry,
+  Color,
   CylinderGeometry,
   Matrix4,
   MeshBasicMaterial,
@@ -12,10 +18,6 @@ import {
 
 import type { BondColorMode } from "../model";
 import { DEFAULT_BOND_COLOR } from "../model";
-import {
-  PREVIEW_THEME_COLORS,
-  type PreviewThemeColors,
-} from "../theme/previewTheme";
 import { BOND_RADIUS } from "./sceneGeometry";
 import { STRUCTURE_RENDER_ORDER } from "./renderOrder";
 import { twoToneBondCylinderGeometry } from "./structureGeometry";
@@ -32,8 +34,9 @@ import {
 import {
   ATOM_HIGHLIGHT_PULSE_COLOR_MIX,
   ATOM_HIGHLIGHT_PULSE_MS,
-  ATOM_HIGHLIGHT_SELECTED_COLOR_MIX,
-  ATOM_HIGHLIGHT_SELECT_MS,
+  SELECTION_HANDOFF_MS,
+  SELECTION_HANDOFF_WHITE_MIX,
+  SELECTION_HIGHLIGHT_COLOR,
   atomPulseFade,
   easeOutCubic,
 } from "./atomHighlight";
@@ -62,7 +65,7 @@ export function BatchedBonds({
   opacity,
   pulseBondId,
   pulseToken,
-  selectionRingColors = PREVIEW_THEME_COLORS.light.atomSelectionRing,
+  selectionHighlightColor = SELECTION_HIGHLIGHT_COLOR,
   thicknessScale,
 }: {
   bondRenderItems: BondRenderItem[];
@@ -77,7 +80,7 @@ export function BatchedBonds({
   opacity: number;
   pulseBondId: string | null;
   pulseToken: number;
-  selectionRingColors?: PreviewThemeColors["atomSelectionRing"];
+  selectionHighlightColor?: string;
   thicknessScale: number;
 }) {
   const meshRef = useRef<BatchedMesh | null>(null);
@@ -95,23 +98,19 @@ export function BatchedBonds({
         radialSegments: meshDetail.bondRadialSegments,
         radius: BOND_RADIUS * thicknessScale,
       }),
-    [
-      bondRenderItems,
-      colorMode,
-      meshDetail.bondRadialSegments,
-      thicknessScale,
-    ],
+    [bondRenderItems, colorMode, meshDetail.bondRadialSegments, thicknessScale],
   );
   const itemById = useMemo(
     () => new Map(bondRenderItems.map((item) => [item.id, item])),
     [bondRenderItems],
   );
   const inspectedItem = inspectedBondId
-    ? itemById.get(inspectedBondId) ?? null
+    ? (itemById.get(inspectedBondId) ?? null)
     : null;
-  const pulseItem = inspectedItem || !pulseBondId || pulseToken === 0
-    ? null
-    : itemById.get(pulseBondId) ?? null;
+  const pulseItem =
+    inspectedItem || !pulseBondId || pulseToken === 0
+      ? null
+      : (itemById.get(pulseBondId) ?? null);
   const activeHighlightItem = inspectedItem ?? pulseItem;
 
   useLayoutEffect(() => {
@@ -211,7 +210,7 @@ export function BatchedBonds({
           inspected={inspectedItem !== null}
           item={activeHighlightItem}
           radius={batch.radius}
-          selectionRingColors={selectionRingColors}
+          selectionHighlightColor={selectionHighlightColor}
         />
       ) : null}
     </>
@@ -275,7 +274,9 @@ function populateBatchedBondMesh(
 ) {
   const matrix = new Matrix4();
   const unicolorGeometry =
-    batch.mode === "unicolor" ? unicolorBondGeometry(batch.radius, batch.radialSegments) : null;
+    batch.mode === "unicolor"
+      ? unicolorBondGeometry(batch.radius, batch.radialSegments)
+      : null;
   const unicolorGeometryId = unicolorGeometry
     ? mesh.addGeometry(prepareBatchGeometry(unicolorGeometry))
     : null;
@@ -284,10 +285,13 @@ function populateBatchedBondMesh(
   mesh.sortObjects = true;
 
   for (const item of batch.items) {
-    const geometryId = unicolorGeometryId ?? addTwoToneBondGeometry(mesh, item, batch);
+    const geometryId =
+      unicolorGeometryId ?? addTwoToneBondGeometry(mesh, item, batch);
     const batchId = mesh.addInstance(geometryId);
     const scale =
-      batch.mode === "unicolor" ? new Vector3(1, item.length, 1) : new Vector3(1, 1, 1);
+      batch.mode === "unicolor"
+        ? new Vector3(1, item.length, 1)
+        : new Vector3(1, 1, 1);
     matrix.compose(item.center, item.quaternion, scale);
     mesh.setMatrixAt(batchId, matrix);
     registerBatchPickItem(pickRegistry, batchId, item);
@@ -300,17 +304,15 @@ function BondHighlightAnimator({
   inspected,
   item,
   radius,
-  selectionRingColors,
+  selectionHighlightColor,
 }: {
   inspected: boolean;
   item: BondRenderItem;
   radius: number;
-  selectionRingColors: PreviewThemeColors["atomSelectionRing"];
+  selectionHighlightColor: string;
 }) {
   const invalidate = useThree((state) => state.invalidate);
-  const haloStyle = meshCssColor(selectionRingColors.halo);
   const tintMaterialRef = useRef<MeshBasicMaterial | null>(null);
-  const haloMaterialRef = useRef<MeshBasicMaterial | null>(null);
   const startTimeRef = useRef(performance.now());
   const activeRef = useRef(true);
 
@@ -325,24 +327,24 @@ function BondHighlightAnimator({
       return;
     }
     const tintMaterial = tintMaterialRef.current;
-    const haloMaterial = haloMaterialRef.current;
-    if (!tintMaterial || (inspected && !haloMaterial)) {
+    if (!tintMaterial) {
       return;
     }
-    const duration = inspected
-      ? ATOM_HIGHLIGHT_SELECT_MS
-      : ATOM_HIGHLIGHT_PULSE_MS;
+    const duration = inspected ? SELECTION_HANDOFF_MS : ATOM_HIGHLIGHT_PULSE_MS;
     const progress = Math.min(
       1,
       (performance.now() - startTimeRef.current) / duration,
     );
     const fade = inspected ? easeOutCubic(progress) : atomPulseFade(progress);
-    const tintOpacity = inspected
-      ? ATOM_HIGHLIGHT_SELECTED_COLOR_MIX
-      : ATOM_HIGHLIGHT_PULSE_COLOR_MIX;
-    tintMaterial.opacity = tintOpacity * fade;
-    if (haloMaterial) {
-      haloMaterial.opacity = haloStyle.opacity * fade;
+    if (inspected) {
+      tintMaterial.color
+        .set("#ffffff")
+        .lerp(new Color(selectionHighlightColor), fade);
+      tintMaterial.opacity =
+        SELECTION_HANDOFF_WHITE_MIX +
+        (0.85 - SELECTION_HANDOFF_WHITE_MIX) * fade;
+    } else {
+      tintMaterial.opacity = ATOM_HIGHLIGHT_PULSE_COLOR_MIX * fade;
     }
     if (progress >= 1) {
       activeRef.current = false;
@@ -359,50 +361,23 @@ function BondHighlightAnimator({
       position={item.center}
       quaternion={item.quaternion}
       scale={[1, item.length, 1]}
-      renderOrder={STRUCTURE_RENDER_ORDER.bondSelectionHalo}
+      renderOrder={STRUCTURE_RENDER_ORDER.bondSelectionHighlight}
     >
       <mesh raycast={ignoreBondHighlightRaycast}>
-        <cylinderGeometry args={[radius * 1.025, radius * 1.025, 1, 24]} />
+        <cylinderGeometry args={[radius * 1.01, radius * 1.01, 1, 24]} />
         <meshBasicMaterial
           ref={tintMaterialRef}
-          color="#ffffff"
+          color={inspected ? selectionHighlightColor : "#ffffff"}
           depthWrite={false}
           opacity={0}
           transparent
         />
       </mesh>
-      {inspected ? (
-        <mesh raycast={ignoreBondHighlightRaycast}>
-          <cylinderGeometry args={[radius * 1.24, radius * 1.24, 1, 24]} />
-          <meshBasicMaterial
-            ref={haloMaterialRef}
-            color={haloStyle.color}
-            depthWrite={false}
-            opacity={0}
-            side={BackSide}
-            transparent
-          />
-        </mesh>
-      ) : null}
     </group>
   );
 }
 
 function ignoreBondHighlightRaycast() {}
-
-function meshCssColor(color: string): { color: string; opacity: number } {
-  const rgba = color.match(
-    /^rgba\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*[^)]+\)$/,
-  );
-  if (!rgba) {
-    return { color, opacity: 1 };
-  }
-  const alpha = Number(color.slice(color.lastIndexOf(",") + 1, -1).trim());
-  return {
-    color: `rgb(${rgba[1]}, ${rgba[2]}, ${rgba[3]})`,
-    opacity: Number.isFinite(alpha) ? alpha : 1,
-  };
-}
 
 function addTwoToneBondGeometry(
   mesh: BatchedMesh,
@@ -423,13 +398,18 @@ function addTwoToneBondGeometry(
   return geometryId;
 }
 
-function prepareBatchGeometry<TGeometry extends BufferGeometry>(geometry: TGeometry): TGeometry {
+function prepareBatchGeometry<TGeometry extends BufferGeometry>(
+  geometry: TGeometry,
+): TGeometry {
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   return geometry;
 }
 
-function unicolorBondGeometry(radius: number, radialSegments: number): CylinderGeometry {
+function unicolorBondGeometry(
+  radius: number,
+  radialSegments: number,
+): CylinderGeometry {
   return new CylinderGeometry(radius, radius, 1, radialSegments);
 }
 

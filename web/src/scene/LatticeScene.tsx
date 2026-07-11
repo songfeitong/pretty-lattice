@@ -18,7 +18,10 @@ import type { PreviewFpsStore } from "../model/previewFpsStore";
 import type { InteractionMode } from "../model/viewState";
 import { PREVIEW_THEME_COLORS } from "../theme/previewTheme";
 import type { ResolvedTheme } from "../theme/themePreference";
-import { computeCrystalCameraPose, type CrystalCameraState } from "./crystalCamera";
+import {
+  computeCrystalCameraPose,
+  type CrystalCameraState,
+} from "./crystalCamera";
 import { MaterialPresetLights } from "./MaterialPresetLights";
 import {
   resolveStructureMaterialFamiliesForStyle,
@@ -60,7 +63,10 @@ export {
   type SceneLayout,
   type SceneStructureLayout,
 } from "./sceneLayout";
-export { polyhedronGeometryFromAtoms, twoToneBondCylinderGeometry } from "./structureGeometry";
+export {
+  polyhedronGeometryFromAtoms,
+  twoToneBondCylinderGeometry,
+} from "./structureGeometry";
 
 export interface CameraOrientationRef {
   current: Quaternion;
@@ -233,19 +239,23 @@ export function LatticeScene({
         interactionMode={interactionMode}
         mouseInertia={mouseInertia}
         layout={layout}
-        onCameraCommandAnimationActiveChange={onCameraCommandAnimationActiveChange}
-        onCameraControlsInteractionActiveChange={onCameraControlsInteractionActiveChange}
+        onCameraCommandAnimationActiveChange={
+          onCameraCommandAnimationActiveChange
+        }
+        onCameraControlsInteractionActiveChange={
+          onCameraControlsInteractionActiveChange
+        }
         resetCounter={resetCounter}
         safeArea={safeArea}
       />
       <PreviewSceneContent
-        atomSelectionRingColors={previewTheme.atomSelectionRing}
         componentOpacity={componentOpacity}
         fogColor={previewTheme.fog}
         layout={layout}
         materialFamilies={materialFamilies}
         meshDetail={EXPORT_SCENE_MESH_DETAIL_PRESETS[previewMeshQuality]}
         scene={scene}
+        selectionHighlightColor={previewTheme.selectionHighlight}
         inspectedAtomId={inspectedAtomId}
         inspectedBondId={inspectedBondId}
         interactionLocked={interactionLocked}
@@ -308,7 +318,10 @@ function CameraOrientationTracker({
     cameraOrientationRef?.current.copy(camera.quaternion);
     lastNotifiedOrientationRef.current.copy(camera.quaternion);
     lastNotificationTimeRef.current = performance.now();
-    if (!suspendUpdates && orientationDelta >= CAMERA_ORIENTATION_CHANGE_EPSILON) {
+    if (
+      !suspendUpdates &&
+      orientationDelta >= CAMERA_ORIENTATION_CHANGE_EPSILON
+    ) {
       onCameraOrientationChange?.();
     }
   }, [camera, cameraOrientationRef, onCameraOrientationChange, suspendUpdates]);
@@ -322,7 +335,9 @@ function CameraOrientationTracker({
     }
 
     const now = performance.now();
-    const orientationDelta = lastNotifiedOrientationRef.current.angleTo(camera.quaternion);
+    const orientationDelta = lastNotifiedOrientationRef.current.angleTo(
+      camera.quaternion,
+    );
     if (
       orientationDelta < CAMERA_ORIENTATION_CHANGE_EPSILON ||
       now - lastNotificationTimeRef.current < 120

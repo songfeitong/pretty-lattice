@@ -236,7 +236,7 @@ describe("computeSceneLayout", () => {
       STRUCTURE_RENDER_ORDER.polyhedronEdge,
     );
     expect(STRUCTURE_RENDER_ORDER.polyhedronEdge).toBeLessThan(
-      STRUCTURE_RENDER_ORDER.atomSelectionRing,
+      STRUCTURE_RENDER_ORDER.atomSelectionRim,
     );
   });
 
@@ -352,7 +352,9 @@ describe("computeSceneLayout", () => {
     expect(polyhedronFamily.id).toBe(atomFamily.id);
     expect(polyhedronFamily.lighting).toEqual(atomFamily.lighting);
     expect(polyhedronFamily.material.type).toBe("MeshStandardMaterial");
-    expect(polyhedronFamily.material.props).not.toEqual(atomFamily.material.props);
+    expect(polyhedronFamily.material.props).not.toEqual(
+      atomFamily.material.props,
+    );
     expect(
       resolveStructureMaterialFamilyForStyle({
         ...style,
@@ -502,8 +504,10 @@ describe("computeSceneLayout", () => {
     expect(strongFog!.far).toBeLessThan(subtleFog!.far);
 
     const backDepth = 40 + 6;
-    const earlyBackFade = (backDepth - earlyFog!.near) / (earlyFog!.far - earlyFog!.near);
-    const lateBackFade = (backDepth - lateFog!.near) / (lateFog!.far - lateFog!.near);
+    const earlyBackFade =
+      (backDepth - earlyFog!.near) / (earlyFog!.far - earlyFog!.near);
+    const lateBackFade =
+      (backDepth - lateFog!.near) / (lateFog!.far - lateFog!.near);
     expect(earlyBackFade).toBeCloseTo(0.5);
     expect(lateBackFade).toBeCloseTo(0.5);
     expect(strongFog!.far).toBeCloseTo(backDepth);

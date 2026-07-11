@@ -1,35 +1,37 @@
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
 import {
   BatchedMesh,
   BufferGeometry,
   Color,
-  Group,
   Matrix4,
   Quaternion,
+  ShaderMaterial,
   SphereGeometry,
-  SpriteMaterial,
   Vector3,
 } from "three";
 
 import type { AtomSpec } from "../api/scene";
 import type { ElementColorOverrides } from "../model/colorSchemes";
 import type { StyleState } from "../model";
-import type { PreviewThemeColors } from "../theme/previewTheme";
 import type { ResolvedStructureMaterialFamily } from "./materialPresetResolver";
 import { STRUCTURE_RENDER_ORDER } from "./renderOrder";
 import { StructureMaterial } from "./StructureMaterial";
 import type { SceneMeshDetail } from "./StructureSceneObjects";
-import { AtomSelectionRing } from "./AtomSelectionRing";
 import {
   ATOM_HIGHLIGHT_PULSE_COLOR_MIX,
   ATOM_HIGHLIGHT_PULSE_MS,
-  ATOM_HIGHLIGHT_SELECT_MS,
   ATOM_HIGHLIGHT_SELECTED_COLOR_MIX,
   ATOM_HIGHLIGHT_TARGET_COLOR,
-  ATOM_SELECTION_RING_PULSE_MIN_SCALE,
-  ATOM_SELECTION_RING_SELECTED_OPACITY,
-  ATOM_SELECTION_RING_SELECTED_SCALE,
+  SELECTION_HANDOFF_MS,
+  SELECTION_HANDOFF_WHITE_MIX,
+  SELECTION_HIGHLIGHT_COLOR,
   atomPulseFade,
   easeOutCubic,
 } from "./atomHighlight";
@@ -70,7 +72,7 @@ export function BatchedAtoms({
   opacity,
   pulseAtomId,
   pulseToken,
-  selectionRingColors,
+  selectionHighlightColor = SELECTION_HIGHLIGHT_COLOR,
   style,
 }: {
   atoms: AtomSpec[];
@@ -86,7 +88,7 @@ export function BatchedAtoms({
   opacity: number;
   pulseAtomId: string | null;
   pulseToken: number;
-  selectionRingColors?: PreviewThemeColors["atomSelectionRing"];
+  selectionHighlightColor?: string;
   style: StyleState;
 }) {
   const meshRef = useRef<BatchedMesh | null>(null);
@@ -125,12 +127,14 @@ export function BatchedAtoms({
     ],
   );
   const inspectedItem = itemForAtomId(itemByAtomId, inspectedAtomId);
-  const activePulse = pulseAtomId && pulseToken !== 0
-    ? { atomId: pulseAtomId, token: pulseToken }
-    : null;
-  const pulseItem = inspectedItem || !activePulse
-    ? null
-    : itemForAtomId(itemByAtomId, activePulse.atomId);
+  const activePulse =
+    pulseAtomId && pulseToken !== 0
+      ? { atomId: pulseAtomId, token: pulseToken }
+      : null;
+  const pulseItem =
+    inspectedItem || !activePulse
+      ? null
+      : itemForAtomId(itemByAtomId, activePulse.atomId);
   const activeHighlightItem = inspectedItem ?? pulseItem;
 
   useLayoutEffect(() => {
@@ -240,11 +244,13 @@ export function BatchedAtoms({
         />
       ) : null}
       {inspectedItem ? (
-        <AtomSelectionRingAnimator
+        <AtomSelectionRimAnimator
           key={inspectedItem.id}
           position={inspectedItem.position}
           radius={inspectedItem.radius}
-          ringColors={selectionRingColors}
+          selectionHighlightColor={selectionHighlightColor}
+          sphereHeightSegments={meshDetail.sphereHeightSegments}
+          sphereWidthSegments={meshDetail.sphereWidthSegments}
         />
       ) : null}
     </>
@@ -327,11 +333,7 @@ function itemForAtomId(
   return itemByAtomId.get(atomId) ?? null;
 }
 
-function setAtomBatchColor(
-  mesh: BatchedMesh,
-  batchId: number,
-  color: Color,
-) {
+function setAtomBatchColor(mesh: BatchedMesh, batchId: number, color: Color) {
   mesh.setColorAt(batchId, color);
 }
 
@@ -350,12 +352,18 @@ function AtomHighlightAnimator({
 }) {
   const invalidate = useThree((state) => state.invalidate);
   const startTimeRef = useRef(performance.now());
-  const activeBatchRef = useRef<{ batchId: number; mesh: BatchedMesh } | null>(null);
+  const activeBatchRef = useRef<{ batchId: number; mesh: BatchedMesh } | null>(
+    null,
+  );
   const isActiveRef = useRef(true);
 
   useEffect(() => {
     startTimeRef.current = performance.now();
-    activeBatchRef.current = resolveActiveBatch(meshRef, pickRegistryRef, itemId);
+    activeBatchRef.current = resolveActiveBatch(
+      meshRef,
+      pickRegistryRef,
+      itemId,
+    );
     isActiveRef.current = true;
     invalidate();
 
@@ -383,13 +391,18 @@ function AtomHighlightAnimator({
     }
 
     const elapsedMs = performance.now() - startTimeRef.current;
-    const targetMix = inspected
-      ? ATOM_HIGHLIGHT_SELECTED_COLOR_MIX
-      : ATOM_HIGHLIGHT_PULSE_COLOR_MIX;
-    const durationMs = inspected ? ATOM_HIGHLIGHT_SELECT_MS : ATOM_HIGHLIGHT_PULSE_MS;
+    const durationMs = inspected
+      ? SELECTION_HANDOFF_MS
+      : ATOM_HIGHLIGHT_PULSE_MS;
     const progress = Math.min(1, elapsedMs / durationMs);
     const fade = inspected ? easeOutCubic(progress) : atomPulseFade(progress);
-    const color = baseColor.clone().lerp(ATOM_HIGHLIGHT_TARGET_COLOR, targetMix * fade);
+    const targetMix = inspected
+      ? SELECTION_HANDOFF_WHITE_MIX +
+        (ATOM_HIGHLIGHT_SELECTED_COLOR_MIX - SELECTION_HANDOFF_WHITE_MIX) * fade
+      : ATOM_HIGHLIGHT_PULSE_COLOR_MIX * fade;
+    const color = baseColor
+      .clone()
+      .lerp(ATOM_HIGHLIGHT_TARGET_COLOR, targetMix);
     setAtomBatchColor(activeBatch.mesh, activeBatch.batchId, color);
 
     if (progress >= 1) {
@@ -420,52 +433,59 @@ function resolveActiveBatch(
   return { batchId, mesh };
 }
 
-function AtomSelectionRingAnimator({
+function AtomSelectionRimAnimator({
   position,
   radius,
-  ringColors,
+  selectionHighlightColor,
+  sphereHeightSegments,
+  sphereWidthSegments,
 }: {
   position: VectorTuple;
   radius: number;
-  ringColors?: PreviewThemeColors["atomSelectionRing"];
+  selectionHighlightColor: string;
+  sphereHeightSegments: number;
+  sphereWidthSegments: number;
 }) {
   const invalidate = useThree((state) => state.invalidate);
-  const ringGroupRef = useRef<Group | null>(null);
-  const ringMaterialRef = useRef<SpriteMaterial | null>(null);
+  const materialRef = useRef<ShaderMaterial | null>(null);
   const startTimeRef = useRef(performance.now());
-  const [isActive, setIsActive] = useState(true);
+  const activeRef = useRef(true);
+  const uniforms = useMemo(
+    () => ({
+      selectionColor: { value: new Color(SELECTION_HIGHLIGHT_COLOR) },
+      selectionOpacity: { value: 0 },
+    }),
+    [],
+  );
 
   useEffect(() => {
     startTimeRef.current = performance.now();
-    setIsActive(true);
+    activeRef.current = true;
     invalidate();
   }, [invalidate]);
 
+  useEffect(() => {
+    uniforms.selectionColor.value.set(selectionHighlightColor);
+    invalidate();
+  }, [invalidate, selectionHighlightColor, uniforms]);
+
   useFrame(() => {
-    if (!isActive) {
+    if (!activeRef.current) {
       return;
     }
-
-    const ringGroup = ringGroupRef.current;
-    const ringMaterial = ringMaterialRef.current;
-    if (!ringGroup || !ringMaterial) {
+    const material = materialRef.current;
+    if (!material) {
       return;
     }
 
     const progress = Math.min(
       1,
-      (performance.now() - startTimeRef.current) / ATOM_HIGHLIGHT_SELECT_MS,
+      (performance.now() - startTimeRef.current) / SELECTION_HANDOFF_MS,
     );
-    const easedProgress = easeOutCubic(progress);
-    const scale =
-      ATOM_SELECTION_RING_PULSE_MIN_SCALE +
-      (ATOM_SELECTION_RING_SELECTED_SCALE - ATOM_SELECTION_RING_PULSE_MIN_SCALE) *
-        easedProgress;
-    ringGroup.scale.setScalar(scale);
-    ringMaterial.opacity = ATOM_SELECTION_RING_SELECTED_OPACITY * easedProgress;
+    material.uniforms.selectionOpacity!.value = easeOutCubic(progress);
 
     if (progress >= 1) {
-      setIsActive(false);
+      activeRef.current = false;
       return;
     }
 
@@ -473,23 +493,67 @@ function AtomSelectionRingAnimator({
   });
 
   return (
-    <AtomSelectionRing
-      materialRef={ringMaterialRef}
-      opacity={0}
+    <mesh
       position={position}
-      radius={radius}
-      ringColors={ringColors}
-      ringRef={ringGroupRef}
-      scale={ATOM_SELECTION_RING_PULSE_MIN_SCALE}
-    />
+      raycast={ignoreAtomSelectionRimRaycast}
+      renderOrder={STRUCTURE_RENDER_ORDER.atomSelectionRim}
+      scale={radius * 1.01}
+    >
+      <sphereGeometry args={[1, sphereWidthSegments, sphereHeightSegments]} />
+      <shaderMaterial
+        ref={materialRef}
+        depthWrite={false}
+        fragmentShader={ATOM_SELECTION_RIM_FRAGMENT_SHADER}
+        transparent
+        uniforms={uniforms}
+        vertexShader={ATOM_SELECTION_RIM_VERTEX_SHADER}
+      />
+    </mesh>
   );
 }
 
-function atomSphereGeometry(widthSegments: number, heightSegments: number): SphereGeometry {
+function ignoreAtomSelectionRimRaycast() {}
+
+const ATOM_SELECTION_RIM_VERTEX_SHADER = `
+  varying vec3 vViewNormal;
+  varying vec3 vViewPosition;
+
+  void main() {
+    vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+    vViewPosition = viewPosition.xyz;
+    vViewNormal = normalize(normalMatrix * normal);
+    gl_Position = projectionMatrix * viewPosition;
+  }
+`;
+
+const ATOM_SELECTION_RIM_FRAGMENT_SHADER = `
+  uniform vec3 selectionColor;
+  uniform float selectionOpacity;
+  varying vec3 vViewNormal;
+  varying vec3 vViewPosition;
+
+  void main() {
+    vec3 viewDirection = normalize(-vViewPosition);
+    float facing = abs(dot(normalize(vViewNormal), viewDirection));
+    float rim = smoothstep(0.20, 0.70, 1.0 - facing);
+    float alpha = rim * selectionOpacity;
+    if (alpha < 0.01) discard;
+    gl_FragColor = vec4(selectionColor, alpha);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+  }
+`;
+
+function atomSphereGeometry(
+  widthSegments: number,
+  heightSegments: number,
+): SphereGeometry {
   return new SphereGeometry(1, widthSegments, heightSegments);
 }
 
-function prepareBatchGeometry<TGeometry extends BufferGeometry>(geometry: TGeometry): TGeometry {
+function prepareBatchGeometry<TGeometry extends BufferGeometry>(
+  geometry: TGeometry,
+): TGeometry {
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   return geometry;
@@ -507,13 +571,9 @@ function atomBatchKey({
   let hash = hashString(`${sphereWidthSegments}:${sphereHeightSegments}`);
   for (const item of items) {
     hash = hashString(
-      [
-        hash,
-        item.id,
-        item.position.join(","),
-        item.radius,
-        item.color,
-      ].join(":"),
+      [hash, item.id, item.position.join(","), item.radius, item.color].join(
+        ":",
+      ),
     );
   }
   return `atoms:${items.length}:${hash.toString(36)}`;
