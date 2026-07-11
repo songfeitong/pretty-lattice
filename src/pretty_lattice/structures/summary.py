@@ -6,7 +6,7 @@ from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from pretty_lattice.structures.schema import (
-    STRUCTURE_ATOM_COUNT_THRESHOLD,
+    LARGE_STRUCTURE_ATOM_COUNT,
     StructureSummarySpec,
     SymmetrySummarySpec,
 )
@@ -35,7 +35,7 @@ def build_structure_summary(structure: Structure) -> StructureSummarySpec:
 def build_symmetry_summary(structure: Structure) -> SymmetrySummarySpec:
     if not has_valid_3d_periodic_cell(structure):
         return _unavailable_symmetry_summary()
-    if len(structure) >= STRUCTURE_ATOM_COUNT_THRESHOLD:
+    if len(structure) >= LARGE_STRUCTURE_ATOM_COUNT:
         return _unavailable_symmetry_summary()
 
     try:

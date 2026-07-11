@@ -21,6 +21,7 @@ from pretty_lattice.structures.schema import (
     InvalidBondCutoffOverridesError,
     SceneSpec,
     bond_algorithm_label,
+    classify_structure_size,
     default_bond_algorithm_for_atom_count,
     normalize_bond_algorithm,
 )
@@ -36,11 +37,13 @@ def build_scene_response(
     *,
     bond_algorithm: str | None = None,
     bond_cutoff_overrides: dict[str, float] | None = None,
+    include_connectivity: bool | None = None,
 ) -> SceneSpec:
     return build_scene_spec(
         structure,
         bond_algorithm=bond_algorithm,
         bond_cutoff_overrides=bond_cutoff_overrides,
+        include_connectivity=include_connectivity,
     )
 
 
@@ -49,12 +52,14 @@ def build_scene_spec(
     *,
     bond_algorithm: str | None = None,
     bond_cutoff_overrides: dict[str, float] | None = None,
+    include_connectivity: bool | None = None,
 ) -> SceneSpec:
     with suppress_third_party_structure_warnings():
         return _build_scene_spec(
             structure,
             bond_algorithm=bond_algorithm,
             bond_cutoff_overrides=bond_cutoff_overrides,
+            include_connectivity=include_connectivity,
         )
 
 
@@ -63,12 +68,16 @@ def _build_scene_spec(
     *,
     bond_algorithm: str | None = None,
     bond_cutoff_overrides: dict[str, float] | None = None,
+    include_connectivity: bool | None = None,
 ) -> SceneSpec:
     enforce_structure_atom_limit(len(structure))
     structure = normalize_structure_for_preview(structure)
     normalized_bond_algorithm = normalize_bond_algorithm(bond_algorithm)
     selected_bond_algorithm = normalized_bond_algorithm or default_bond_algorithm_for_atom_count(
         len(structure)
+    )
+    connectivity_deferred = (
+        classify_structure_size(len(structure)) == "large" and include_connectivity is not True
     )
     cell_vectors = [vector3(vector) for vector in structure.lattice.matrix]
     can_generate_periodic_images = has_valid_3d_periodic_cell(structure)
@@ -82,7 +91,7 @@ def _build_scene_spec(
     polyhedra = []
     warnings = []
     strict_recalculation = bool(bond_cutoff_overrides)
-    if can_generate_periodic_images:
+    if can_generate_periodic_images and not connectivity_deferred:
         boundary_source_keys = [
             key for key, atom in atom_data.atom_records.items() if "boundary" in atom.image_reasons
         ]
@@ -173,6 +182,8 @@ def _build_scene_spec(
         "bondFamilies": bond_families,
         "polyhedra": polyhedra,
         "summary": build_structure_summary(structure),
+        "connectivity": "deferred" if connectivity_deferred else "ready",
+        "bondAlgorithm": selected_bond_algorithm,
     }
     if warnings:
         scene["warnings"] = warnings

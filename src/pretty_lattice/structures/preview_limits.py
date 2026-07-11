@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import json
+from importlib.resources import files
+
 MIB = 1024 * 1024
 
-MAX_STRUCTURE_UPLOAD_BYTES = 1 * MIB
+_SCENE_CONTRACT = json.loads(files(__package__).joinpath("scene_contract.json").read_text())
+MAX_STRUCTURE_UPLOAD_BYTES = int(_SCENE_CONTRACT["previewLimits"]["maxUploadBytes"])
 MAX_STRUCTURE_ATOMS = 25_600
 MAX_SCENE_ATOMS = 64_000
 MAX_SCENE_BONDS = 256_000

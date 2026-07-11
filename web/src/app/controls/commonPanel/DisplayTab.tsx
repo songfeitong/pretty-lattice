@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -44,25 +45,26 @@ import {
 } from "./styles";
 
 export function DisplayTabContent({
+  connectivityIntent,
+  connectivityStatus,
   hasPolyhedra,
   onOpacityChange,
   onVisibilityChange,
   opacity,
   visibility,
 }: {
+  connectivityIntent: string | null;
+  connectivityStatus: "deferred" | "loading" | "ready" | "error";
   hasPolyhedra: boolean;
   onOpacityChange: Dispatch<SetStateAction<ComponentOpacityState>>;
-  onVisibilityChange: Dispatch<SetStateAction<ComponentVisibilityState>>;
+  onVisibilityChange: (key: keyof ComponentVisibilityState, value: boolean) => void;
   opacity: ComponentOpacityState;
   visibility: ComponentVisibilityState;
 }) {
   const { t } = useTranslation();
 
   function setVisibility(key: keyof ComponentVisibilityState, value: boolean) {
-    onVisibilityChange((currentVisibility) => ({
-      ...currentVisibility,
-      [key]: value,
-    }));
+    onVisibilityChange(key, value);
   }
 
   function setOpacity(key: keyof ComponentOpacityState, value: number) {
@@ -151,6 +153,8 @@ export function DisplayTabContent({
             value={opacity.bonds}
             onCheckedChange={(checked) => setVisibility("bonds", checked)}
             onOpacityChange={(value) => setOpacity("bonds", value)}
+            checkboxDisabled={connectivityStatus === "loading"}
+            loading={connectivityStatus === "loading" && connectivityIntent === "bonds"}
           />
           <ComponentOpacityRow
             checked={visibility.unitCell}
@@ -162,12 +166,13 @@ export function DisplayTabContent({
           />
           <ComponentOpacityRow
             checked={hasPolyhedra && visibility.polyhedra}
-            checkboxDisabled={!hasPolyhedra}
+            checkboxDisabled={connectivityStatus === "loading" || (connectivityStatus === "ready" && !hasPolyhedra)}
             label={t("display.polyhedra")}
             max={COMPONENT_OPACITY_MAX.polyhedra}
             value={opacity.polyhedra}
             onCheckedChange={(checked) => setVisibility("polyhedra", checked)}
             onOpacityChange={(value) => setOpacity("polyhedra", value)}
+            loading={connectivityStatus === "loading" && connectivityIntent === "polyhedra"}
           />
         </div>
       </section>
@@ -191,6 +196,8 @@ export function DisplayTabContent({
             checked={visibility.oneHopBondedAtoms}
             label={t("display.oneHopBondedAtoms")}
             onCheckedChange={(checked) => setVisibility("oneHopBondedAtoms", checked)}
+            disabled={connectivityStatus === "loading"}
+            loading={connectivityStatus === "loading" && connectivityIntent === "oneHopBondedAtoms"}
           />
         </div>
       </section>
@@ -202,6 +209,7 @@ function ComponentOpacityRow({
   checked,
   checkboxDisabled = false,
   label,
+  loading = false,
   max,
   onCheckedChange,
   onOpacityChange,
@@ -210,6 +218,7 @@ function ComponentOpacityRow({
   checked: boolean;
   checkboxDisabled?: boolean;
   label: string;
+  loading?: boolean;
   max: number;
   onCheckedChange: (checked: boolean) => void;
   onOpacityChange: (opacity: number) => void;
@@ -290,6 +299,7 @@ function ComponentOpacityRow({
         >
           {label}
         </span>
+        {loading ? <LoadingSpinner className="shrink-0 text-muted-foreground" /> : null}
       </label>
 
       <div
@@ -357,10 +367,14 @@ function ComponentOpacityRow({
 function ImageSwitchRow({
   checked,
   label,
+  disabled = false,
+  loading = false,
   onCheckedChange,
 }: {
   checked: boolean;
   label: string;
+  disabled?: boolean;
+  loading?: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
   return (
@@ -370,9 +384,10 @@ function ImageSwitchRow({
         COMMON_PANEL_BODY_TEXT_CLASS,
       )}
     >
-      <span className="min-w-0 truncate leading-tight">{label}</span>
+      <span className="flex min-w-0 items-center gap-2"><span className="truncate leading-tight">{label}</span>{loading ? <LoadingSpinner className="shrink-0 text-muted-foreground" /> : null}</span>
       <Switch
         checked={checked}
+        disabled={disabled}
         aria-label={label}
         className="h-4 w-7 p-0.5"
         thumbClassName="size-3 data-[state=checked]:translate-x-3"

@@ -207,7 +207,9 @@ def _benchmark_scene_case(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     structure = _load_structure(filename, supercell)
     scene, durations = _measure(
-        lambda: build_scene_spec(structure, bond_algorithm="cut-off-dict"),
+        lambda: build_scene_spec(
+            structure, bond_algorithm="cut-off-dict", include_connectivity=True
+        ),
         samples=samples,
     )
     _validate_scene(scene, require_polyhedra=True)
@@ -248,6 +250,33 @@ def _benchmark_large_scenes(
         results[name] = result
         contracts.update(case_contract)
     return results, contracts
+
+
+def _benchmark_progressive_loading(*, full: bool) -> dict[str, dict[str, Any]]:
+    cases = [
+        ("medium-full-625", (5, 5, 5), True, 3 if full else 1),
+        ("large-base-1080", (6, 6, 6), False, 3 if full else 1),
+    ]
+    results: dict[str, dict[str, Any]] = {}
+    for name, supercell, include_connectivity, samples in cases:
+        structure = _load_structure("SrTiO3.cif", supercell)
+        scene, durations = _measure(
+            lambda structure=structure, include_connectivity=include_connectivity: build_scene_spec(
+                structure,
+                bond_algorithm="cut-off-dict",
+                include_connectivity=include_connectivity,
+            ),
+            samples=samples,
+        )
+        results[name] = {
+            "input_atoms": len(structure),
+            "connectivity": scene["connectivity"],
+            "samples": samples,
+            "seconds_all": durations,
+            "seconds_median": statistics.median(durations),
+            **_scene_contract(scene),
+        }
+    return results
 
 
 def _benchmark_neighbor_reuse_case(
@@ -330,8 +359,14 @@ def _timed_preview_request(
     payload: bytes,
     filename: str,
     bond_algorithm: str | None = None,
+    include_connectivity: bool = True,
 ) -> tuple[float, dict[str, Any]]:
-    query = f"?bondAlgorithm={bond_algorithm}" if bond_algorithm else ""
+    params = []
+    if bond_algorithm:
+        params.append(f"bondAlgorithm={bond_algorithm}")
+    if include_connectivity:
+        params.append("includeConnectivity=true")
+    query = f"?{'&'.join(params)}" if params else ""
     started = perf_counter()
     response = client.post(
         f"/api/structure-preview{query}",
@@ -489,6 +524,7 @@ def _write_profile(*, full: bool, label: str) -> dict[str, str]:
         build_scene_spec,
         structure,
         bond_algorithm="cut-off-dict",
+        include_connectivity=True,
     )
     _validate_scene(scene, require_polyhedra=True)
 
@@ -563,6 +599,7 @@ def main() -> None:
         },
         "cutoff_neighbor_tables": _benchmark_cutoff_tables(full=full),
         "large_scenes": large_scenes,
+        "progressive_loading": _benchmark_progressive_loading(full=full),
         "neighbor_reuse": neighbor_reuse,
         "scene_contracts": scene_contracts,
         "comparison": comparison,

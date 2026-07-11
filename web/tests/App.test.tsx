@@ -16,7 +16,7 @@ import {
 } from "../src/app/exportFigure";
 import {
   DEFAULT_DRAG_SENSITIVITY,
-  STRUCTURE_ATOM_COUNT_THRESHOLD,
+  LARGE_STRUCTURE_ATOM_COUNT,
   dragSensitivityToSliderPosition,
   formatDragSensitivityPercent,
   type ExportFormat,
@@ -67,6 +67,8 @@ class MockCamera {
 
 mock.module("@react-three/fiber", () => {
   return {
+    connectivity: "ready",
+    bondAlgorithm: "crystal-nn",
     Canvas: ({
       camera: _camera,
       children: _children,
@@ -615,7 +617,7 @@ describe("App", () => {
     await renderLoadedStructure(
       user,
       sceneWithPeriodicImages({
-        atomCount: STRUCTURE_ATOM_COUNT_THRESHOLD,
+        atomCount: LARGE_STRUCTURE_ATOM_COUNT,
       }),
     );
 
@@ -1223,7 +1225,7 @@ describe("App", () => {
     await user.type(cutoffInput, "0.8{Enter}");
     await waitFor(() => expect(fetchCalls).toHaveLength(2));
     expect(fetchCalls[1]?.input).toBe(
-      "/api/structure-preview?bondAlgorithm=crystal-nn",
+      "/api/structure-preview?bondAlgorithm=crystal-nn&includeConnectivity=true",
     );
     const headers = new Headers(fetchCalls[1]?.init?.headers);
     expect(headers.get("x-pretty-lattice-bond-cutoff-overrides")).toBe(
@@ -2609,7 +2611,7 @@ describe("App", () => {
 
     await waitFor(() => expect(fetchCalls).toHaveLength(2));
     expect(fetchCalls[1]?.input).toBe(
-      "/api/structure-preview?bondAlgorithm=minimum-distance",
+      "/api/structure-preview?bondAlgorithm=minimum-distance&includeConnectivity=true",
     );
     expect(fetchCalls[1]?.init?.body).toBeInstanceOf(File);
     expect(polyhedraCheckbox.getAttribute("aria-checked")).toBe("true");
@@ -2619,7 +2621,7 @@ describe("App", () => {
     await user.click(await screen.findByRole("option", { name: "CrystalNN" }));
 
     await waitFor(() => expect(fetchCalls).toHaveLength(3));
-    expect(fetchCalls[2]?.input).toBe("/api/structure-preview?bondAlgorithm=crystal-nn");
+    expect(fetchCalls[2]?.input).toBe("/api/structure-preview?bondAlgorithm=crystal-nn&includeConnectivity=true");
     expect(fetchCalls[2]?.init?.body).toBeInstanceOf(File);
   });
 
@@ -2637,7 +2639,7 @@ describe("App", () => {
 
     await waitFor(() => expect(fetchCalls).toHaveLength(2));
     expect(fetchCalls[1]?.input).toBe(
-      "/api/structure-preview?bondAlgorithm=minimum-distance",
+      "/api/structure-preview?bondAlgorithm=minimum-distance&includeConnectivity=true",
     );
     expect(screen.getByRole("combobox", { name: "Bonding algorithm" }).textContent).toContain(
       "Minimum distance",
@@ -2652,7 +2654,7 @@ describe("App", () => {
     await user.click(await screen.findByRole("menuitem", { name: "Reset all" }));
 
     await waitFor(() => expect(fetchCalls).toHaveLength(3));
-    expect(fetchCalls[2]?.input).toBe("/api/structure-preview");
+    expect(fetchCalls[2]?.input).toBe("/api/structure-preview?includeConnectivity=true");
     expect(fetchCalls[2]?.init?.body).toBeInstanceOf(File);
 
     expect(screen.getByRole("button", { name: "Sidebar" }).getAttribute("aria-expanded")).toBe(
@@ -2809,7 +2811,7 @@ describe("App", () => {
     render(<App />);
 
     const largeFile = new File(
-      [new Uint8Array(1 * 1024 * 1024 + 1)],
+      [new Uint8Array(4 * 1024 * 1024 + 1)],
       "movie.mp4",
       { type: "video/mp4" },
     );
@@ -2854,6 +2856,33 @@ describe("App", () => {
 
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByTestId("lattice-canvas").isConnected).toBe(true);
+  });
+
+  test("loads one shared connectivity bundle from Objects for a deferred large scene", async () => {
+    const user = userEvent.setup();
+    const readyScene = { ...sceneWithPeriodicImages({ atomCount: 1024 }), bondAlgorithm: "cut-off-dict" as const };
+    const deferredScene: SceneSpec = {
+      ...readyScene,
+      atoms: readyScene.atoms.filter((atom) => !atom.imageReasons.includes("bonded")),
+      bonds: [],
+      bondFamilies: [],
+      polyhedra: [],
+      connectivity: "deferred",
+    };
+    await renderLoadedStructure(user, deferredScene);
+
+    const commonControls = screen.getByRole("complementary", { name: "Common controls" });
+    expect(within(commonControls).getByRole("checkbox", { name: "Bonds" }).getAttribute("aria-checked")).toBe("false");
+
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    queueFetchResponse(jsonResponse(readyScene));
+    await openBondObjectsTab(user, sidebar);
+
+    await waitFor(() => expect(fetchCalls).toHaveLength(2));
+    expect(fetchCalls[1]?.input).toBe("/api/structure-preview?bondAlgorithm=cut-off-dict&includeConnectivity=true");
+    expect(within(commonControls).getByRole("checkbox", { name: "Bonds" }).getAttribute("aria-checked")).toBe("false");
+    expect((await within(sidebar).findByRole("button", { name: "Expand Na–Cl" })).isConnected).toBe(true);
   });
 });
 

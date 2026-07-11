@@ -1,6 +1,6 @@
 import type { SceneSpec } from "../api/scene";
 import type { MeshQuality } from "./exportSettings";
-import { STRUCTURE_ATOM_COUNT_THRESHOLD } from "./structureLimits";
+import { LARGE_STRUCTURE_ATOM_COUNT } from "./structureLimits";
 
 export type UnitCellLineStyle = "solid" | "dashed";
 
@@ -24,7 +24,7 @@ export const LARGE_SCENE_PREVIEW_MESH_QUALITY: MeshQuality = "low";
 export function hasLargePreviewAtomCount(
   scene: Pick<SceneSpec, "summary"> | null,
 ): boolean {
-  return (scene?.summary.atomCount ?? 0) >= STRUCTURE_ATOM_COUNT_THRESHOLD;
+  return (scene?.summary.atomCount ?? 0) >= LARGE_STRUCTURE_ATOM_COUNT;
 }
 
 export function defaultPreviewMeshQualityForScene(

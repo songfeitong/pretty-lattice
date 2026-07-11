@@ -31,6 +31,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -236,7 +238,7 @@ export function ObjectsPanel({
           value="bonds"
           className="!h-6 flex-none rounded-lg px-2.5 text-xs font-medium"
         >
-          {t("objectsPanel.bonds")}
+          <span className="flex items-center gap-1.5">{t("objectsPanel.bonds")}{isSceneLoading ? <LoadingSpinner className="text-muted-foreground" /> : null}</span>
         </TabsTrigger>
       </TabsList>
 
@@ -294,6 +296,8 @@ export function ObjectsPanel({
           </Select>
         </div>
         <Separator className="mb-3" />
+        {isSceneLoading ? <BondFamiliesSkeleton /> : null}
+        <div className={cn(isSceneLoading ? "hidden" : null)}>
         <BondsPanel
           bondLocateRequest={bondLocateRequest}
           bondsVisible={bondsVisible}
@@ -310,8 +314,22 @@ export function ObjectsPanel({
           style={style}
           visibilityOverrides={bondVisibilityOverrides}
         />
+        </div>
       </TabsContent>
     </Tabs>
+  );
+}
+
+function BondFamiliesSkeleton() {
+  return (
+    <div className="flex flex-col gap-2" aria-label="Loading bonds">
+      {["w-3/4", "w-2/3", "w-4/5", "w-1/2"].map((width, index) => (
+        <div key={index} className="grid h-10 grid-cols-[minmax(0,1fr)_5rem] items-center gap-3 border-b border-border/45 px-1.5">
+          <Skeleton className={`h-3 ${width}`} />
+          <Skeleton className="h-3 w-14" />
+        </div>
+      ))}
+    </div>
   );
 }
 

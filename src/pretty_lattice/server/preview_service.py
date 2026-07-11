@@ -108,6 +108,7 @@ async def create_structure_preview(
     filename: str,
     bond_algorithm: str | None,
     bond_cutoff_overrides: dict[str, float] | None = None,
+    include_connectivity: bool | None = None,
 ) -> dict[str, object]:
     task = partial(
         _build_structure_preview,
@@ -115,6 +116,7 @@ async def create_structure_preview(
         filename=filename,
         bond_algorithm=bond_algorithm,
         bond_cutoff_overrides=bond_cutoff_overrides,
+        include_connectivity=include_connectivity,
     )
     return await to_thread.run_sync(
         task,
@@ -129,6 +131,7 @@ def _build_structure_preview(
     filename: str,
     bond_algorithm: str | None,
     bond_cutoff_overrides: dict[str, float] | None = None,
+    include_connectivity: bool | None = None,
 ) -> dict[str, object]:
     structure = PREVIEW_STRUCTURE_CACHE.get_or_parse(
         payload=payload,
@@ -140,6 +143,7 @@ def _build_structure_preview(
         structure,
         bond_algorithm=bond_algorithm,
         bond_cutoff_overrides=bond_cutoff_overrides,
+        include_connectivity=include_connectivity,
     )
 
 

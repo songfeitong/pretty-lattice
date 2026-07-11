@@ -14,6 +14,7 @@ import { MotionProvider, useMotion } from "@/motion/MotionProvider";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -92,6 +93,7 @@ import {
   setBondFamilyVisible,
   setBondInstanceVisible,
   type BondVisibilityOverrides,
+  type ComponentVisibilityState,
 } from "../model";
 
 type InspectedSceneObject =
@@ -198,6 +200,9 @@ function AppContent() {
   const {
     bondAlgorithm,
     customBondingProfile,
+    connectivityIntent,
+    connectivityRetryable,
+    connectivityStatus,
     errorKind,
     errorMessage,
     errorTitle,
@@ -205,6 +210,7 @@ function AppContent() {
     handleBondCutoffOverrideChange,
     handleFileChange,
     handleResetAllSettings,
+    requestConnectivity,
     previewStatus,
     scene,
     selectedFileName,
@@ -441,7 +447,21 @@ function AppContent() {
   const handleActiveObjectsTabChange = useCallback((tab: ObjectsPanelTab) => {
     closeActiveColorPicker();
     setActiveObjectsTab(tab);
-  }, [closeActiveColorPicker]);
+    if (tab === "bonds" && connectivityStatus !== "ready") {
+      void requestConnectivity("objects");
+    }
+  }, [closeActiveColorPicker, connectivityStatus, requestConnectivity]);
+
+  const handleComponentVisibilityChange = useCallback(async (
+    key: keyof ComponentVisibilityState,
+    value: boolean,
+  ) => {
+    if (value && (key === "bonds" || key === "polyhedra" || key === "oneHopBondedAtoms") && connectivityStatus !== "ready") {
+      const succeeded = await requestConnectivity(key);
+      if (!succeeded) return;
+    }
+    setComponentVisibility((current) => ({ ...current, [key]: value }));
+  }, [connectivityStatus, requestConnectivity]);
 
   const handleFogAffectsUnitCellChange = useCallback((fogAffectsUnitCell: boolean) => {
     setStyle((currentStyle) => ({
@@ -969,6 +989,8 @@ function AppContent() {
               style={style}
               exportProjectedSize={exportProjectedSize ?? undefined}
               componentVisibility={componentVisibility}
+              connectivityIntent={connectivityIntent}
+              connectivityStatus={connectivityStatus}
               exportError={exportError}
               exportSettings={exportSettings}
               hasPolyhedra={hasPolyhedra(scene)}
@@ -985,7 +1007,7 @@ function AppContent() {
               onExport={handleExportFigure}
               onExportSettingsChange={handleExportSettingsChange}
               onStyleChange={setStyle}
-              onComponentVisibilityChange={setComponentVisibility}
+              onComponentVisibilityChange={handleComponentVisibilityChange}
             />
           </div>
         ) : null}
@@ -1006,6 +1028,9 @@ function AppContent() {
           </AlertTitle>
           <AlertDescription>
             {localizedPreviewErrorMessage(errorKind, errorMessage, t)}
+            {errorKind === "bonding-error" && connectivityRetryable ? (
+              <Button className="mt-2 h-7 px-2 text-xs" variant="outline" disabled={connectivityStatus === "loading"} onClick={() => void requestConnectivity(connectivityIntent ?? "preserve")}>Retry</Button>
+            ) : null}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -1052,7 +1077,7 @@ function AppContent() {
                   mouseInertia={viewState.mouseInertia}
                   isCustomColorScheme={style.colorSchemeMode === "custom"}
                   isOpen={isInspectorOpen}
-                  isSceneLoading={previewStatus === "loading"}
+                  isSceneLoading={previewStatus === "loading" || connectivityStatus === "loading"}
                   previewMeshQuality={previewMeshQuality}
                   fogAffectsUnitCell={style.fogAffectsUnitCell}
                   distinguishSimilarColors={style.distinguishSimilarColors}

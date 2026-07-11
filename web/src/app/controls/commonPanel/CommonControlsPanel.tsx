@@ -71,6 +71,8 @@ export function CommonControlsPanel({
   cellVectors,
   componentOpacity,
   componentVisibility,
+  connectivityIntent,
+  connectivityStatus,
   exportError,
   exportProjectedSize,
   exportSettings,
@@ -96,6 +98,8 @@ export function CommonControlsPanel({
   cellVectors: VectorTuple[];
   componentOpacity: ComponentOpacityState;
   componentVisibility: ComponentVisibilityState;
+  connectivityIntent: string | null;
+  connectivityStatus: "deferred" | "loading" | "ready" | "error";
   exportError: string | null;
   exportProjectedSize?: ExportProjectedSize;
   exportSettings: ExportSettingsState;
@@ -110,9 +114,7 @@ export function CommonControlsPanel({
   onCameraStateChange: (cameraState: CrystalCameraState) => void;
   onActiveTabChange?: (tab: CommonPanelTab) => void;
   onComponentOpacityChange: Dispatch<SetStateAction<ComponentOpacityState>>;
-  onComponentVisibilityChange: Dispatch<
-    SetStateAction<ComponentVisibilityState>
-  >;
+  onComponentVisibilityChange: (key: keyof ComponentVisibilityState, value: boolean) => void;
   onExport: () => void;
   onExportSettingsChange: (settings: ExportSettingsState) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
@@ -363,6 +365,8 @@ export function CommonControlsPanel({
             </TabsContent>
             <TabsContent value="display">
               <DisplayTabContent
+                connectivityIntent={connectivityIntent}
+                connectivityStatus={connectivityStatus}
                 hasPolyhedra={hasPolyhedra}
                 opacity={componentOpacity}
                 onOpacityChange={onComponentOpacityChange}

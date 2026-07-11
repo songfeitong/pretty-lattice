@@ -28,6 +28,7 @@ async def health() -> dict[str, str]:
 async def create_structure_preview(
     request: Request,
     bond_algorithm: str | None = Query(default=None, alias="bondAlgorithm"),
+    include_connectivity: bool | None = Query(default=None, alias="includeConnectivity"),
     bond_cutoff_overrides: str | None = Header(
         default=None,
         alias="x-pretty-lattice-bond-cutoff-overrides",
@@ -51,6 +52,7 @@ async def create_structure_preview(
             filename=filename,
             bond_algorithm=normalized_bond_algorithm,
             bond_cutoff_overrides=normalized_cutoff_overrides,
+            include_connectivity=include_connectivity,
         )
     except StructureReadError as exc:
         raise HTTPException(status_code=400, detail={"message": str(exc)}) from exc

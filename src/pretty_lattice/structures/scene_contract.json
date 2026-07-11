@@ -1,8 +1,12 @@
 {
   "version": 2,
   "bondFamilyKeySeparator": "|",
-  "limits": {
-    "structureAtomCountThreshold": 1000
+  "structureSizeTiers": {
+    "mediumFromAtomCount": 256,
+    "largeFromAtomCount": 1024
+  },
+  "previewLimits": {
+    "maxUploadBytes": 4194304
   },
   "bondAlgorithms": [
     {

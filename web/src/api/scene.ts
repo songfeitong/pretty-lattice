@@ -1,4 +1,3 @@
-import { STRUCTURE_ATOM_COUNT_THRESHOLD } from "../model/structureLimits";
 import sceneContract from "../../../src/pretty_lattice/structures/scene_contract.json";
 
 export interface SceneSpec {
@@ -11,6 +10,8 @@ export interface SceneSpec {
   polyhedra: PolyhedronSpec[];
   summary: StructureSummary;
   warnings?: AnalysisWarningSpec[];
+  connectivity?: "deferred" | "ready";
+  bondAlgorithm?: BondAlgorithm;
 }
 
 export type BondAlgorithm = "crystal-nn" | "minimum-distance" | "cut-off-dict";
@@ -111,25 +112,24 @@ export interface AnalysisWarningSpec {
 }
 
 export function defaultBondAlgorithmForScene(
-  scene: Pick<SceneSpec, "summary">,
+  scene: Pick<SceneSpec, "summary" | "bondAlgorithm">,
 ): BondAlgorithm {
-  if (scene.summary.atomCount < STRUCTURE_ATOM_COUNT_THRESHOLD) {
-    return DEFAULT_BOND_ALGORITHM;
-  }
-
-  return LARGE_STRUCTURE_BOND_ALGORITHM;
+  return scene.bondAlgorithm ?? DEFAULT_BOND_ALGORITHM;
 }
 
 export class StructurePreviewError extends Error {
   readonly reason: "backend-unavailable" | "preview-failed";
+  readonly code: string | null;
 
   constructor(
     message: string,
     reason: "backend-unavailable" | "preview-failed" = "preview-failed",
+    code: string | null = null,
   ) {
     super(message);
     this.name = "StructurePreviewError";
     this.reason = reason;
+    this.code = code;
   }
 }
 
@@ -176,6 +176,8 @@ export async function uploadStructurePreview(
   options: {
     bondAlgorithm?: BondAlgorithm;
     cutoffOverrides?: Record<string, number>;
+    includeConnectivity?: boolean;
+    signal?: AbortSignal;
   } = {},
 ): Promise<SceneSpec> {
   if (hasStaticScenePreview()) {
@@ -199,6 +201,7 @@ export async function uploadStructurePreview(
       method: "POST",
       headers,
       body: file,
+      signal: options.signal,
     });
   } catch {
     throw new StructurePreviewError(BACKEND_UNAVAILABLE_MESSAGE, "backend-unavailable");
@@ -208,7 +211,8 @@ export async function uploadStructurePreview(
     if (isBackendUnavailableResponse(response)) {
       throw new StructurePreviewError(BACKEND_UNAVAILABLE_MESSAGE, "backend-unavailable");
     }
-    throw new StructurePreviewError(await readPreviewError(response));
+    const detail = await readPreviewError(response);
+    throw new StructurePreviewError(detail.message, "preview-failed", detail.code);
   }
 
   if (!isJsonResponse(response)) {
@@ -218,11 +222,12 @@ export async function uploadStructurePreview(
   return (await response.json()) as SceneSpec;
 }
 
-function previewEndpointForOptions(options: { bondAlgorithm?: BondAlgorithm }): string {
+function previewEndpointForOptions(options: { bondAlgorithm?: BondAlgorithm; includeConnectivity?: boolean }): string {
   const params = new URLSearchParams();
   if (options.bondAlgorithm) {
     params.set("bondAlgorithm", options.bondAlgorithm);
   }
+  if (options.includeConnectivity) params.set("includeConnectivity", "true");
 
   const query = params.toString();
   if (!query) {
@@ -232,22 +237,22 @@ function previewEndpointForOptions(options: { bondAlgorithm?: BondAlgorithm }): 
   return `/api/structure-preview?${query}`;
 }
 
-async function readPreviewError(response: Response): Promise<string> {
+async function readPreviewError(response: Response): Promise<{ code: string | null; message: string }> {
   try {
     const payload = (await response.json()) as {
-      detail?: string | { message?: string };
+      detail?: string | { code?: string; message?: string };
     };
     if (typeof payload.detail === "string") {
-      return payload.detail;
+      return { code: null, message: payload.detail };
     }
     if (payload.detail?.message) {
-      return payload.detail.message;
+      return { code: payload.detail.code ?? null, message: payload.detail.message };
     }
   } catch {
     // Fall through to the status-based message.
   }
 
-  return `Structure preview failed with status ${response.status}.`;
+  return { code: null, message: `Structure preview failed with status ${response.status}.` };
 }
 
 function isBackendUnavailableResponse(response: Response): boolean {

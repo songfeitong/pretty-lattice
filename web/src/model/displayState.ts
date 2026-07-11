@@ -55,8 +55,16 @@ export const COMPONENT_OPACITY_MAX: ComponentOpacityState = {
 };
 
 export function createDefaultComponentVisibility(
-  _scene: SceneSpec | null = null,
+  scene: SceneSpec | null = null,
 ): ComponentVisibilityState {
+  if (scene?.connectivity === "deferred") {
+    return {
+      ...DEFAULT_COMPONENT_VISIBILITY,
+      bonds: false,
+      polyhedra: false,
+      oneHopBondedAtoms: false,
+    };
+  }
   return { ...DEFAULT_COMPONENT_VISIBILITY };
 }
 

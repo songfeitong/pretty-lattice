@@ -24,10 +24,13 @@ from pretty_lattice.structures.scene import (
     build_scene_response,
 )
 from pretty_lattice.structures.schema import (
-    STRUCTURE_ATOM_COUNT_THRESHOLD,
+    LARGE_STRUCTURE_ATOM_COUNT,
+    MEDIUM_STRUCTURE_ATOM_COUNT,
     CustomBondRecalculationError,
     InvalidBondCutoffOverridesError,
     UnsupportedBondAlgorithmError,
+    classify_structure_size,
+    default_bond_algorithm_for_atom_count,
 )
 from pretty_lattice.structures.symmetry import (
     POINT_GROUP_SCHOENFLIES,
@@ -231,6 +234,8 @@ def test_scene_response_shape_excludes_renderer_visual_data() -> None:
         "bondFamilies",
         "polyhedra",
         "summary",
+        "connectivity",
+        "bondAlgorithm",
     }
     assert scene["bondFamilies"] == [
         {
@@ -520,8 +525,8 @@ def test_third_party_structure_warnings_are_suppressed() -> None:
     ("atom_count", "expected_algorithm"),
     [
         (5, "crystal-nn"),
-        (STRUCTURE_ATOM_COUNT_THRESHOLD - 1, "crystal-nn"),
-        (STRUCTURE_ATOM_COUNT_THRESHOLD, "cut-off-dict"),
+        (MEDIUM_STRUCTURE_ATOM_COUNT - 1, "crystal-nn"),
+        (MEDIUM_STRUCTURE_ATOM_COUNT, "cut-off-dict"),
     ],
 )
 def test_scene_response_defaults_bonding_by_structure_size(
@@ -544,6 +549,43 @@ def test_scene_response_defaults_bonding_by_structure_size(
     build_scene_response(structure)
 
     assert captured_algorithms == [expected_algorithm]
+
+
+@pytest.mark.parametrize(
+    ("atom_count", "size", "algorithm"),
+    [
+        (255, "small", "crystal-nn"),
+        (256, "medium", "cut-off-dict"),
+        (1023, "medium", "cut-off-dict"),
+        (1024, "large", "cut-off-dict"),
+    ],
+)
+def test_structure_size_boundaries(atom_count: int, size: str, algorithm: str) -> None:
+    assert classify_structure_size(atom_count) == size
+    assert default_bond_algorithm_for_atom_count(atom_count) == algorithm
+
+
+def test_large_scene_defers_connectivity(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail_connectivity(**_kwargs: object) -> connectivity_module.ConnectivityResult:
+        raise AssertionError("connectivity must be deferred")
+
+    monkeypatch.setattr(connectivity_module, "build_connectivity", fail_connectivity)
+    structure = _structure_from_fractional_positions(
+        ["C"] * LARGE_STRUCTURE_ATOM_COUNT,
+        [
+            [index / LARGE_STRUCTURE_ATOM_COUNT, 0.25, 0.25]
+            for index in range(LARGE_STRUCTURE_ATOM_COUNT)
+        ],
+    )
+
+    scene = build_scene_response(structure)
+
+    assert scene["connectivity"] == "deferred"
+    assert scene["bondAlgorithm"] == "cut-off-dict"
+    assert scene["bonds"] == []
+    assert scene["bondFamilies"] == []
+    assert scene["polyhedra"] == []
+    assert all("bonded" not in atom["imageReasons"] for atom in scene["atoms"])
 
 
 def test_cutoff_dict_bonding_uses_batched_neighbor_table(
@@ -1101,16 +1143,16 @@ def test_large_structure_summary_skips_symmetry_analysis(monkeypatch: pytest.Mon
 
     monkeypatch.setattr(summary_module, "SpacegroupAnalyzer", fail_spacegroup_analysis)
     structure = _structure_from_fractional_positions(
-        ["Na"] * STRUCTURE_ATOM_COUNT_THRESHOLD,
+        ["Na"] * LARGE_STRUCTURE_ATOM_COUNT,
         [
-            [index / STRUCTURE_ATOM_COUNT_THRESHOLD, 0.25, 0.25]
-            for index in range(STRUCTURE_ATOM_COUNT_THRESHOLD)
+            [index / LARGE_STRUCTURE_ATOM_COUNT, 0.25, 0.25]
+            for index in range(LARGE_STRUCTURE_ATOM_COUNT)
         ],
     )
 
     summary = summary_module.build_structure_summary(structure)
 
-    assert summary["atomCount"] == STRUCTURE_ATOM_COUNT_THRESHOLD
+    assert summary["atomCount"] == LARGE_STRUCTURE_ATOM_COUNT
     assert summary["symmetry"] == {
         "available": False,
         "spaceGroup": None,

@@ -11,7 +11,8 @@ VisibilityDependency = Literal["boundaryAtoms", "oneHopBondedAtoms"]
 
 _SCENE_CONTRACT = json.loads(files(__package__).joinpath("scene_contract.json").read_text())
 
-STRUCTURE_ATOM_COUNT_THRESHOLD = int(_SCENE_CONTRACT["limits"]["structureAtomCountThreshold"])
+MEDIUM_STRUCTURE_ATOM_COUNT = int(_SCENE_CONTRACT["structureSizeTiers"]["mediumFromAtomCount"])
+LARGE_STRUCTURE_ATOM_COUNT = int(_SCENE_CONTRACT["structureSizeTiers"]["largeFromAtomCount"])
 DEFAULT_BOND_ALGORITHM = cast(BondAlgorithm, _SCENE_CONTRACT["defaultBondAlgorithm"])
 LARGE_STRUCTURE_BOND_ALGORITHM = cast(BondAlgorithm, _SCENE_CONTRACT["largeStructureBondAlgorithm"])
 BOND_ALGORITHM_LABELS: dict[BondAlgorithm, str] = {
@@ -123,6 +124,8 @@ class SceneSpec(TypedDict):
     bondFamilies: list[BondFamilySpec]
     polyhedra: list[PolyhedronSpec]
     summary: StructureSummarySpec
+    connectivity: Literal["deferred", "ready"]
+    bondAlgorithm: BondAlgorithm
     warnings: NotRequired[list[AnalysisWarningSpec]]
 
 
@@ -147,10 +150,18 @@ def bond_algorithm_label(bond_algorithm: BondAlgorithm) -> str:
 
 
 def default_bond_algorithm_for_atom_count(atom_count: int) -> BondAlgorithm:
-    if atom_count < STRUCTURE_ATOM_COUNT_THRESHOLD:
+    if atom_count < MEDIUM_STRUCTURE_ATOM_COUNT:
         return DEFAULT_BOND_ALGORITHM
 
     return LARGE_STRUCTURE_BOND_ALGORITHM
+
+
+def classify_structure_size(atom_count: int) -> Literal["small", "medium", "large"]:
+    if atom_count < MEDIUM_STRUCTURE_ATOM_COUNT:
+        return "small"
+    if atom_count < LARGE_STRUCTURE_ATOM_COUNT:
+        return "medium"
+    return "large"
 
 
 def parse_bond_cutoff_overrides(value: str | None) -> dict[str, float]:

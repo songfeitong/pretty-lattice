@@ -20,7 +20,7 @@ import {
   hasCustomColormapChanges,
   INSPECTOR_OPEN_SCENE_OFFSET_X_PX,
   INSPECTOR_PREVIEW_SAFE_AREA,
-  STRUCTURE_ATOM_COUNT_THRESHOLD,
+  LARGE_STRUCTURE_ATOM_COUNT,
   parseExportDimensionInput,
   setExportAspectRatioLocked,
   setExportBackground,
@@ -44,9 +44,9 @@ import {
 
 describe("settings", () => {
   test("keeps the large-scene mesh quality threshold", () => {
-    const belowThreshold = STRUCTURE_ATOM_COUNT_THRESHOLD - 1;
-    const atThreshold = STRUCTURE_ATOM_COUNT_THRESHOLD;
-    const aboveThreshold = STRUCTURE_ATOM_COUNT_THRESHOLD + 1;
+    const belowThreshold = LARGE_STRUCTURE_ATOM_COUNT - 1;
+    const atThreshold = LARGE_STRUCTURE_ATOM_COUNT;
+    const aboveThreshold = LARGE_STRUCTURE_ATOM_COUNT + 1;
 
     expect(defaultPreviewMeshQualityForScene(null)).toBe("medium");
     expect(defaultPreviewMeshQualityForScene(sceneWithAtomCount(belowThreshold))).toBe("medium");
