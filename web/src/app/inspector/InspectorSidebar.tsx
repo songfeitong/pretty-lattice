@@ -10,7 +10,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import {
-  Boxes,
+  Atom,
   Monitor,
   Moon,
   MonitorCog,
@@ -313,7 +313,7 @@ export function InspectorSidebar({
               value="objects"
               className="h-8 flex-none px-0 text-[0.875rem] font-semibold"
             >
-              <Boxes aria-hidden="true" />
+              <Atom aria-hidden="true" />
               {t("nav.objects")}
             </TabsTrigger>
           </TabsList>

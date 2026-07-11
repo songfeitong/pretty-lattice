@@ -2,6 +2,7 @@ import { ChevronRight, Eye, EyeOff, RotateCcw } from "lucide-react";
 import {
   type KeyboardEvent,
   type MutableRefObject,
+  type ReactNode,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -34,6 +35,7 @@ import {
   type BondVisibilityOverrides,
   type StyleState,
 } from "../../model";
+import { lambertLegendSwatchBackground } from "../../scene/renderAppearance";
 import { TOOL_ICON_BUTTON_CLASS } from "../surface";
 
 export interface BondLocateRequest {
@@ -174,7 +176,7 @@ export function BondsPanel({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {scene.bondFamilies.map((family) => {
+        {scene.bondFamilies.map((family, familyIndex) => {
           const expanded = expandedFamilies.has(family.key);
           const familyVisible =
             bondsVisible && !visibilityOverrides.hiddenFamilies.has(family.key);
@@ -207,6 +209,7 @@ export function BondsPanel({
               onToggle={() => toggleFamily(family.key)}
               rowByBondIdRef={rowByBondIdRef}
               scene={scene}
+              separated={familyIndex > 0}
               style={style}
               tokenColor={tokenColor}
               visibilityOverrides={visibilityOverrides}
@@ -236,6 +239,7 @@ function FamilyRows({
   onToggle,
   rowByBondIdRef,
   scene,
+  separated,
   style,
   tokenColor,
   visibilityOverrides,
@@ -257,6 +261,7 @@ function FamilyRows({
   onToggle: () => void;
   rowByBondIdRef: MutableRefObject<Map<string, HTMLTableRowElement>>;
   scene: SceneSpec;
+  separated: boolean;
   style: StyleState;
   tokenColor: (element: string) => string;
   visibilityOverrides: BondVisibilityOverrides;
@@ -264,44 +269,54 @@ function FamilyRows({
   const { t } = useTranslation();
   return (
     <>
-      <TableRow className="border-border/45 bg-muted/40 hover:bg-muted/55">
-        <TableCell className="h-8 px-1.5 py-0">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={
-                expanded
-                  ? t("objectsPanel.collapseBondFamily", {
-                      family: family.elements.join("–"),
-                    })
-                  : t("objectsPanel.expandBondFamily", {
-                      family: family.elements.join("–"),
-                    })
-              }
-              className={cn(
-                TOOL_ICON_BUTTON_CLASS,
-                "size-5 rounded-[7px] [&_svg]:size-3",
-              )}
-              onClick={onToggle}
-            >
-              <ChevronRight
-                aria-hidden="true"
-                className={cn("transition-transform", expanded ? "rotate-90" : null)}
-              />
-            </Button>
-            <AtomToken color={tokenColor(family.elements[0])} />
-            <span className="font-semibold">{family.elements[0]}</span>
-            <span className="text-muted-foreground">—</span>
-            <AtomToken color={tokenColor(family.elements[1])} />
-            <span className="font-semibold">{family.elements[1]}</span>
-          </div>
+      <TableRow
+        className={cn(
+          "border-0",
+          expanded
+            ? "bg-muted/30 hover:bg-muted/45"
+            : "bg-transparent hover:bg-muted/30",
+          separated ? "[&>td]:border-t [&>td]:border-border/45" : null,
+        )}
+      >
+        <TableCell className="h-9 px-1.5 py-0">
+          <BondPairLabel
+            endColor={tokenColor(family.elements[1])}
+            endLabel={family.elements[1]}
+            labelClassName="font-semibold"
+            leading={(
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={
+                  expanded
+                    ? t("objectsPanel.collapseBondFamily", {
+                        family: family.elements.join("–"),
+                      })
+                    : t("objectsPanel.expandBondFamily", {
+                        family: family.elements.join("–"),
+                      })
+                }
+                className={cn(
+                  TOOL_ICON_BUTTON_CLASS,
+                  "size-5 rounded-[7px] [&_svg]:size-3",
+                )}
+                onClick={onToggle}
+              >
+                <ChevronRight
+                  aria-hidden="true"
+                  className={cn("transition-transform", expanded ? "rotate-90" : null)}
+                />
+              </Button>
+            )}
+            startColor={tokenColor(family.elements[0])}
+            startLabel={family.elements[0]}
+          />
         </TableCell>
-        <TableCell className="h-8 px-1.5 py-0 font-mono text-[12px] tabular-nums">
+        <TableCell className="h-9 px-1.5 py-0 font-mono text-[12px] tabular-nums">
           {formatBondFamilyLength(family)}
         </TableCell>
-        <TableCell className="h-8 px-1 py-0">
+        <TableCell className="h-9 px-1 py-0">
           <div className="flex items-center justify-center gap-0.5">
             <VisibilityButton
               label={t("objectsPanel.visibility", {
@@ -334,7 +349,7 @@ function FamilyRows({
         </TableCell>
       </TableRow>
       {expanded ? (
-        <TableRow className="border-border/30 hover:bg-transparent">
+        <TableRow className="border-0 hover:bg-transparent">
           <TableCell colSpan={3} className="h-9 px-7 py-0">
             <MaximumLengthControl
               cutoff={cutoff}
@@ -525,16 +540,15 @@ function ContextualBondRow({
         }
       }}
       data-state="selected"
-      className="border-border/30 bg-accent hover:bg-accent"
+      className="border-0 bg-accent hover:bg-accent"
     >
-      <TableCell className="h-8 px-7 py-0">
-        <div className="flex items-center gap-1.5 font-mono text-[12px]">
-          <AtomToken color={startColor} />
-          <span>{atomSiteLabel(startAtom)}</span>
-          <span className="text-muted-foreground">—</span>
-          <AtomToken color={endColor} />
-          <span>{atomSiteLabel(endAtom)}</span>
-        </div>
+      <TableCell className="h-8 px-1.5 py-0">
+        <BondPairLabel
+          endColor={endColor}
+          endLabel={atomSiteLabel(endAtom)}
+          startColor={startColor}
+          startLabel={atomSiteLabel(startAtom)}
+        />
       </TableCell>
       <TableCell className="h-8 px-1.5 py-0 font-mono text-[12px] tabular-nums">
         {bond.length.toFixed(3)}
@@ -585,9 +599,46 @@ function AtomToken({ color }: { color: string }) {
   return (
     <span
       aria-hidden="true"
-      className="size-3 shrink-0 rounded-full border border-foreground/15"
-      style={{ backgroundColor: color }}
+      data-bond-atom-token=""
+      className="size-3.5 shrink-0 rounded-full border border-foreground/15"
+      style={{ background: lambertLegendSwatchBackground(color) }}
     />
+  );
+}
+
+function BondPairLabel({
+  endColor,
+  endLabel,
+  labelClassName,
+  leading,
+  startColor,
+  startLabel,
+}: {
+  endColor: string;
+  endLabel: string;
+  labelClassName?: string;
+  leading?: ReactNode;
+  startColor: string;
+  startLabel: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center font-mono text-[12px]">
+      <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span>
+      <span aria-hidden="true" className="w-2.5 shrink-0" />
+      <AtomToken color={startColor} />
+      <span aria-hidden="true" className="w-2 shrink-0" />
+      <span className={cn("shrink-0", labelClassName)}>{startLabel}</span>
+      <span aria-hidden="true" className="w-1 shrink-0" />
+      <span
+        aria-hidden="true"
+        data-bond-connector=""
+        className="h-px w-2 shrink-0 bg-muted-foreground"
+      />
+      <span aria-hidden="true" className="w-1 shrink-0" />
+      <AtomToken color={endColor} />
+      <span aria-hidden="true" className="w-2 shrink-0" />
+      <span className={cn("truncate", labelClassName)}>{endLabel}</span>
+    </div>
   );
 }
 

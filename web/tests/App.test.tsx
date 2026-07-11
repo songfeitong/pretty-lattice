@@ -976,10 +976,29 @@ describe("App", () => {
     expect(within(sidebar).queryByText("Na:0")).toBeNull();
     expect(within(sidebar).queryByText(/image/)).toBeNull();
 
+    const collapsedSodiumElementRow = within(sidebar).getByText("Na").closest("tr");
+    const collapsedChlorineElementRow = within(sidebar).getByText("Cl").closest("tr");
+    expect(collapsedSodiumElementRow?.className).toContain("bg-transparent");
+    expect(collapsedSodiumElementRow?.classList.contains("bg-muted/30")).toBe(false);
+    expect(collapsedSodiumElementRow?.className).not.toContain("border-t");
+    expect(collapsedChlorineElementRow?.className).toContain("[&>td]:border-t");
+    expect(collapsedChlorineElementRow?.className).toContain(
+      "[&>td]:border-border/45",
+    );
+    const sodiumRadiusInput = within(sidebar).getByRole("textbox", {
+      name: "Na radius",
+    }) as HTMLInputElement;
+    const initialSodiumRadius = sodiumRadiusInput.value;
+    await user.click(sodiumRadiusInput);
+    expect(sodiumRadiusInput.value).toBe("");
+    await user.tab();
+    expect(sodiumRadiusInput.value).toBe(initialSodiumRadius);
+
     await user.click(within(sidebar).getByRole("button", { name: "Expand Na" }));
 
     const sodiumAtomLabel = within(sidebar).getByText("Na:0");
     const sodiumElementLabel = within(sidebar).getByText("Na");
+    expect(sodiumElementLabel.closest("tr")?.className).toContain("bg-muted/30");
     expect(sodiumAtomLabel.isConnected).toBe(true);
     expect(sodiumElementLabel.parentElement?.classList.contains("gap-x-2.5")).toBe(true);
     expect(sodiumAtomLabel.parentElement?.classList.contains("gap-x-2.5")).toBe(true);
@@ -1143,6 +1162,26 @@ describe("App", () => {
     expect(within(sidebar).getByText("Na").isConnected).toBe(true);
     expect(within(sidebar).getByText("Cl").isConnected).toBe(true);
     expect(within(sidebar).getByText("1").isConnected).toBe(true);
+    const bondFamilyRow = within(sidebar)
+      .getByRole("button", { name: "Expand Na–Cl" })
+      .closest("tr");
+    expect(bondFamilyRow?.classList.contains("bg-transparent")).toBe(true);
+    expect(bondFamilyRow?.classList.contains("bg-muted/30")).toBe(false);
+    const bondAtomTokens = bondFamilyRow?.querySelectorAll(
+      '[data-bond-atom-token=""]',
+    );
+    expect(bondAtomTokens).toHaveLength(2);
+    for (const token of bondAtomTokens ?? []) {
+      expect(token.classList.contains("size-3.5")).toBe(true);
+      expect(token.classList.contains("rounded-full")).toBe(true);
+      expect(token.className).not.toContain("transition");
+      expect(token.getAttribute("style")).toContain("linear-gradient");
+    }
+    expect(
+      bondFamilyRow
+        ?.querySelector('[data-bond-connector=""]')
+        ?.classList.contains("w-2"),
+    ).toBe(true);
 
     const familyVisibility = () =>
       within(sidebar).getByRole("button", { name: "Na–Cl visibility" });
@@ -1171,6 +1210,7 @@ describe("App", () => {
     await user.click(
       within(sidebar).getByRole("button", { name: "Expand Na–Cl" }),
     );
+    expect(bondFamilyRow?.classList.contains("bg-muted/30")).toBe(true);
     expect(within(sidebar).getByText("Automatic").isConnected).toBe(true);
     await user.click(within(sidebar).getByRole("button", { name: "Set" }));
     const cutoffInput = within(sidebar).getByRole("textbox", {

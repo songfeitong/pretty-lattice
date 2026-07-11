@@ -9,7 +9,9 @@ import {
   EyeOff,
 } from "lucide-react";
 import {
+  type ChangeEvent,
   type Dispatch,
+  type FocusEvent,
   type KeyboardEvent,
   type SetStateAction,
   useCallback,
@@ -128,7 +130,8 @@ const OBJECTS_HEADER_TEXT_CLASS =
   "text-[12px] font-medium leading-tight text-muted-foreground";
 const OBJECTS_CELL_CLASS = "h-8 px-1.5 py-0 align-middle";
 const OBJECTS_TABLE_HEADER_HEIGHT = 28;
-const OBJECTS_TABLE_ROW_HEIGHT = 32;
+const OBJECTS_ATOM_ROW_HEIGHT = 32;
+const OBJECTS_ELEMENT_ROW_HEIGHT = 36;
 const OBJECTS_TABLE_VIRTUAL_OVERSCAN = 8;
 const OBJECTS_TABLE_DEFAULT_VIEWPORT_HEIGHT = 640;
 const RADIUS_STEP = 0.01;
@@ -378,6 +381,7 @@ function ObjectsAtomsTable({
     () => rowsForElementGroups(elementGroups, expandedElements),
     [elementGroups, expandedElements],
   );
+  const rowOffsets = useMemo(() => rowOffsetsForRows(rows), [rows]);
   const rowIndexByAtomId = useMemo(() => rowIndexByAtomIdForRows(rows), [rows]);
   const elementAppearanceByElement = useMemo(
     () =>
@@ -461,10 +465,14 @@ function ObjectsAtomsTable({
       return;
     }
 
-    scrollRowIndexIntoInspectorBody(tableContainerRef.current, rowIndex);
+    scrollRowIndexIntoInspectorBody(
+      tableContainerRef.current,
+      rowOffsets[rowIndex] ?? 0,
+      rowHeight(rows[rowIndex]!),
+    );
     refreshVirtualViewport();
     setPendingLocateAtomId(null);
-  }, [pendingLocateAtomId, refreshVirtualViewport, rowIndexByAtomId]);
+  }, [pendingLocateAtomId, refreshVirtualViewport, rowIndexByAtomId, rowOffsets, rows]);
 
   function toggleElementExpanded(element: string) {
     setExpandedElements((currentExpandedElements) => ({
@@ -733,11 +741,12 @@ function ObjectsAtomsTable({
     getRowId: (row) => row.id,
   });
   const tableRows = table.getRowModel().rows;
-  const virtualRange = virtualRowRangeForViewport(tableRows.length, virtualViewport);
+  const virtualRange = virtualRowRangeForViewport(rowOffsets, virtualViewport);
   const virtualRows = tableRows.slice(virtualRange.startIndex, virtualRange.endIndex);
-  const topSpacerHeight = virtualRange.startIndex * OBJECTS_TABLE_ROW_HEIGHT;
+  const topSpacerHeight = rowOffsets[virtualRange.startIndex] ?? 0;
+  const totalRowsHeight = rowOffsets.at(-1) ?? 0;
   const bottomSpacerHeight =
-    (tableRows.length - virtualRange.endIndex) * OBJECTS_TABLE_ROW_HEIGHT;
+    totalRowsHeight - (rowOffsets[virtualRange.endIndex] ?? totalRowsHeight);
 
   return (
     <div ref={tableContainerRef} className={cn("min-h-0", OBJECTS_BODY_TEXT_CLASS)}>
@@ -778,6 +787,10 @@ function ObjectsAtomsTable({
           ) : null}
           {virtualRows.map((tableRow) => {
             const item = tableRow.original;
+            const elementExpanded =
+              item.kind === "element" && expandedElements[item.element] === true;
+            const isFirstElement =
+              item.kind === "element" && item.element === elementGroups[0]?.element;
             const selected =
               item.kind === "atom" && item.atom.id === selectedObjectAtomId;
             const row = (
@@ -785,9 +798,16 @@ function ObjectsAtomsTable({
                 key={tableRow.id}
                 data-state={selected ? "selected" : undefined}
                 className={cn(
-                  "group border-border/45",
+                  "group border-0",
                   item.kind === "element"
-                    ? "bg-muted/40 hover:bg-muted/55"
+                    ? cn(
+                        elementExpanded
+                          ? "bg-muted/30 hover:bg-muted/45"
+                          : "bg-transparent hover:bg-muted/30",
+                        isFirstElement
+                          ? null
+                          : "[&>td]:border-t [&>td]:border-border/45",
+                      )
                     : "cursor-default hover:bg-muted/35",
                   selected ? "bg-accent hover:bg-accent" : null,
                 )}
@@ -802,6 +822,7 @@ function ObjectsAtomsTable({
                     key={`${tableRow.id}:${column.id}`}
                     className={cn(
                       OBJECTS_CELL_CLASS,
+                      item.kind === "element" ? "h-9" : null,
                       column.id === "visible" ? "text-center" : null,
                     )}
                   >
@@ -956,13 +977,17 @@ function RadiusCell({
   value: number;
 }) {
   const [valueText, setValueText] = useState(formatRadius(value));
+  const [hasEdited, setHasEdited] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const cancelCommitRef = useRef(false);
+  const displayedValue = isFocused && !hasEdited ? "" : valueText;
 
   useEffect(() => {
     setValueText(formatRadius(value));
   }, [value]);
 
-  function commitValueText() {
-    const parsedRadius = parseRadiusInput(valueText);
+  function commitValueText(text: string) {
+    const parsedRadius = parseRadiusInput(text);
     if (parsedRadius === null) {
       setValueText(formatRadius(value));
       return;
@@ -973,14 +998,38 @@ function RadiusCell({
     onCommit(nextRadius);
   }
 
+  function handleFocus() {
+    cancelCommitRef.current = false;
+    setIsFocused(true);
+    setHasEdited(false);
+  }
+
+  function handleBlur(event: FocusEvent<HTMLInputElement>) {
+    setIsFocused(false);
+    setHasEdited(false);
+
+    if (cancelCommitRef.current || !hasEdited) {
+      cancelCommitRef.current = false;
+      setValueText(formatRadius(value));
+      return;
+    }
+
+    commitValueText(event.currentTarget.value);
+  }
+
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
+    setHasEdited(true);
+    setValueText(event.currentTarget.value);
+  }
+
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter") {
       event.currentTarget.blur();
-      commitValueText();
       return;
     }
 
     if (event.key === "Escape") {
+      cancelCommitRef.current = true;
       setValueText(formatRadius(value));
       event.currentTarget.blur();
       return;
@@ -989,7 +1038,10 @@ function RadiusCell({
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       event.preventDefault();
       const direction = event.key === "ArrowUp" ? RADIUS_STEP : -RADIUS_STEP;
-      onCommit(clampAtomRadius(value + direction));
+      const nextRadius = clampAtomRadius(value + direction);
+      setHasEdited(true);
+      setValueText(formatRadius(nextRadius));
+      onCommit(nextRadius);
     }
   }
 
@@ -998,12 +1050,13 @@ function RadiusCell({
       type="text"
       inputMode="decimal"
       aria-label={ariaLabel}
-      value={valueText}
-      className="h-[22px] w-[3.25rem] rounded-md px-1.5 py-0 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]"
-      onBlur={commitValueText}
-      onChange={(event) => setValueText(event.currentTarget.value)}
+      value={displayedValue}
+      className="h-[22px] w-12 rounded-md px-1.5 py-0 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]"
+      onBlur={handleBlur}
+      onChange={handleChange}
       onClick={(event) => event.stopPropagation()}
       onDoubleClick={(event) => event.stopPropagation()}
+      onFocus={handleFocus}
       onKeyDown={handleKeyDown}
     />
   );
@@ -1110,24 +1163,28 @@ function sameVirtualViewport(left: VirtualViewport, right: VirtualViewport): boo
 }
 
 function virtualRowRangeForViewport(
-  rowCount: number,
+  rowOffsets: readonly number[],
   viewport: VirtualViewport,
 ): VirtualRowRange {
+  const rowCount = Math.max(0, rowOffsets.length - 1);
   if (rowCount <= 0) {
     return { endIndex: 0, startIndex: 0 };
   }
 
-  const visibleStartIndex = Math.floor(viewport.scrollTop / OBJECTS_TABLE_ROW_HEIGHT);
+  const visibleStartIndex = rowIndexAtOffset(rowOffsets, viewport.scrollTop);
+  const visibleEndIndex = rowIndexAtOffset(
+    rowOffsets,
+    viewport.scrollTop + viewport.height,
+  );
   const startIndex = Math.min(
     rowCount - 1,
     Math.max(0, visibleStartIndex - OBJECTS_TABLE_VIRTUAL_OVERSCAN),
   );
-  const visibleRowCount = Math.ceil(viewport.height / OBJECTS_TABLE_ROW_HEIGHT);
   const endIndex = Math.max(
     startIndex + 1,
     Math.min(
       rowCount,
-      visibleStartIndex + visibleRowCount + OBJECTS_TABLE_VIRTUAL_OVERSCAN,
+      visibleEndIndex + 1 + OBJECTS_TABLE_VIRTUAL_OVERSCAN,
     ),
   );
 
@@ -1137,9 +1194,27 @@ function virtualRowRangeForViewport(
   };
 }
 
+function rowIndexAtOffset(rowOffsets: readonly number[], offset: number): number {
+  const rowCount = Math.max(0, rowOffsets.length - 1);
+  let low = 0;
+  let high = rowCount;
+
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if ((rowOffsets[middle + 1] ?? Infinity) <= offset) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+
+  return Math.min(Math.max(0, low), Math.max(0, rowCount - 1));
+}
+
 function scrollRowIndexIntoInspectorBody(
   tableContainer: HTMLElement | null,
-  rowIndex: number,
+  rowOffset: number,
+  rowHeight: number,
 ) {
   const scrollContainer = inspectorScrollContainerForTable(tableContainer);
   if (!tableContainer || !scrollContainer) {
@@ -1149,9 +1224,8 @@ function scrollRowIndexIntoInspectorBody(
   const tableRect = tableContainer.getBoundingClientRect();
   const containerRect = scrollContainer.getBoundingClientRect();
   const tableTop = tableRect.top - containerRect.top + scrollContainer.scrollTop;
-  const rowTop =
-    tableTop + OBJECTS_TABLE_HEADER_HEIGHT + rowIndex * OBJECTS_TABLE_ROW_HEIGHT;
-  const rowBottom = rowTop + OBJECTS_TABLE_ROW_HEIGHT;
+  const rowTop = tableTop + OBJECTS_TABLE_HEADER_HEIGHT + rowOffset;
+  const rowBottom = rowTop + rowHeight;
   const viewportTop = scrollContainer.scrollTop;
   const viewportBottom =
     viewportTop +
@@ -1224,6 +1298,22 @@ function rowsForElementGroups(
   }
 
   return rows;
+}
+
+function rowHeight(row: ObjectsAtomRow): number {
+  return row.kind === "element"
+    ? OBJECTS_ELEMENT_ROW_HEIGHT
+    : OBJECTS_ATOM_ROW_HEIGHT;
+}
+
+function rowOffsetsForRows(rows: readonly ObjectsAtomRow[]): number[] {
+  const offsets = [0];
+
+  for (const row of rows) {
+    offsets.push(offsets[offsets.length - 1]! + rowHeight(row));
+  }
+
+  return offsets;
 }
 
 function rowIndexByAtomIdForRows(rows: readonly ObjectsAtomRow[]): Map<string, number> {
