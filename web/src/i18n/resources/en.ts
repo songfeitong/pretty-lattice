@@ -31,7 +31,7 @@ export const en = {
     version: "Version {{version}}",
   },
   atomInspector: {
-    cartesian: "Cartesian",
+    cartesian: "Cartesian\u2009(Å)",
     cellOffset: "Cell offset",
     fractional: "Fractional",
     selectedAtom: "Selected atom",

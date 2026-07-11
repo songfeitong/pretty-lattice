@@ -54,8 +54,8 @@ export function atomInspectorCopyText(info: InspectedAtomInfo): string {
   return [
     `Element: ${info.canonicalAtom.element}`,
     `Index: ${atomSiteIndex(info.canonicalAtom)}`,
-    `Fractional: ${formatAtomCoordinateForCopy(info.canonicalAtom.fractionalPosition)}`,
-    `Cartesian (A): ${formatAtomCoordinateForCopy(info.canonicalAtom.position)}`,
+    `Fractional: ${formatAtomCoordinateForCopy(info.atom.fractionalPosition)}`,
+    `Cartesian\u2009(Å): ${formatAtomCoordinateForCopy(info.atom.position)}`,
     `Cell offset: ${formatCellOffset(info.atom.imageOffset)}`,
   ].join("\n");
 }

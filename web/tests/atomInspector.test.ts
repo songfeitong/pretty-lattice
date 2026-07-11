@@ -21,7 +21,7 @@ describe("atom inspector formatting", () => {
     expect(formatCellOffset([0, 0, 0])).toBe("0, 0, 0");
   });
 
-  test("uses the unit-cell atom for coordinates and the clicked image for cell offset", () => {
+  test("uses the clicked image for coordinates and cell offset", () => {
     const scene = sceneWithImageAtom();
 
     const info = inspectedAtomInfoForId(scene, "Al-1-image-1-0--1");
@@ -32,8 +32,8 @@ describe("atom inspector formatting", () => {
     expect(atomInspectorCopyText(info!)).toBe([
       "Element: Al",
       "Index: 1",
-      "Fractional: 0.250000, 0.500000, 0.147904",
-      "Cartesian (A): 1.200000, 2.300000, 1.939946",
+      "Fractional: 1.250000, 0.500000, -0.852096",
+      "Cartesian\u2009(Å): 6.005000, 2.300000, -11.176000",
       "Cell offset: 1, 0, -1",
     ].join("\n"));
   });

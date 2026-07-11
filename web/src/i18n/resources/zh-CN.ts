@@ -33,7 +33,7 @@ export const zhCN = {
     version: "版本 {{version}}",
   },
   atomInspector: {
-    cartesian: "笛卡尔坐标",
+    cartesian: "笛卡尔坐标\u2009(Å)",
     cellOffset: "晶胞偏移",
     fractional: "分数坐标",
     selectedAtom: "选中的原子",

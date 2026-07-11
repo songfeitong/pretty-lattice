@@ -126,15 +126,15 @@ export function AtomInspectorCard({
       </div>
 
       <dl className="mt-2 grid grid-cols-[5.8rem_minmax(0,1fr)] gap-x-2 gap-y-1 tabular-nums">
-        <dt className="text-muted-foreground">{t("atomInspector.fractional")}</dt>
+        <dt className="whitespace-nowrap text-muted-foreground">{t("atomInspector.fractional")}</dt>
         <dd className="truncate text-right text-foreground">
-          {formatAtomCoordinateForDisplay(canonicalAtom.fractionalPosition)}
+          {formatAtomCoordinateForDisplay(atom.fractionalPosition)}
         </dd>
-        <dt className="text-muted-foreground">{t("atomInspector.cartesian")}</dt>
+        <dt className="whitespace-nowrap text-muted-foreground">{t("atomInspector.cartesian")}</dt>
         <dd className="truncate text-right text-foreground">
-          {formatAtomCoordinateForDisplay(canonicalAtom.position)}
+          {formatAtomCoordinateForDisplay(atom.position)}
         </dd>
-        <dt className="text-muted-foreground">{t("atomInspector.cellOffset")}</dt>
+        <dt className="whitespace-nowrap text-muted-foreground">{t("atomInspector.cellOffset")}</dt>
         <dd className="truncate text-right text-foreground">
           {formatCellOffset(atom.imageOffset)}
         </dd>

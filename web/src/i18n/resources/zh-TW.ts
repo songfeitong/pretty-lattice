@@ -33,7 +33,7 @@ export const zhTW = {
     version: "版本 {{version}}",
   },
   atomInspector: {
-    cartesian: "笛卡兒座標",
+    cartesian: "笛卡兒座標\u2009(Å)",
     cellOffset: "晶胞偏移",
     fractional: "分率座標",
     selectedAtom: "已選取的原子",
