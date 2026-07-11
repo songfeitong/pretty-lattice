@@ -10,13 +10,19 @@ import {
   type Dispatch,
   type SetStateAction,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -55,6 +61,9 @@ const COMMON_PANEL_TABS: {
   { Icon: Palette, labelKey: "nav.style", value: "style" },
   { Icon: ImageDown, labelKey: "nav.export", value: "export" },
 ];
+
+const ACTIVE_TAB_TRACK_WEIGHT = 1.65;
+const INACTIVE_TAB_TRACK_WEIGHT = 0.9;
 
 export function CommonControlsPanel({
   activeTab: targetActiveTab,
@@ -101,30 +110,33 @@ export function CommonControlsPanel({
   onCameraStateChange: (cameraState: CrystalCameraState) => void;
   onActiveTabChange?: (tab: CommonPanelTab) => void;
   onComponentOpacityChange: Dispatch<SetStateAction<ComponentOpacityState>>;
-  onComponentVisibilityChange: Dispatch<SetStateAction<ComponentVisibilityState>>;
+  onComponentVisibilityChange: Dispatch<
+    SetStateAction<ComponentVisibilityState>
+  >;
   onExport: () => void;
   onExportSettingsChange: (settings: ExportSettingsState) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   style: StyleState;
 }) {
   const { t } = useTranslation();
-  const tabTriggerRefs = useRef<Record<CommonPanelTab, HTMLButtonElement | null>>({
-    camera: null,
-    display: null,
-    export: null,
-    style: null,
-  });
+  const tabListRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [hasMountedCameraTab, setHasMountedCameraTab] = useState(() => cellVectors.length > 0);
-  const [tabIndicatorRect, setTabIndicatorRect] = useState<TabIndicatorRect | null>(null);
+  const [hasMountedCameraTab, setHasMountedCameraTab] = useState(
+    () => cellVectors.length > 0,
+  );
+  const [tabIndicatorRect, setTabIndicatorRect] =
+    useState<TabIndicatorRect | null>(null);
   const [contentHeight, setContentHeight] = useState<number | null>(null);
   const activeTab = targetActiveTab;
-  const contentStyle = contentHeight === null
-    ? undefined
-    : ({ height: `${contentHeight}px` } as CSSProperties);
+  const contentStyle =
+    contentHeight === null
+      ? undefined
+      : ({ height: `${contentHeight}px` } as CSSProperties);
   const tabListStyle = {
     gridTemplateColumns: COMMON_PANEL_TABS.map(({ value }) =>
-      value === activeTab ? "1.65fr" : "0.9fr",
+      value === activeTab
+        ? `${ACTIVE_TAB_TRACK_WEIGHT}fr`
+        : `${INACTIVE_TAB_TRACK_WEIGHT}fr`,
     ).join(" "),
   } as const;
 
@@ -134,39 +146,61 @@ export function CommonControlsPanel({
     }
   }, [cellVectors.length]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const tabList = tabListRef.current;
+    if (!tabList) {
+      return;
+    }
+
     const updateIndicatorRect = () => {
-      const activeTrigger = tabTriggerRefs.current[activeTab];
-      if (!activeTrigger) {
+      const activeIndex = COMMON_PANEL_TABS.findIndex(
+        ({ value }) => value === activeTab,
+      );
+      if (activeIndex < 0) {
         return;
       }
 
-      setTabIndicatorRect({
-        left: activeTrigger.offsetLeft,
-        width: activeTrigger.offsetWidth,
-      });
+      const styles = window.getComputedStyle(tabList);
+      const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
+      const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
+      const availableWidth = Math.max(
+        0,
+        tabList.clientWidth - paddingLeft - paddingRight,
+      );
+      const totalWeight =
+        ACTIVE_TAB_TRACK_WEIGHT +
+        INACTIVE_TAB_TRACK_WEIGHT * (COMMON_PANEL_TABS.length - 1);
+      const inactiveWidth =
+        availableWidth * (INACTIVE_TAB_TRACK_WEIGHT / totalWeight);
+      const activeWidth =
+        availableWidth * (ACTIVE_TAB_TRACK_WEIGHT / totalWeight);
+
+      const nextRect = {
+        left: paddingLeft + inactiveWidth * activeIndex,
+        width: activeWidth,
+      };
+      setTabIndicatorRect((currentRect) =>
+        currentRect &&
+        Math.abs(currentRect.left - nextRect.left) < 0.01 &&
+        Math.abs(currentRect.width - nextRect.width) < 0.01
+          ? currentRect
+          : nextRect,
+      );
     };
 
     updateIndicatorRect();
-    const animationFrame = window.requestAnimationFrame(updateIndicatorRect);
 
     if (typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", updateIndicatorRect);
       return () => {
-        window.cancelAnimationFrame(animationFrame);
         window.removeEventListener("resize", updateIndicatorRect);
       };
     }
 
     const resizeObserver = new ResizeObserver(updateIndicatorRect);
-    for (const trigger of Object.values(tabTriggerRefs.current)) {
-      if (trigger) {
-        resizeObserver.observe(trigger);
-      }
-    }
+    resizeObserver.observe(tabList);
 
     return () => {
-      window.cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
     };
   }, [activeTab]);
@@ -246,19 +280,17 @@ export function CommonControlsPanel({
         )}
       >
         <MaterialPresetTokenPreloadPool />
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabValueChange}
-        >
+        <Tabs value={activeTab} onValueChange={handleTabValueChange}>
           <TabsList
-            className="relative grid !h-8 w-full overflow-hidden rounded-lg bg-muted/70 p-1 transition-[grid-template-columns] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+            ref={tabListRef}
+            className="relative grid !h-8 w-full overflow-hidden rounded-lg bg-muted/70 p-1 transition-[grid-template-columns] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
             style={tabListStyle}
           >
             {tabIndicatorRect ? (
               <span
                 aria-hidden="true"
                 data-slot="common-controls-active-indicator"
-                className="pointer-events-none absolute inset-y-1 left-0 z-0 rounded-md bg-background shadow-sm transition-[transform,width] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+                className="pointer-events-none absolute inset-y-1 left-0 z-0 rounded-md bg-background shadow-sm transition-[transform,width] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
                 style={{
                   transform: `translateX(${tabIndicatorRect.left}px)`,
                   width: tabIndicatorRect.width,
@@ -270,15 +302,14 @@ export function CommonControlsPanel({
               const label = t(labelKey);
               const trigger = (
                 <TabsTrigger
-                  ref={(node) => {
-                    tabTriggerRefs.current[value] = node;
-                  }}
                   key={value}
                   value={value}
                   aria-label={label}
                   className={cn(
-                    "z-10 !h-6 min-w-0 rounded-lg !bg-transparent text-xs !shadow-none transition-[color,padding] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[state=active]:!bg-transparent data-[state=active]:!shadow-none motion-reduce:transition-none [&_svg]:size-3.5",
-                    isActive ? "px-2 text-foreground" : "px-0.5 text-muted-foreground",
+                    "z-10 !h-6 min-w-0 rounded-lg !bg-transparent text-xs !shadow-none transition-[color,padding] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] data-[state=active]:!bg-transparent data-[state=active]:!shadow-none dark:data-[state=active]:!border-transparent motion-reduce:transition-none [&_svg]:size-3.5",
+                    isActive
+                      ? "px-2 text-foreground"
+                      : "px-0.5 text-muted-foreground",
                   )}
                 >
                   <Icon aria-hidden="true" />
@@ -286,7 +317,7 @@ export function CommonControlsPanel({
                     data-slot="common-controls-tab-label"
                     data-active={isActive ? "true" : "false"}
                     className={cn(
-                      "overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
+                      "overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
                       isActive ? "max-w-16 opacity-100" : "max-w-0 opacity-0",
                     )}
                   >
