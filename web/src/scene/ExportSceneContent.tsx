@@ -17,6 +17,7 @@ import { MemoizedStructureSceneObjects, SceneFog } from "./StructureSceneObjects
 import { applyOrthographicExportFrame, type StructureExportFramePlan } from "./exportFrame";
 
 export function ExportSceneContent({
+  backgroundColor,
   cameraPose,
   componentOpacity,
   exportFramePlan,
@@ -32,6 +33,7 @@ export function ExportSceneContent({
   unitCellLineStyle = "solid",
   unitCellLineWidthScale = 1,
 }: {
+  backgroundColor: string | null;
   cameraPose: CameraPoseSnapshot;
   componentOpacity: ComponentOpacityState;
   exportFramePlan: StructureExportFramePlan;
@@ -61,7 +63,7 @@ export function ExportSceneContent({
 
   return (
     <>
-      <SceneFog layout={layout} style={style} />
+      <SceneFog color={backgroundColor ?? undefined} layout={layout} style={style} />
       <MemoizedStructureSceneObjects
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}

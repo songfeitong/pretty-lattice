@@ -199,6 +199,7 @@ export async function renderStructureRasterImage({
           lighting={materialFamily.lighting}
         />
         <ExportSceneContent
+          backgroundColor={backgroundColor}
           cameraPose={cameraPose}
           componentOpacity={componentOpacity}
           exportFramePlan={exportFramePlan}

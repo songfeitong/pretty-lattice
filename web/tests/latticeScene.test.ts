@@ -514,12 +514,14 @@ describe("computeSceneLayout", () => {
     const lateFog = createSceneFog(40, 10, 6, 1, 50, 100);
     const subtleFog = createSceneFog(40, 10, 6, 1, 25, 25);
     const strongFog = createSceneFog(40, 10, 6, 1, 100, 25);
+    const darkFog = createSceneFog(40, 10, 6, 1, 50, 25, "#111111");
 
     expect(earlyFog).not.toBeNull();
     expect(lateFog).not.toBeNull();
     expect(subtleFog).not.toBeNull();
     expect(strongFog).not.toBeNull();
     expect(earlyFog?.color.getHexString()).toBe(SCENE_FOG_COLOR.slice(1));
+    expect(darkFog?.color.getHexString()).toBe("111111");
     expect(earlyFog!.near).toBeCloseTo(37);
     expect(lateFog!.near).toBeGreaterThan(earlyFog!.near);
     expect(lateFog!.near).toBeCloseTo(42);
