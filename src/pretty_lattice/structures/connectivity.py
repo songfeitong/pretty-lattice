@@ -31,6 +31,7 @@ from pretty_lattice.structures.preview_limits import (
 )
 from pretty_lattice.structures.schema import (
     BondAlgorithm,
+    BondCutoffRange,
     BondFamilySpec,
     BondSpec,
     InvalidBondCutoffOverridesError,
@@ -124,7 +125,7 @@ def build_connectivity(
     boundary_source_keys: list[AtomKey],
     sites: list[SceneSite],
     structure: Structure,
-    cutoff_overrides: Mapping[str, float] | None = None,
+    cutoff_overrides: Mapping[str, BondCutoffRange] | None = None,
 ) -> ConnectivityResult:
     element_order = _element_order_for_sites(sites)
     normalized_cutoff_overrides, override_family_elements = _normalize_cutoff_overrides(
@@ -432,7 +433,7 @@ def _effective_neighbor_records(
     override_neighbors: list[NeighborRecord],
     source_site: SceneSite,
     sites: list[SceneSite],
-    cutoff_overrides: Mapping[str, float],
+    cutoff_overrides: Mapping[str, BondCutoffRange],
     element_order: Mapping[str, int],
 ) -> list[NeighborRecord]:
     inherited = [
@@ -452,10 +453,10 @@ def _cutoff_override_neighbor_records_by_site(
     structure: Structure,
     *,
     sites: list[SceneSite],
-    cutoff_overrides: Mapping[str, float],
+    cutoff_overrides: Mapping[str, BondCutoffRange],
     element_order: Mapping[str, int],
 ) -> list[list[NeighborRecord]]:
-    max_distance = max(cutoff_overrides.values())
+    max_distance = max(cutoff_range["max"] for cutoff_range in cutoff_overrides.values())
     _enforce_custom_neighbor_search_cost(structure, max_distance)
     center_indices, target_indices, images, distances = structure.get_neighbor_list(max_distance)
     enforce_custom_bond_search_cost(len(center_indices))
@@ -474,8 +475,13 @@ def _cutoff_override_neighbor_records_by_site(
             sites[int(target_index)].element_symbol,
             element_order=element_order,
         )
-        cutoff = cutoff_overrides.get(family_key)
-        if cutoff is None or float(distance) > cutoff + 1e-10:
+        cutoff_range = cutoff_overrides.get(family_key)
+        numeric_distance = float(distance)
+        if (
+            cutoff_range is None
+            or numeric_distance < cutoff_range["min"] - 1e-10
+            or numeric_distance > cutoff_range["max"] + 1e-10
+        ):
             continue
         neighbors_by_site[int(center_index)].append(
             NeighborRecord(
@@ -567,13 +573,13 @@ def _neighbor_bin(
 
 
 def _normalize_cutoff_overrides(
-    cutoff_overrides: Mapping[str, float],
+    cutoff_overrides: Mapping[str, BondCutoffRange],
     *,
     element_order: Mapping[str, int],
-) -> tuple[dict[str, float], dict[str, tuple[str, str]]]:
-    normalized: dict[str, float] = {}
+) -> tuple[dict[str, BondCutoffRange], dict[str, tuple[str, str]]]:
+    normalized: dict[str, BondCutoffRange] = {}
     family_elements: dict[str, tuple[str, str]] = {}
-    for supplied_key, cutoff in cutoff_overrides.items():
+    for supplied_key, cutoff_range in cutoff_overrides.items():
         elements = supplied_key.split("|")
         if len(elements) != 2 or any(element not in element_order for element in elements):
             raise InvalidBondCutoffOverridesError(f"Unknown bond family '{supplied_key}'.")
@@ -582,7 +588,18 @@ def _normalize_cutoff_overrides(
             elements[1],
             element_order=element_order,
         )
-        normalized[family_key] = float(cutoff)
+        minimum = float(cutoff_range["min"])
+        maximum = float(cutoff_range["max"])
+        if (
+            not math.isfinite(minimum)
+            or not math.isfinite(maximum)
+            or minimum < 0
+            or maximum <= minimum
+        ):
+            raise InvalidBondCutoffOverridesError(
+                f"Bond cutoff for '{supplied_key}' must satisfy 0 <= min < max."
+            )
+        normalized[family_key] = {"min": minimum, "max": maximum}
         family_elements[family_key] = family_pair
     return normalized, family_elements
 

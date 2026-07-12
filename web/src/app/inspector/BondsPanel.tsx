@@ -1,8 +1,6 @@
-import { Check, ChevronDown, Eye, EyeOff, Minus } from "lucide-react";
+import { ChevronDown, Eye, EyeOff, Minus, RotateCcw } from "lucide-react";
 import {
   type Dispatch,
-  type KeyboardEvent,
-  type ReactNode,
   type SetStateAction,
   useEffect,
   useLayoutEffect,
@@ -31,7 +29,6 @@ import {
   clampBondRadius,
   clearBondOverridePropertyForFamily,
   elementColorOverridesForStyle,
-  formatBondFamilyLength,
   resolveAtomAppearance,
   resolveBondOpacityForStyle,
   resolveBondRadiusForStyle,
@@ -43,6 +40,13 @@ import {
 import { lambertLegendSwatchBackground } from "../../scene/renderAppearance";
 import { BOND_RADIUS } from "../../scene/sceneGeometry";
 import { TOOL_ICON_BUTTON_CLASS } from "../surface";
+import {
+  bondCutoffDraftCanRestore,
+  formatBondCutoffDraftField,
+  type BondCutoffDraft,
+  type BondCutoffDrafts,
+  type BondCutoffField,
+} from "./bondCutoffEditor";
 
 export interface BondLocateRequest {
   bondId: string;
@@ -56,11 +60,16 @@ export function BondsPanel({
   bondLocateRequest,
   bondOpacity,
   bondsVisible,
-  cutoffOverrides,
+  cutoffDrafts,
+  cutoffEditing,
+  invalidCutoffFields,
+  invalidCutoffFeedbackPhase,
   isSceneLoading,
   onBondLocateRequestHandled,
   onBondVisibilityChange,
-  onCutoffChange,
+  onCutoffDraftChange,
+  onCutoffEditorKeyDown,
+  onCutoffRestoreToggle,
   onFamilyVisibilityChange,
   onStyleChange,
   resetToken,
@@ -72,11 +81,16 @@ export function BondsPanel({
   bondLocateRequest: BondLocateRequest | null;
   bondOpacity: number;
   bondsVisible: boolean;
-  cutoffOverrides: Record<string, number>;
+  cutoffDrafts: BondCutoffDrafts;
+  cutoffEditing: boolean;
+  invalidCutoffFields: ReadonlySet<string>;
+  invalidCutoffFeedbackPhase: "a" | "b" | null;
   isSceneLoading: boolean;
   onBondLocateRequestHandled: (token: number) => void;
   onBondVisibilityChange: (bond: BondSpec, visible: boolean) => void;
-  onCutoffChange: (familyKey: string, cutoff: number | null) => Promise<boolean>;
+  onCutoffDraftChange: (familyKey: string, field: BondCutoffField, value: string) => void;
+  onCutoffEditorKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+  onCutoffRestoreToggle: (familyKey: string) => void;
   onFamilyVisibilityChange: (familyKey: string, visible: boolean) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   resetToken: number;
@@ -190,8 +204,12 @@ export function BondsPanel({
           )}
         >
           <span>{t("objectsPanel.bond")}</span>
-          <span className="text-center">{t("objectsPanel.radius")}</span>
-          <span className="text-center">{t("objectsPanel.opacity")}</span>
+          <span className={cn("text-center whitespace-nowrap", cutoffEditing && "text-[10px]")}>
+            {cutoffEditing ? t("objectsPanel.minimumAngstrom") : t("objectsPanel.radius")}
+          </span>
+          <span className={cn("text-center whitespace-nowrap", cutoffEditing && "text-[10px]")}>
+            {cutoffEditing ? t("objectsPanel.maximumAngstrom") : t("objectsPanel.opacity")}
+          </span>
           <span aria-hidden="true" />
         </div>
         <div data-slot="bond-family-groups" className="mt-1 flex flex-col gap-2">
@@ -204,6 +222,7 @@ export function BondsPanel({
             );
             const familyVisible =
               bondsVisible && !visibilityOverrides.hiddenFamilies.has(family.key);
+            const cutoffDraft = cutoffDrafts[family.key];
             return (
               <section
                 key={family.key}
@@ -223,40 +242,68 @@ export function BondsPanel({
                   <div className="flex min-w-0 items-center">
                     <FamilyLabel family={family} scene={scene} style={style} />
                   </div>
-                  <RadiusCell
-                    ariaLabel={t("objectsPanel.radiusControl", { target: family.elements.join("–") })}
-                    value={familyRadius}
-                    onCommit={(value) => setFamilyAppearance(family, "radius", value)}
-                  />
-                  <OpacityCell
-                    ariaLabel={t("objectsPanel.opacityControl", { target: family.elements.join("–") })}
-                    value={familyOpacity}
-                    onCommit={(value) => setFamilyAppearance(family, "opacity", value)}
-                  />
-                  <VisibilityButton
-                    label={t("objectsPanel.visibility", { target: family.elements.join("–") })}
-                    visible={familyVisible}
-                    onToggle={() => onFamilyVisibilityChange(family.key, !familyVisible)}
-                  />
+                  <div
+                    key={cutoffEditing ? "cutoff" : "appearance"}
+                    className={cn(
+                      "col-span-3 grid grid-cols-[2.75rem_2.75rem_1.5rem] items-center gap-2",
+                      cutoffEditing
+                        ? "bond-family-controls-enter-cutoff"
+                        : "bond-family-controls-enter-appearance",
+                    )}
+                  >
+                    {cutoffEditing && cutoffDraft ? (
+                      <>
+                      <CutoffInput
+                        field="min"
+                        family={family}
+                        draft={cutoffDraft}
+                        invalid={invalidCutoffFields.has(`${family.key}:min`)}
+                        feedbackPhase={invalidCutoffFeedbackPhase}
+                        isSceneLoading={isSceneLoading}
+                        onChange={onCutoffDraftChange}
+                        onKeyDown={onCutoffEditorKeyDown}
+                      />
+                      <CutoffInput
+                        field="max"
+                        family={family}
+                        draft={cutoffDraft}
+                        invalid={invalidCutoffFields.has(`${family.key}:max`)}
+                        feedbackPhase={invalidCutoffFeedbackPhase}
+                        isSceneLoading={isSceneLoading}
+                        onChange={onCutoffDraftChange}
+                        onKeyDown={onCutoffEditorKeyDown}
+                      />
+                      <CutoffRestoreButton
+                        disabled={isSceneLoading || !bondCutoffDraftCanRestore(cutoffDraft, family)}
+                        family={family}
+                        pendingRemoval={cutoffDraft.pendingRemoval}
+                        onToggle={onCutoffRestoreToggle}
+                      />
+                      </>
+                    ) : (
+                      <>
+                      <RadiusCell
+                        ariaLabel={t("objectsPanel.radiusControl", { target: family.elements.join("–") })}
+                        value={familyRadius}
+                        onCommit={(value) => setFamilyAppearance(family, "radius", value)}
+                      />
+                      <OpacityCell
+                        ariaLabel={t("objectsPanel.opacityControl", { target: family.elements.join("–") })}
+                        value={familyOpacity}
+                        onCommit={(value) => setFamilyAppearance(family, "opacity", value)}
+                      />
+                      <VisibilityButton
+                        label={t("objectsPanel.visibility", { target: family.elements.join("–") })}
+                        visible={familyVisible}
+                        onToggle={() => onFamilyVisibilityChange(family.key, !familyVisible)}
+                      />
+                      </>
+                    )}
+                  </div>
                 </div>
                 <div>
-                  <div
-                    data-slot="bond-family-details"
-                    className="flex flex-col gap-1.5 px-2.5 pb-2 pt-0.5 text-[12px]"
-                  >
-                    <ReadOnlyRow
-                      label={t("objectsPanel.bondLength")}
-                      value={formatBondLengthRange(family)}
-                    />
-                    <CutoffControl
-                      cutoff={cutoffOverrides[family.key]}
-                      family={family}
-                      isSceneLoading={isSceneLoading}
-                      onCutoffChange={onCutoffChange}
-                    />
-                  </div>
                   <SelectedBondWorkspace
-                    bond={selectedBond?.familyKey === family.key ? selectedBond : null}
+                    bond={!cutoffEditing && selectedBond?.familyKey === family.key ? selectedBond : null}
                     bondOpacity={bondOpacity}
                     bondsVisible={bondsVisible}
                     colorOverrides={colorOverrides}
@@ -280,6 +327,92 @@ export function BondsPanel({
         />
       </div>
     </TooltipProvider>
+  );
+}
+
+function CutoffInput({
+  draft,
+  family,
+  feedbackPhase,
+  field,
+  invalid,
+  isSceneLoading,
+  onChange,
+  onKeyDown,
+}: {
+  draft: BondCutoffDraft;
+  family: BondFamilySpec;
+  feedbackPhase: "a" | "b" | null;
+  field: BondCutoffField;
+  invalid: boolean;
+  isSceneLoading: boolean;
+  onChange: (familyKey: string, field: BondCutoffField, value: string) => void;
+  onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+}) {
+  const { t } = useTranslation();
+  const value = field === "min" ? draft.minText : draft.maxText;
+  return (
+    <Input
+      type="text"
+      inputMode="decimal"
+      aria-label={t(
+        field === "min" ? "objectsPanel.minimumCutoffFor" : "objectsPanel.maximumCutoffFor",
+        { family: family.elements.join("–") },
+      )}
+      aria-invalid={invalid}
+      disabled={isSceneLoading || draft.pendingRemoval}
+      value={value}
+      className={cn(
+        "h-[22px] min-w-0 justify-self-center rounded-md px-1 py-0 text-center font-mono text-[0.66rem] tabular-nums aria-invalid:border-input aria-invalid:ring-0 focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.66rem]",
+        invalid && feedbackPhase ? `bond-cutoff-invalid-feedback-${feedbackPhase}` : null,
+      )}
+      onChange={(event) => onChange(family.key, field, event.currentTarget.value)}
+      onBlur={(event) => {
+        const formatted = formatBondCutoffDraftField(event.currentTarget.value);
+        if (formatted !== event.currentTarget.value) onChange(family.key, field, formatted);
+      }}
+      onKeyDown={onKeyDown}
+    />
+  );
+}
+
+function CutoffRestoreButton({
+  disabled,
+  family,
+  onToggle,
+  pendingRemoval,
+}: {
+  disabled: boolean;
+  family: BondFamilySpec;
+  onToggle: (familyKey: string) => void;
+  pendingRemoval: boolean;
+}) {
+  const { t } = useTranslation();
+  const label = pendingRemoval
+    ? t("objectsPanel.keepCustomCutoff", { family: family.elements.join("–") })
+    : t("objectsPanel.restoreAutomaticCutoff", { family: family.elements.join("–") });
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={label}
+          aria-pressed={pendingRemoval}
+          disabled={disabled}
+          className={cn(
+            TOOL_ICON_BUTTON_CLASS,
+            "size-6 rounded-[8px]",
+            pendingRemoval && "bg-muted text-foreground",
+          )}
+          onClick={() => onToggle(family.key)}
+        >
+          <RotateCcw aria-hidden="true" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="left">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -358,105 +491,6 @@ function SelectedBondWorkspace({
   );
 }
 
-function CutoffControl({ cutoff, family, isSceneLoading, onCutoffChange }: {
-  cutoff: number | undefined;
-  family: BondFamilySpec;
-  isSceneLoading: boolean;
-  onCutoffChange: (familyKey: string, cutoff: number | null) => Promise<boolean>;
-}) {
-  const { t } = useTranslation();
-  const [valueText, setValueText] = useState(cutoff === undefined ? "" : formatCutoff(cutoff));
-  const [submitting, setSubmitting] = useState(false);
-  useEffect(() => {
-    setValueText(cutoff === undefined ? "" : formatCutoff(cutoff));
-  }, [cutoff]);
-  const parsed = Number(valueText.trim());
-  const valid = valueText.trim() !== "" && Number.isFinite(parsed) && parsed > 0;
-  const dirty = valid && (cutoff === undefined || parsed !== cutoff);
-
-  async function setCutoff() {
-    if (!dirty || submitting) return;
-    setSubmitting(true);
-    const succeeded = await onCutoffChange(family.key, parsed);
-    setSubmitting(false);
-    if (!succeeded) return;
-  }
-
-  async function removeCutoff() {
-    if (cutoff === undefined || submitting) return;
-    setSubmitting(true);
-    await onCutoffChange(family.key, null);
-    setSubmitting(false);
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      void setCutoff();
-    } else if (event.key === "Escape") {
-      setValueText(cutoff === undefined ? "" : formatCutoff(cutoff));
-      event.currentTarget.blur();
-    }
-  }
-
-  return (
-    <div className="grid grid-cols-[minmax(5.5rem,1fr)_4rem_auto_auto_auto] items-center gap-1.5">
-      <span className="text-muted-foreground">{t("objectsPanel.cutoff")}</span>
-      <Input
-        type="text"
-        inputMode="decimal"
-        aria-label={t("objectsPanel.cutoffFor", { family: family.elements.join("–") })}
-        aria-invalid={valueText.trim() !== "" && !valid}
-        disabled={isSceneLoading || submitting}
-        placeholder={family.maxLength === null ? "—" : formatCutoff(family.maxLength)}
-        value={valueText}
-        className="h-[22px] rounded-md px-1.5 py-0 text-right font-mono text-[0.68rem] tabular-nums md:text-[0.68rem]"
-        onChange={(event) => setValueText(event.currentTarget.value)}
-        onKeyDown={handleKeyDown}
-      />
-      <span className="text-muted-foreground">Å</span>
-      <CutoffButton
-        disabled={!dirty || isSceneLoading || submitting}
-        label={t("objectsPanel.setCutoff", { family: family.elements.join("–") })}
-        onClick={() => void setCutoff()}
-        icon={<Check aria-hidden="true" />}
-      />
-      <CutoffButton
-        disabled={cutoff === undefined || isSceneLoading || submitting}
-        label={t("objectsPanel.removeCutoff", { family: family.elements.join("–") })}
-        onClick={() => void removeCutoff()}
-        icon={<Minus aria-hidden="true" />}
-      />
-    </div>
-  );
-}
-
-function CutoffButton({ disabled, icon, label, onClick }: {
-  disabled: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label={label}
-          disabled={disabled}
-          className={cn(TOOL_ICON_BUTTON_CLASS, "size-6 rounded-[8px] [&_svg]:size-3.5")}
-          onClick={onClick}
-        >
-          {icon}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="left">{label}</TooltipContent>
-    </Tooltip>
-  );
-}
-
 function HiddenBonds({ bonds, onRestore, scene, style }: {
   bonds: readonly BondSpec[];
   onRestore: (bond: BondSpec) => void;
@@ -510,12 +544,23 @@ function HiddenBonds({ bonds, onRestore, scene, style }: {
             {bonds.map((bond) => (
               <div key={bond.id} className="flex h-7 items-center justify-between rounded-md px-2.5 text-muted-foreground hover:bg-muted/35">
                 <BondLabel bond={bond} scene={scene} style={style} />
-                <CutoffButton
-                  disabled={false}
-                  label={t("objectsPanel.restoreBondVisibility", { bond: bondLabel(bond, scene) })}
-                  onClick={() => onRestore(bond)}
-                  icon={<Minus aria-hidden="true" />}
-                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t("objectsPanel.restoreBondVisibility", { bond: bondLabel(bond, scene) })}
+                      className={cn(TOOL_ICON_BUTTON_CLASS, "size-6 rounded-[8px]")}
+                      onClick={() => onRestore(bond)}
+                    >
+                      <Minus aria-hidden="true" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    {t("objectsPanel.restoreBondVisibility", { bond: bondLabel(bond, scene) })}
+                  </TooltipContent>
+                </Tooltip>
               </div>
             ))}
           </div>
@@ -672,10 +717,6 @@ function VisibilityButton({ label, onToggle, visible }: { label: string; onToggl
   );
 }
 
-function ReadOnlyRow({ label, value }: { label: string; value: string }) {
-  return <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">{label}</span><span className="font-mono tabular-nums">{value}</span></div>;
-}
-
 function bondLabel(bond: BondSpec, scene: SceneSpec): string {
   const startAtom = scene.atoms[bond.startAtomIndex];
   const endAtom = scene.atoms[bond.endAtomIndex];
@@ -689,13 +730,4 @@ function scrollElementIntoInspectorBody(element: HTMLElement) {
   const containerRect = container.getBoundingClientRect();
   if (elementRect.top < containerRect.top) container.scrollTop -= containerRect.top - elementRect.top + 8;
   else if (elementRect.bottom > containerRect.bottom) container.scrollTop += elementRect.bottom - containerRect.bottom + 8;
-}
-
-function formatCutoff(value: number): string {
-  return value.toFixed(3).replace(/\.?0+$/, "");
-}
-
-function formatBondLengthRange(family: BondFamilySpec): string {
-  const value = formatBondFamilyLength(family);
-  return value === "—" ? value : `${value} Å`;
 }

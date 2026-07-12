@@ -112,6 +112,11 @@ class BondFamilySpec(TypedDict):
     maxLength: float | None
 
 
+class BondCutoffRange(TypedDict):
+    min: float
+    max: float
+
+
 class AnalysisWarningSpec(TypedDict):
     code: str
     message: str
@@ -164,7 +169,7 @@ def classify_structure_size(atom_count: int) -> Literal["small", "medium", "larg
     return "large"
 
 
-def parse_bond_cutoff_overrides(value: str | None) -> dict[str, float]:
+def parse_bond_cutoff_overrides(value: str | None) -> dict[str, BondCutoffRange]:
     if value is None or value == "":
         return {}
 
@@ -180,19 +185,34 @@ def parse_bond_cutoff_overrides(value: str | None) -> dict[str, float]:
     if len(payload) > 1_024:
         raise InvalidBondCutoffOverridesError("Bond cutoff overrides contain too many families.")
 
-    overrides: dict[str, float] = {}
-    for family_key, cutoff in payload.items():
+    overrides: dict[str, BondCutoffRange] = {}
+    for family_key, cutoff_range in payload.items():
         if not isinstance(family_key, str) or not family_key.strip():
             raise InvalidBondCutoffOverridesError("Each bond cutoff override needs a family key.")
-        if isinstance(cutoff, bool) or not isinstance(cutoff, (int, float)):
+        if not isinstance(cutoff_range, dict) or set(cutoff_range) != {"min", "max"}:
             raise InvalidBondCutoffOverridesError(
-                f"Bond cutoff for '{family_key}' must be a positive number."
+                f"Bond cutoff for '{family_key}' must contain min and max."
             )
-        numeric_cutoff = float(cutoff)
-        if not math.isfinite(numeric_cutoff) or numeric_cutoff <= 0:
+        minimum = cutoff_range["min"]
+        maximum = cutoff_range["max"]
+        if any(
+            isinstance(bound, bool) or not isinstance(bound, (int, float))
+            for bound in (minimum, maximum)
+        ):
             raise InvalidBondCutoffOverridesError(
-                f"Bond cutoff for '{family_key}' must be a positive number."
+                f"Bond cutoff for '{family_key}' must use numeric bounds."
             )
-        overrides[family_key.strip()] = numeric_cutoff
+        numeric_minimum = float(minimum)
+        numeric_maximum = float(maximum)
+        if (
+            not math.isfinite(numeric_minimum)
+            or not math.isfinite(numeric_maximum)
+            or numeric_minimum < 0
+            or numeric_maximum <= numeric_minimum
+        ):
+            raise InvalidBondCutoffOverridesError(
+                f"Bond cutoff for '{family_key}' must satisfy 0 <= min < max."
+            )
+        overrides[family_key.strip()] = {"min": numeric_minimum, "max": numeric_maximum}
 
     return overrides

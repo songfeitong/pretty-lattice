@@ -48,7 +48,7 @@ import { THEME_PREFERENCES, type ThemePreference } from "@/theme/themePreference
 import { useTheme } from "@/theme/ThemeProvider";
 import type { SelectionActivation } from "@/selection/selectionActivationPreference";
 
-import { type BondSpec, type SceneSpec } from "../../api/scene";
+import { type BondCutoffRange, type BondSpec, type SceneSpec } from "../../api/scene";
 import {
   currentLanguagePreference,
   setLanguagePreference,
@@ -223,6 +223,7 @@ export function InspectorSidebar({
   onActiveTabChange,
   onAtomLocateRequestHandled,
   onBondCutoffChange,
+  onBondCutoffEditingStart,
   onBondFamilyVisibilityChange,
   onBondLocateRequestHandled,
   onBondVisibilityChange,
@@ -253,7 +254,7 @@ export function InspectorSidebar({
   bondObjectsResetToken: number;
   bondsVisible: boolean;
   bondVisibilityOverrides: BondVisibilityOverrides;
-  cutoffOverrides: Record<string, number>;
+  cutoffOverrides: Record<string, BondCutoffRange>;
   hasCustomBondingProfile: boolean;
   distinguishSimilarColors: boolean;
   dragSensitivity: number;
@@ -278,7 +279,8 @@ export function InspectorSidebar({
   onActiveTabChange: (tab: InspectorSidebarTab) => void;
   onAtomLocateRequestHandled: (token: number) => void;
   onBondAlgorithmChange: (bondAlgorithm: BondingMode) => void;
-  onBondCutoffChange: (familyKey: string, cutoff: number | null) => Promise<boolean>;
+  onBondCutoffChange: (cutoffOverrides: Record<string, BondCutoffRange>) => Promise<boolean>;
+  onBondCutoffEditingStart: () => void;
   onBondFamilyVisibilityChange: (familyKey: string, visible: boolean) => void;
   onBondLocateRequestHandled: (token: number) => void;
   onBondVisibilityChange: (bond: BondSpec, visible: boolean) => void;
@@ -393,6 +395,7 @@ export function InspectorSidebar({
               onBondLocateRequestHandled={onBondLocateRequestHandled}
               onBondAlgorithmChange={onBondAlgorithmChange}
               onBondVisibilityChange={onBondVisibilityChange}
+              onBondCutoffEditingStart={onBondCutoffEditingStart}
               onCutoffChange={onBondCutoffChange}
               onElementColorChange={onElementColorChange}
               onFamilyVisibilityChange={onBondFamilyVisibilityChange}

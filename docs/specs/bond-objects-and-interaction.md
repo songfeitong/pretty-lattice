@@ -2,72 +2,44 @@
 
 状态：已实现
 
-范围：`Objects > Bonds`、单根 bond 的场景选中与信息卡片、已有 bond
-family 的可见性、外观和自定义 cutoff。
+范围：`Objects > Bonds`、bond family 外观与显隐、区间 cutoff 编辑、单根 bond
+的场景选择与信息卡片。
 
-## 目的
+## 1. 产品定位
 
-Pretty Lattice 中的 atom 来自结构文件，而 bond 通常是 CrystalNN、
-MinimumDistanceNN 或 CutOffDictNN 等规则推断出的显示结果。用户需要控制 bond，
-但这些操作不应假装是在修改结构文件中的客观数据。
+Pretty Lattice 是结构可视化工具，不是配位环境分析软件。结构文件提供 atoms；bonds
+则由 CrystalNN、MinimumDistanceNN、CutOffDictNN 或用户的稀疏区间 override 推断。
 
-本功能坚持三个方向：
-
-- 继续聚焦 visualization，不把 Objects 变成配位分析面板。
-- 信息卡片只用于查看；会改变场景的操作放在 Objects。
-- 明确区分“重新计算 bonding”和“只是不画”。
-
-核心语义是：
+界面必须持续区分两类操作：
 
 ```text
-Hide = 保留 connectivity，只改变可见性
-Cutoff = 改变成键规则，重新计算 connectivity
+Hide    = connectivity 不变，只改变绘制
+Cutoff  = 修改成键定义，重新计算 connectivity
 ```
 
-修改 cutoff 后，bonds、bond 需要的周期镜像 atoms 和 polyhedra 使用新的
-connectivity。隐藏 family 或单根 bond 时，这些派生对象不重新计算。
+因此：
 
-## 本期范围
+- 高频外观与显隐操作放在普通 Family 行。
+- 低频 cutoff 使用独立编辑模式，并放在 separator 上方的全局成键区域。
+- 信息卡片负责查看单根 bond，不承担 cutoff 编辑。
+- Objects 不长期展示只读 bond-length range；它对可视化工作流价值有限。
 
-本期实现：
+## 2. 对象身份
 
-- `Objects > Bonds` family 列表。
-- Family 的实际 bond length 范围、半径、不透明度和可见性。
-- 已有 family 的自定义 cutoff。
-- Family 级和逻辑 bond relation 级 Hide；同一 relation 的所有周期副本一起隐藏。
-- 单根 bond 的单击 pulse、双击选中、持续高亮和只读信息卡片。
-- 从信息卡片定位到 Objects，并在 family 下临时显示当前 bond。
-- 单根 bond instance 的半径、不透明度，以及按 relation 去重的隐藏恢复列表。
+### 2.1 Bond family
 
-本期不实现：
+Bond family 是无方向的元素对，例如 `Fe–O`。内部 key 必须规范化；`Fe–O` 与
+`O–Fe` 是同一 family。
 
-- 添加新的 bond family。
-- 手动新增一根当前不存在的 bond。
-- 展开或搜索某个 family 下的全部 bond instances。
-- Minimum length。
-- 配位数、配位环境或其他分析摘要。
-- Bond order、primary/secondary bond、氢键或其他 interaction 类型。
-- Per-family 颜色、线型和标签控制。
-- 单独为 bond 实现 Undo；以后统一接入全局 Undo。
-- 修改并写回结构文件。
+Family 的顺序和左右元素顺序都遵循 canonical unit-cell atoms 中元素首次出现的
+顺序，不使用纯字母排序。相同 scene 必须得到稳定顺序。
 
-## 术语与身份
+本功能只编辑当前基础 connectivity 已存在的 families，不提供新增元素对的入口。
+增大某个已有 family 的区间上界可以加入基础算法未选中的更长连接。
 
-### Bond family
+### 2.2 逻辑 bond relation
 
-Bond family 是无方向的元素对，例如 `Fe–O`、`Li–O` 和 `P–O`。内部 key
-必须规范化，`Fe–O` 与 `O–Fe` 是同一个 family。
-
-Family 的显示顺序和左右顺序都遵循 canonical unit-cell atoms 中元素第一次出现的
-顺序。不要使用纯字母排序，以免把更自然的 `P–O` 显示成 `O–P`。相同输入和相同
-scene 必须得到稳定顺序。
-
-### 逻辑 bond relation
-
-逻辑周期连接不能用 `scene.atoms` 的数组下标作为身份。数组下标会在过滤、重算和
-scene 重建后变化。
-
-一个逻辑 bond relation 至少包含：
+逻辑周期连接的身份至少包含：
 
 ```ts
 {
@@ -77,15 +49,13 @@ scene 重建后变化。
 }
 ```
 
-`relativeImageOffset` 是 end atom 相对于 start atom 的晶胞平移。端点顺序必须采用
-确定性的规范化规则；交换端点时同时对 relative offset 取反。
+端点按确定性规则规范化；交换端点时同时对 relative offset 取反。relation identity
+不能依赖 `scene.atoms` 数组下标。
 
-这份身份用于 connectivity 去重、重算后匹配和 family 归属。
+### 2.3 可见 bond instance
 
-### 可见 bond instance
-
-平移等价的多根可见圆柱可能共享同一个逻辑 relation。为了只选择或隐藏用户当前
-点到的那一根，可见 bond instance 还必须包含两个端点各自的 cell offset：
+同一逻辑 relation 可能在显示范围中产生多根周期平移副本。单次拾取仍以可见 instance
+为目标，其身份还包含两个端点各自的 cell offset：
 
 ```ts
 {
@@ -96,17 +66,22 @@ scene 重建后变化。
 }
 ```
 
-它可以等价地由两个稳定 atom instance id 表示。端点顺序仍需确定性规范化。不要用
-`startAtomIndex/endAtomIndex` 持久化 selection、Hide 或 Locate 状态。
+Selection 和信息卡片保持 instance 级；Hide 保持 relation 级，即隐藏一根 bond 时，
+共享 `relationId` 的所有 periodic images 一起隐藏。
 
-## 状态分层
+## 3. 状态边界
 
-Bonding definition 与 visibility 必须分开保存。
+Bonding definition、visibility 和 appearance 分开保存：
 
 ```ts
+type BondCutoffRange = {
+  min: number;
+  max: number;
+};
+
 type CustomBondingProfile = {
   baseAlgorithm: BondAlgorithm;
-  cutoffOverrides: Record<BondFamilyKey, number>;
+  cutoffOverrides: Record<BondFamilyKey, BondCutoffRange>;
 };
 
 type BondVisibilityOverrides = {
@@ -115,449 +90,290 @@ type BondVisibilityOverrides = {
 };
 ```
 
-数据结构不要求逐字采用以上 TypeScript，但必须保留同样的语义边界。
-
-### Custom bonding
-
-CrystalNN、Minimum distance 和 CutOffDictNN 是不可修改的 presets。用户第一次为
-某个 family 设置 cutoff 后，Bonding algorithm 切换为 `Custom`。
-
-Custom 不是把整个 CrystalNN 结果强行转换成一份 cutoff dict，而是：
+Appearance 继续使用全局、family、individual 三层覆盖：
 
 ```text
-base algorithm + sparse family cutoff overrides
+global bond appearance
+  -> family radius / opacity override
+    -> individual bond radius / opacity override
 ```
 
-存在 override 的 family 完全由距离规则接管；没有 override 的 family 继续继承
-base algorithm。例如：
+数据结构可以采用等价实现，但不得混合这三类状态。
+
+## 4. Custom bonding 语义
+
+CrystalNN、Minimum distance 和 CutOffDictNN 是不可修改的 presets。Custom 是：
 
 ```text
-Fe–O -> cutoff 2.30 Å
-Li–O -> 继续继承 base algorithm
-P–O  -> 继续继承 base algorithm
+base algorithm + sparse family interval overrides
 ```
 
-距离规则不是与原 family 结果做 union。它既能加入 base algorithm 没选中的短距离
-pair，也能移除超过 cutoff 的原 bond。
-
-Custom 草稿在用户临时切回 preset 后保留；再次选择 `Custom` 时恢复。打开新结构或
-执行 Reset all 时清空。若移除 cutoff 后已经没有任何 cutoff overrides，则退出空的
-Custom 状态并恢复它的 base algorithm。只有 visibility overrides 时不应保持
-`Custom`。
-
-### Visibility
-
-Family eye 和 relation eye 都只写入 visibility overrides：
-
-- 不切换到 `Custom`。
-- 不改变 family 的 length 范围。
-- 不重新计算 one-hop atoms 或 polyhedra。
-- 不修改后端的 base connectivity。
-
-## Objects > Bonds
-
-### 基本布局
-
-`Objects` 保留 nested tabs：
-
-- Atoms
-- Bonds
-
-`Bonds` 使用与 `Atoms` 相同的 card、column header、selected workspace 和 hidden recovery
-视觉语言，不使用 table。
-
-Family cards 之前依次显示两个全局选项：
-
-- `Bonding algorithm` Select。
-- `Radius scale` Slider，控制所有 bond cylinder 的整体半径缩放。
-
-两行使用与 `Objects > Atoms` 顶部控制完全相同的 label、control 列宽、左右 padding、
-行高和垂直间距。全局控制与 family cards 之间使用 separator 分隔。Styles 面板不显示
-Size section，也不重复显示或重置 bond radius scale。
-
-主行列为：
-
-- `Bond`
-- `R (Å)`
-- `Opacity`
-- visibility icon
-
-不要增加 coordination、rule、bond count 或内部 id。Bond family 不显示数量。
-
-Family card 示例：
+存在 override 的 family 完全由闭区间距离规则接管：
 
 ```text
-Bond                         R (Å)   Opacity
-
-▾ ● Fe — ● O                 0.10      100       eye
-▸ ● Li — ● O                 0.10      100       eye
-▸ ● P  — ● O                 0.10      100       eye
+minimum <= bond length <= maximum
 ```
 
-两个圆形 token 分别使用当前两个元素的有效 atom 颜色，带细边框，以免浅色 token
-消失在背景中。中间只使用中性的横线，不画缩小版 bond cylinder。
+两端比较保留很小的浮点容差。没有 override 的 family 继续继承 base algorithm。
+区间规则不是与基础结果做 union；它既能添加基础算法未选中的连接，也能移除区间外的
+原连接。
 
-Family cards 不提供折叠；`Bond length` 和 `Cutoff` 始终显示。第一个元素 token 与
-Atoms 主行使用相同的左边距和垂直对齐，但 Bonds 中所有元素 token 统一为 14px。
-Family 元素符号沿用 Atoms 的 sans semibold；只有带 site index 的 individual bond
-label 使用 mono。
+合法区间必须满足：
 
-### Bond length
+```text
+minimum 和 maximum 都是有限数字
+minimum >= 0
+maximum > minimum
+```
 
-Family 内容区的 `Bond length` 是当前 bonding definition 生成出的实际范围，
-不是 cutoff，也不允许直接编辑。
+用户第一次提交任一 override 后，Bonding algorithm 显示为 `Custom`。最后一个
+override 被移除后恢复 base algorithm。用户主动切换到任一 preset 时，整份 Custom
+profile 立即清空；之后再次进入 cutoff 编辑模式时，必须从该 preset 当前生成结果重新
+建立建议值。打开新结构或 Reset all 时同样清空。
 
-计算顺序是：
+若 custom override 令一个 family 暂时变成零根 bond，该 family 仍保留在列表中，
+以便用户显式恢复自动规则。恢复后若基础算法也不存在该 family，重算后它从列表消失。
+
+## 5. Objects > Bonds 普通模式
+
+### 5.1 顶部全局区域
+
+separator 上方依次显示：
+
+1. Bonding algorithm。
+2. Bond radius scale。
+3. Custom cutoff。
+
+Custom cutoff 使用与前两行相同的左右布局：左侧固定标签，右侧是 icon-only 入口。
+Tooltip 为 `Edit custom cutoff / 编辑自定义截断距离`。存在任一 override 时，入口图标
+使用激活样式，但不增加 badge、数量或说明文字。
+
+入口使用 paper-and-pen edit 图标，尺寸与 `X / Check` 相同，边框常驻。进入或退出
+编辑模式时，edit 图标与 `X / Check` 操作组
+之间使用 150 ms 的轻微淡入和缩放动画；右侧控制列宽保持不变。Reduced motion 下取消
+动画。
+
+separator 明确区分“会重算 connectivity 的全局成键设置”和下方对象控制。
+
+### 5.2 Family 列表
+
+普通模式与 Atoms 使用相同的视觉和列结构：
+
+```text
+Bond | R (Å) | Opacity | Visibility
+```
+
+每个 family 始终只显示主操作行：
+
+- 左列：两个 14 px 元素视觉 token、短连接线和 sans semibold 元素文本。
+- 中间两列：居中的 radius 与 opacity 数值输入。
+- 右列：Eye / EyeOff。
+
+不显示 family 数量，不提供 family 折叠，不显示只读 Bond length，也不常驻显示 cutoff。
+Family card 的高度、圆角、边框、背景、输入框和 icon button 均尽量复用 Atoms 样式。
+
+### 5.3 Selected bond workspace
+
+普通模式下，当前选中的 bond 在所属 family 下方临时显示独立 workspace：
+
+- 与 family 主行之间使用 separator 和弱化背景区分。
+- 显示 individual radius、opacity 和 visibility。
+- 不重复显示 bond length。
+- radius 和 opacity 从 family 继承；修改后写入 individual override。
+
+## 6. Cutoff 编辑模式
+
+### 6.1 进入与退出
+
+点击顶部 Custom cutoff 图标后：
+
+- 全部 Family 同时进入 cutoff 编辑模式。
+- 当前选中的 bond 立即取消，信息卡关闭。
+- Bonding algorithm 暂时禁用。
+- Bond radius scale 保持可用，因为它不影响 connectivity。
+- 顶部入口原位替换为 `X` 和 `Check` 两个 icon-only 按钮。
+- `X` 和 `Check` 不显示 Tooltip；aria-label 保留完整操作描述。
+- `X` 直接丢弃整批草稿并退出，不二次确认、不重算。
+- `Check` 校验并提交整批草稿。
+
+编辑期间仍允许用户在场景中重新选择 bond 查看信息卡，以便参考单根键长；Family 下方
+不显示 selected bond workspace。退出编辑模式后，仍存在的选择可以恢复普通 workspace。
+
+全局操作区不 sticky，也不在列表底部复制。Family 数量通常较少；键盘操作可以减少
+往返滚动。
+
+### 6.2 Family 编辑行
+
+编辑模式复用普通模式四列宽度，不增加 card 高度：
+
+```text
+Bond | Min (Å) | Max (Å) | Restore
+```
+
+- 两个输入框居中、等宽、使用紧凑 mono 数字字体。
+- focus 边框、背景和 ring 与 Family 的 radius/opacity 数值输入完全一致。
+- 单位只放在表头，不在每个输入框内重复。
+- 中文表头使用 `下界 (Å)` 和 `上界 (Å)`；英文使用 `Min (Å)` 和 `Max (Å)`。
+- 最后一列用 `RotateCcw` 表示恢复基础算法，不使用减号，避免被理解成删除 family。
+- 不增加说明文字、badge 或额外详情行。
+
+普通模式与 cutoff 编辑模式切换时，每个 Family 的后三列使用 300 ms 的淡入与 2 px
+垂直位移动画；卡片高度、Family token 和列宽保持不动。Reduced motion 下取消该动画。
+
+### 6.3 初始草稿
+
+已有 override 的 family 显示当前 `min` 和 `max`。
+
+没有 override 的 family 显示一个未生效的建议起点：
+
+```text
+0 - 当前实际生成结果的最大 bond length
+```
+
+这里的 maximum 只是编辑起点，不宣称是基础算法的 cutoff。默认 maximum 向上取整到
+三位小数，避免用户只修改 minimum 后因显示舍入误删当前最长 bond。输入框失焦或提交
+时统一格式化为三位小数，例如 `0.000`、`2.000`；提交仍使用对应数值。
+
+未修改的建议值不生成 override。聚焦、失焦或以不同文本格式重新输入同一数值也不算
+实际变化。
+
+### 6.4 Restore
+
+Restore 始终是显式操作：
+
+- 已有 override：点击后标记为待移除；原数值保留，但输入框禁用并淡化。
+- 再点一次：撤销待移除，恢复可编辑。
+- 没有 override、但存在本轮草稿修改：点击后丢弃该 family 的修改，回到建议起点。
+- 没有 override 且未修改：按钮不可用。
+
+Restore 不立即重算，只参与全局批量提交。
+
+### 6.5 校验反馈
+
+只有实际修改或待新增的 families 参与输入校验；未修改并继续继承基础算法的 families
+不参与。
+
+任一参与项无效时：
+
+- 整批拒绝提交。
+- 不触发重算。
+- 不弹 toast，不显示错误文字。
+- 对对应输入框播放一次与 View Lock 相同语气的短暂 halo。
+- `max <= min` 时两个输入框同时 halo。
+- 保持编辑模式和全部草稿，等待用户修正。
+
+### 6.6 批量提交
+
+提交是原子操作：
+
+1. 从当前稀疏 overrides 复制事务草稿。
+2. 应用所有合法的新区间与待移除标记。
+3. 若最终映射与当前状态完全相同，直接退出，不发送请求。
+4. 否则只发送一次重算请求。
+5. 请求期间 `Check` 显示 spinner，输入和模式按钮锁定。
+6. 成功后保存新 profile、退出编辑模式并切回普通 Family 行。
+7. 失败时保持旧 scene 与旧 profile，恢复输入可编辑，并保留整批草稿供重试。
+
+后端错误沿用现有 connectivity 错误提示；halo 只表达本地校验失败。
+
+### 6.7 键盘
+
+- `Enter`：等同全局 Check，校验并提交整批草稿。
+- `Escape`：等同全局 X，丢弃整批草稿。
+- `Tab`：按正常顺序遍历输入框和 Restore。
+- blur：只保留草稿，不提交、不重算。
+
+## 7. Visibility
+
+### 7.1 Family visibility
+
+Family Eye/EyeOff 写入 `hiddenFamilies`，不修改 connectivity。隐藏 family 时，其周期
+副本和依赖显示对象按现有 visibility dependency 规则一起不绘制。
+
+### 7.2 Relation visibility
+
+单根 bond 的 Hide 写入 `hiddenBondRelations`。共享 relationId 的所有 periodic images
+一起隐藏。Hidden bonds 列表按 relation 去重，不为每个周期副本重复列项。
+
+恢复单根 bond 只移除 relation override；若 family 或全局 bonds 仍隐藏，它仍保持不可见。
+Hidden bonds 区域的位置、折叠、计数和恢复按钮样式与 Hidden atoms 一致。
+
+## 8. 场景选择与信息卡片
+
+### 8.1 选择
+
+- 单击 bond：pulse。
+- 双击 bond：持续选择并打开信息卡。
+- 选择使用 instance id；Hide 使用 relation id。
+- family 或 relation 被隐藏时，相关 selection 清除。
+- cutoff 重算后，若原 bond id 不存在，selection 和信息卡清除。
+
+### 8.2 Bond 信息卡
+
+信息卡标题使用两个端点的 site label。字段为：
+
+- `Bond length / 键长`
+- `Vector (frac)`：start 指向 end 的 fractional vector，三个分量用逗号分隔。
+- `Cell offset`：`(start) - (end)`。
+
+Header actions 与 Atom 信息卡对齐：Close、Hide、Copy、Locate。Hide 位于相同位置并采用
+相同图标。信息卡不放 cutoff、Delete 或其他成键设置。
+
+## 9. 重算与派生对象
+
+前端提交以下输入：
 
 ```text
 base algorithm
--> 应用 custom family cutoff overrides
--> 得到实际 bonds
--> 计算 family length 范围
--> 最后应用 family/relation visibility
+sparse family interval overrides
 ```
 
-因此：
-
-- Hide 最长的一根 bond 不改变 family length。
-- 隐藏整个 family 不改变 family length。
-- 修改 cutoff 并完成 bonding 重算后，family bond length 才更新。
-
-Family range 使用紧凑的 Å 格式，最多显示三位小数并去除无意义的末尾零。单值范围
-可以显示为一个 length，不必重复两遍。
-
-如果 custom cutoff 使一个已有 family 暂时变成零根 bond，该 family 仍必须保留，
-否则用户无法移除 cutoff。此时 `Bond length` 显示 `—`，Remove 仍可用。
-
-### Visible
-
-可见性继续使用现有 Objects 的 eye/eye-off 语言：
-
-- Visible：eye，正常前景色。
-- Hidden：eye-off，muted 颜色。
-
-Family eye 隐藏或显示整个 family。隐藏 family 后，card、Bond length 和 Cutoff 仍可查看
-和编辑；主行不出现 reset 图标。
-
-`Display > Bonds` 是全局有效可见性：
-
-- 关闭时，所有 family 和当前 relation row 都显示为不可见。
-- 重新开启时，与现有 Atoms 规则一致，清除 bond family 和 relation visibility
-  overrides，使所有 bonding definition 生成的 bonds 恢复可见。
-- Object-level visibility 操作不反向关闭 `Display > Bonds`。
-
-### Family 内容区
-
-`Bond length` 和 `Cutoff` 是 family 属性，放在 family 主行后的固定内容区。当前
-selected bond workspace 放在它们之后。Family 主操作行与 Bond length/Cutoff 区域之间
-不加 separator，也不改变背景色；它们共同属于同一张 family card。只有 selected bond
-workspace 使用 separator 和灰色背景形成层级区别。
-
-```text
-▾ ● Fe — ● O                  0.10      100       eye
-    Bond length                         1.95–2.23 Å
-    Cutoff                 [ 2.30 ] Å   check   minus
-    ● Fe:2 — ● O:7             0.10      100       eye
-```
-
-没有 selected bond 时，family card 在 Cutoff 行结束。
-
-### Cutoff
-
-Objects 不重复显示 `CrystalNN` 等具体算法名称。输入框始终存在：
-
-```text
-Cutoff    [      ] Å    check(disabled)    minus(disabled)
-```
-
-存在 override 时显示当前生效值：
-
-```text
-Cutoff    [ 2.30 ] Å    check    minus
-```
-
-规则：
-
-- 第一版只支持 maximum，不支持 minimum。
-- 当前 family 的实际最大 bond length 只作为空输入框的 placeholder。
-- 用户语义是 `bond length <= cutoff`，边界包含在内。
-- 输入框只包含数字，单位放在外部。
-- 不在每个 keystroke 或失焦后重算；确认图标或 Enter 提交。
-- Escape 恢复当前生效值；没有 override 时恢复为空。
-- 空值、非数字、非有限值、零和负数不能提交，并通过 invalid 状态反馈。
-- 计算期间保留旧 scene；相关输入显示 loading/disabled。
-- 只有后端重算成功后才提交新值并切换到 `Custom`。
-- 失败时保留旧 scene、旧值和旧 bonding mode，并显示清楚的错误。
-- 减号图标移除当前 family 的 cutoff override 并触发重算。
-
-不要在没有产品依据的情况下用一个很小的固定上限限制科学用例。后端必须在昂贵邻居
-搜索前执行安全校验，并继续受现有 scene atom/bond 数量限制保护；超限时返回明确错误，
-不能卡死或清空当前 scene。
-
-### 外观继承与隐藏恢复
-
-Bond 外观与 Atoms 使用同样的继承语义：global bond radius/opacity -> family override ->
-individual bond override。修改 family 的某个外观属性会清除该 family 下相同属性的单键
-override。Family 和 selected bond 均提供 `R (Å)`、`Opacity` 与 visibility。
-
-Family 隐藏只改变 family eye，不把所有成员列进恢复区。明确隐藏的逻辑 bond relation
-放进底部 `Hidden bonds` Collapsible；同一 relation 的周期平移副本只显示一行。该区域使用
-与 `Hidden atoms` 相同的 separator、标题、计数、展开动画和减号恢复按钮。恢复会移除
-relation hidden override，使其所有周期副本一起恢复；如果 family 仍隐藏，它们仍不可见。
-
-## 单根 bond 的场景交互
-
-### 选择模型
-
-Atom 和 bond 共用一个 scene selection 概念：
-
-```ts
-type InspectedSceneObject =
-  | { kind: "atom"; id: string }
-  | { kind: "bond"; id: string }
-  | null;
-```
-
-不要让 atom card 和 bond card 同时打开，也不要让 Objects 维护第二份 table selection。
-
-### 点击行为
-
-默认使用双击选择，并允许用户在 `Settings > Interaction > Selection` 中持久化选择
-`Single click` 或 `Double click`。该偏好同时作用于 atom 和 bond；Reset all 将它恢复为
-`Double click`，普通模式切换保持当前 selection。
-
-默认双击模式沿用现有 atom 规则：
-
-- 单击 atom：清除 selected bond，atom pulse。
-- 双击 atom：选中 atom，打开 atom card。
-- 单击 bond：清除 selected atom，bond pulse。
-- 双击 bond：选中 bond，打开 bond card。
-- 单击已经 selected 的同一对象：保持 selection，不重复 pulse。
-- 点击背景、cell 或 polyhedron：清除 selection。
-- Interaction locked 时不 pulse、不选择；双击复用现有 lock feedback。
-
-单击模式下：
-
-- 单击 atom 或 bond 直接选择，不先播放 pulse；
-- 单击已经 selected 的同一对象保持 selection，不重复触发定位或动画；
-- 双击产生的后续 click 保持同一 selection，不重复处理 double-click；
-- Interaction locked 时，第一次单击即复用 lock feedback。
-
-Atom 与 bond 重叠时使用 Three.js/R3F 原生的最近可见表面结果：
-
-- 点击 atom sphere 覆盖区域，atom 优先。
-- 点击两个 atom 之间露出的 cylinder，bond 响应。
-- 多根 bond 重叠时，离相机最近的 bond 响应。
-
-Atom 和 bond handlers 都应停止事件继续传给后方交点。第一版不做 hover highlight、
-重叠对象循环选择或扩大的隐形 bond hit target。若真实使用证明 bond 太难点，再单独设计
-克制的 picking tolerance，不能提前让 bond 抢走 atom 点击。
-
-### Pulse 与 selected 视觉
-
-交互节奏和视觉语言与 atom 一致，但 overlay 形状服从对象几何：
-
-```text
-Atom single click  -> 短暂向白色提亮
-Atom selected      -> 持续提亮 + 圆形 selection ring
-
-Bond single click  -> 整根 bond 短暂向白色提亮
-Bond selected      -> 持续提亮 + 沿 cylinder 的细 outline/halo
-```
-
-Bond 不使用屏幕朝向圆环。Outline/halo 复用 atom selection 的主题颜色和相近动画节奏，
-但不要覆盖或抹掉原来的 unicolor/bicolor 身份。
-
-当前 bicolor bond 的两半颜色写在 geometry vertex colors 中，不适合简单套用 atom 的
-`setColorAt()` 高亮。实现应保留原 batched bond，在 pulse/selected 时只为当前一根 bond
-渲染独立 highlight overlay。场景同时最多一个 overlay，不能因为 selection 重建整批
-bonds。
-
-`BatchedBonds` 应像 `BatchedAtoms` 一样通过 `batchId` registry 把 pointer event 映射到
-稳定 bond instance id。`batchId = 0` 必须被视为有效值。
-
-## Bond 信息卡片
-
-信息卡片是只读 surface。它只提供：
-
-- Close。
-- Hide。
-- Copy。
-- Locate in Objects。
-
-Hide 与 atom 信息卡使用相同的位置和图标。不要在卡片里放 Delete、cutoff 或其他成键
-定义操作。
-
-### Header
-
-Header 示例：
-
-```text
-close   ● Fe:2 — ● O:7   copy   locate
-```
-
-- 两个圆形 token 紧挨各自 atom label。
-- Token 使用具体 endpoint atom 的最终有效颜色，包括 per-atom override。
-- 周期镜像继承 canonical atom 的颜色。
-- 中间使用无方向横线，不使用箭头。
-- 不增加独立 bond token、胶囊或缩小圆柱。
-
-### 内容
-
-```text
-Bond length     2.137 Å
-Vector (frac)    0.500, -0.250, 0.000
-Cell offset     (0, 0, 0) - (0, 0, -1)
-```
-
-规则：
-
-- 使用 `Bond length`，不用 `Length` 或 `Distance`。
-- `Vector (frac)` 是从标题左端 start atom 指向右端 end atom 的分数坐标向量，三个分量用逗号分隔，屏幕显示三位小数。
-- `Cell offset` 按标题中左右两个 atom 的顺序显示两个端点的晶胞偏移。
-- 两个端点是确定性的几何顺序，不表示化学方向。
-- 屏幕 length 显示三位小数。
-
-卡片不显示：
-
-- Family。
-- Rule 或具体 bonding algorithm。
-- Coordination。
-- `startAtomIndex/endAtomIndex`。
-- Relative cell offset。
-- 两个 atom 的完整 fractional/cartesian coordinates。
-- Visibility dependencies 或 image reasons。
-
-Copy 文本使用更高精度：
-
-```text
-Bond: Fe:2 -- O:7
-Bond length (A): 2.137428
-Vector (frac): 0.500000, -0.250000, 0.000000
-Cell offset: (0, 0, 0) - (0, 0, -1)
-```
-
-### Locate in Objects
-
-Locate：
-
-- 打开 Inspector。
-- 切换到 `Objects > Bonds`。
-- 定位到对应 family。
-- 只滚动 inspector body，使当前 contextual bond row 可见。
-- 不使用 page-level `scrollIntoView`，不能让整个 preview 跳动。
-
-如果 sidebar 已经打开在 `Objects > Bonds`，双击场景 bond 直接定位。若 sidebar
-关闭、位于 Settings 或位于 Objects > Atoms，场景双击本身不自动打开或切换；用户通过
-卡片的 Locate 明确执行。
-
-## 当前 bond contextual row
-
-Objects 不列出 family 下的全部 bond。只有当前 selected bond 在对应 family 下出现一根
-临时 child row：
-
-```text
-● Fe:2 — ● O:7    2.137    eye
-```
-
-规则：
-
-- Workspace 放在 family 的 Bond length 与 Cutoff 之后。
-- 使用与 selected atom 相同的轻微 selected background 和展开动画。
-- 显示具体 endpoints、R (Å)、Opacity 和 individual visibility；不重复显示单根键长。
-- 不重复显示 start/end cell；这些属于信息卡片。
-- Eye-off 隐藏当前 instance 所属的整个逻辑 relation，包括所有周期平移副本。
-- 控件点击不能触发行 selection。
-- selected bond 清除后，row 消失。
-- 选中另一根 bond 时，row 更新并在需要时移动到另一个 family。
-- 不保留“最近看过”的 rows，避免逐渐退化为完整 bond list。
-
-隐藏当前 selected bond 后：
-
-- 写入 relation visibility override。
-- bond 从 preview 和 export 的有效可见 scene 中消失。
-- 清除 selected bond，关闭卡片，contextual row 随之消失。
-- 用户通过底部 `Hidden bonds` 恢复。
-
-## Bonding 重算后的状态
-
-设置或移除 cutoff 后，后端基于以下输入重建有效 connectivity：
-
-- 当前结构文件。
-- Custom profile 的 base algorithm。
-- Sparse family cutoff overrides。
-
-重算必须同时更新：
-
-- Bonds。
-- 新 connectivity 需要的 one-hop periodic image atoms。
-- Polyhedra。
-- Family 实际 length 范围。
-
-重算不应重置：
-
-- Camera pose 或 zoom。
-- Component opacity。
-- Atom/bond style。
-- Inspector open state、active top-level tab 和 Objects nested tab。
-
-Selection 按稳定身份协调：
-
-- Selected bond instance 在新 scene 中仍存在时，保持 selection 和信息卡片。
-- Selected bond 被 cutoff 移除时，清除 selection 和卡片。
-- Selected atom 仍存在且可见时保持；因 one-hop connectivity 变化消失时清除。
-
-## Preview、export 与 demand rendering
-
-Preview 和 export 必须使用同一份有效 bond visibility 与 custom bonding 结果。不能出现
-preview 已隐藏而 export 仍显示，或 preview 已重算而 export 仍使用 base scene 的情况。
-
-Preview Canvas 使用 demand rendering。以下变化都必须主动请求 frame：
-
-- Bond pulse/selected overlay。
-- Family 或 relation visibility。
-- Bonding 重算完成后的 scene 替换。
-- Family 或 individual 外观修改。
-
-## 前后端边界
-
-Python backend 负责：
-
-- 读取结构。
-- 执行 base bonding algorithm。
-- 对存在 cutoff override 的 family 做周期距离搜索并替换该 family 结果。
-- 合并、规范化和去重 connectivity。
-- 生成需要的周期镜像 atoms、bonds 和 polyhedra。
-- 执行输入、scene 数量和计算成本保护。
-
-Web frontend 负责：
-
-- Custom draft 与 visibility overrides 的用户状态。
-- Objects family cards、selected workspace 和 Hidden bonds。
-- Selection、pulse、highlight、信息卡片和 Locate。
-- 从稳定 ids 解析 preview/export 可见性。
-- 在提交或移除 cutoff 时把 base algorithm 和 sparse overrides 发送给 backend。
-
-Backend scene contract 应为 bond instances 提供稳定身份所需的数据。保留 index endpoints
-用于紧凑几何引用是允许的，但任何用户状态都不能以数组下标为持久 key。
-
-## 验收要点
-
-- Bonds 顶部的 Bonding algorithm 与 Radius scale 对齐，并与 Atoms 顶部控制使用相同布局。
-- Styles 不显示 Size section；atom 与 bond radius scale 分别只存在于对应 Objects tab。
-- Bonds 按 family 聚合，不渲染完整 individual list。
-- Family ordering 和 endpoint ordering 稳定、自然。
-- Family `Bond length` 只读，Hide 不改变它，cutoff 重算会改变它。
-- 零 bond 的 custom family 保留为 `—`，可以移除 cutoff。
-- Family/relation Hide 不切换 Custom，也不重算 polyhedra。
-- Cutoff 成功提交后切换 Custom，并更新 bonds、one-hop atoms 和 polyhedra。
-- Remove 只移除目标 family 的 cutoff；最后一个 cutoff override 被清除后退出空 Custom。
-- Atom/bond click 和 double-click 互斥、lock-aware，并按最近可见表面响应。
-- Bicolor 与 unicolor bond 都能 pulse 和持续高亮，不重建整批 bonds。
-- Bond card 严格只读，字段和 copy 格式符合本 spec。
-- Locate 只滚动 inspector body，并只显示当前 contextual bond row。
-- 隐藏 selected bond 后 selection、card 和 contextual row 正确清除。
-- 重算后仍存在的 selection 保留；消失的 selection 清除。
-- Preview 与 export 一致。
-- 不使用浏览器或 Playwright 作为默认验证步骤；按项目约定使用 Bun/Python 测试、
-  typecheck 和 build。
+后端对所有 override 取最大的 `max` 作为一次 periodic neighbor search 半径，再按各
+family 的闭区间过滤候选。没有 override 的 family 继续使用 base algorithm 结果。
+
+重算成功后必须基于同一 connectivity 一次性重建：
+
+- bonds 与 bond families；
+- bond 需要的 periodic image atoms；
+- polyhedra；
+- selection 所依赖的 scene identity 映射。
+
+任何分析、序列化、安全上限或响应构建失败都不得部分提交。旧 scene 保持可用。
+
+现有安全限制继续生效：
+
+- 最大 neighbor-search 半径的成本预检。
+- 最大候选 periodic neighbors。
+- 最大 scene bonds、atoms、polyhedra 和响应体大小。
+- override family 必须存在于 base connectivity。
+
+## 10. Preview 与 Export 一致性
+
+Preview 和 export 必须共享同一套：
+
+- effective connectivity；
+- family/relation visibility；
+- global → family → individual 的 radius 和 opacity 解析；
+- periodic-image dependency 过滤。
+
+不得出现 preview 已按区间移除 bond，而 export 仍使用旧 connectivity 的情况。
+
+## 11. 验收标准
+
+至少覆盖以下行为：
+
+- 普通模式只显示 `Family / R / Opacity / Eye`，无数量、只读键长和常驻 cutoff 行。
+- 顶部 Custom cutoff 入口位于 separator 上方，存在 override 时显示激活状态。
+- 进入编辑后全部 Family 同时切换为 `Min / Max / Restore`。
+- 默认建议 maximum 按三位小数向上取整，未修改时不生成 override。
+- 下界和上界都参与闭区间过滤。
+- 任一无效区间令整批本地拒绝，并只播放输入框 halo。
+- 多个 Family 修改与 Restore 只触发一次请求。
+- 无实际变化时退出但不请求。
+- 取消不请求，后端失败保留草稿和旧 scene。
+- 编辑期间算法选择器禁用、radius scale 可用、selected workspace 隐藏。
+- 进入编辑清除旧 bond selection，编辑中仍可重新查看信息卡。
+- Restore 最后一个 override 后退出 Custom 并恢复 base algorithm。
+- 零 bond custom family 保留；恢复后可按 base connectivity 消失。
+- relation Hide 同时隐藏所有 periodic images，Hidden bonds 按 relation 去重。
+- preview/export 的 connectivity、visibility、radius 和 opacity 一致。

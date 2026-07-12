@@ -13,6 +13,7 @@ from pymatgen.core import Structure
 from pretty_lattice.structures.preview_limits import enforce_structure_atom_limit
 from pretty_lattice.structures.readers import read_structure_bytes
 from pretty_lattice.structures.scene_builder import build_scene_response
+from pretty_lattice.structures.schema import BondCutoffRange
 
 PREVIEW_TASK_CONCURRENCY = 1
 _PREVIEW_TASK_LIMITER = CapacityLimiter(PREVIEW_TASK_CONCURRENCY)
@@ -107,7 +108,7 @@ async def create_structure_preview(
     *,
     filename: str,
     bond_algorithm: str | None,
-    bond_cutoff_overrides: dict[str, float] | None = None,
+    bond_cutoff_overrides: dict[str, BondCutoffRange] | None = None,
     include_connectivity: bool | None = None,
 ) -> dict[str, object]:
     task = partial(
@@ -130,7 +131,7 @@ def _build_structure_preview(
     *,
     filename: str,
     bond_algorithm: str | None,
-    bond_cutoff_overrides: dict[str, float] | None = None,
+    bond_cutoff_overrides: dict[str, BondCutoffRange] | None = None,
     include_connectivity: bool | None = None,
 ) -> dict[str, object]:
     structure = PREVIEW_STRUCTURE_CACHE.get_or_parse(

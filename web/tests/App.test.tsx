@@ -1100,7 +1100,7 @@ describe("App", () => {
     });
   });
 
-  test("manages bond families, visibility, and sparse maximum-length overrides", async () => {
+  test("manages bond families, visibility, and sparse cutoff ranges", async () => {
     const user = userEvent.setup();
     const scene = sceneWithPeriodicImages();
 
@@ -1149,32 +1149,83 @@ describe("App", () => {
     await user.click(bondsCheckbox);
     expect(familyVisibility().getAttribute("aria-pressed")).toBe("true");
 
-    expect(within(bondFamilyCard!).getByText("Bond length").isConnected).toBe(true);
-    expect(within(bondFamilyCard!).getByText("1.00 Å").isConnected).toBe(true);
+    expect(within(bondFamilyCard!).queryByText("Bond length")).toBeNull();
     expect(within(sidebar).queryByText("Automatic")).toBeNull();
-    const cutoffInput = within(sidebar).getByRole("textbox", {
-      name: "Cutoff for Na–Cl",
+    const cutoffModeButton = within(sidebar).getByRole("button", {
+      name: "Edit custom cutoff",
     });
-    expect(cutoffInput.getAttribute("value")).toBe("");
-    expect(cutoffInput.getAttribute("placeholder")).toBe("1");
+    expect(cutoffModeButton.querySelector(".lucide-square-pen")).not.toBeNull();
+    expect(cutoffModeButton.className).toContain("size-6");
+    expect(cutoffModeButton.className).toContain("border-border/70");
+    expect(cutoffModeButton.parentElement?.className).toContain(
+      "bond-cutoff-mode-actions-enter",
+    );
+    await user.click(cutoffModeButton);
+    expect(
+      within(sidebar).getByRole("button", { name: "Apply custom cutoffs" }).parentElement
+        ?.className,
+    ).toContain("bond-cutoff-mode-actions-enter");
+    const cutoffInput = within(sidebar).getByRole("textbox", {
+      name: "Maximum cutoff for Na–Cl",
+    });
+    expect(cutoffInput.getAttribute("value")).toBe("1.000");
+    expect(within(sidebar).getByRole("textbox", { name: "Minimum cutoff for Na–Cl" }).getAttribute("value"))
+      .toBe("0.000");
+    expect(within(sidebar).getByRole("combobox", { name: "Bonding algorithm" }).hasAttribute("disabled"))
+      .toBe(true);
 
     queueFetchResponse(jsonResponse(scene));
     await user.clear(cutoffInput);
     await user.type(cutoffInput, "0.8");
-    await user.click(within(sidebar).getByRole("button", { name: "Set Na–Cl cutoff" }));
+    await user.click(within(sidebar).getByRole("button", { name: "Apply custom cutoffs" }));
     await waitFor(() => expect(fetchCalls).toHaveLength(2));
     expect(fetchCalls[1]?.input).toBe(
       "/api/structure-preview?bondAlgorithm=crystal-nn&includeConnectivity=true",
     );
     const headers = new Headers(fetchCalls[1]?.init?.headers);
     expect(headers.get("x-pretty-lattice-bond-cutoff-overrides")).toBe(
-      '{"Na|Cl":0.8}',
+      '{"Na|Cl":{"min":0,"max":0.8}}',
     );
 
     expect(
       within(sidebar).getByRole("combobox", { name: "Bonding algorithm" })
         .textContent,
     ).toContain("Custom");
+
+    queueFetchResponse(jsonResponse(scene));
+    await user.click(within(sidebar).getByRole("combobox", { name: "Bonding algorithm" }));
+    await user.click(await screen.findByRole("option", { name: "Minimum distance" }));
+    await waitFor(() => expect(fetchCalls).toHaveLength(3));
+    const presetHeaders = new Headers(fetchCalls[2]?.init?.headers);
+    expect(presetHeaders.has("x-pretty-lattice-bond-cutoff-overrides")).toBe(false);
+    expect(
+      within(sidebar).getByRole("combobox", { name: "Bonding algorithm" }).textContent,
+    ).toContain("Minimum distance");
+
+    await user.click(within(sidebar).getByRole("button", { name: "Edit custom cutoff" }));
+    expect(
+      within(sidebar).getByRole("textbox", { name: "Maximum cutoff for Na–Cl" })
+        .getAttribute("value"),
+    ).toBe("1.000");
+    expect(
+      within(sidebar).getByRole("button", { name: "Restore Na–Cl automatic rule" })
+        .hasAttribute("disabled"),
+    ).toBe(true);
+  });
+
+  test("leaves cutoff editing without recalculation when no values changed", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user, sceneWithPeriodicImages());
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await openBondObjectsTab(user, sidebar);
+    await user.click(within(sidebar).getByRole("button", { name: "Edit custom cutoff" }));
+    await user.click(within(sidebar).getByRole("button", { name: "Apply custom cutoffs" }));
+
+    expect(fetchCalls).toHaveLength(1);
+    expect(within(sidebar).getByRole("button", { name: "Edit custom cutoff" }).isConnected)
+      .toBe(true);
   });
 
   test("keeps preset bonding and the previous scene when a Custom cutoff fails", async () => {
@@ -1189,23 +1240,54 @@ describe("App", () => {
         "Custom bonding recalculation failed: Bond analysis with CrystalNN failed",
       ),
     );
+    await user.click(within(sidebar).getByRole("button", { name: "Edit custom cutoff" }));
     const cutoffInput = within(sidebar).getByRole("textbox", {
-      name: "Cutoff for Na–Cl",
+      name: "Maximum cutoff for Na–Cl",
     });
     await user.clear(cutoffInput);
     await user.type(cutoffInput, "0.8");
-    await user.click(within(sidebar).getByRole("button", { name: "Set Na–Cl cutoff" }));
+    await user.click(within(sidebar).getByRole("button", { name: "Apply custom cutoffs" }));
 
     expect((await screen.findByRole("alert")).textContent).toContain(
       "Custom bonding recalculation failed",
     );
     expect(screen.getByTestId("lattice-canvas").isConnected).toBe(true);
-    expect(cutoffInput.getAttribute("value")).toBe("0.8");
+    expect(cutoffInput.getAttribute("value")).toBe("0.800");
+    expect(within(sidebar).getByRole("button", { name: "Apply custom cutoffs" }).isConnected)
+      .toBe(true);
     expect(within(sidebar).queryByText("Automatic")).toBeNull();
     expect(
       within(sidebar).getByRole("combobox", { name: "Bonding algorithm" })
         .textContent,
     ).toContain("CrystalNN");
+  });
+
+  test("rejects invalid cutoff drafts atomically with input halo feedback", async () => {
+    const user = userEvent.setup();
+
+    await renderLoadedStructure(user, sceneWithPeriodicImages());
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await openBondObjectsTab(user, sidebar);
+    await user.click(within(sidebar).getByRole("button", { name: "Edit custom cutoff" }));
+    const minimum = within(sidebar).getByRole("textbox", {
+      name: "Minimum cutoff for Na–Cl",
+    });
+    const maximum = within(sidebar).getByRole("textbox", {
+      name: "Maximum cutoff for Na–Cl",
+    });
+    await user.clear(minimum);
+    await user.type(minimum, "2");
+    await user.clear(maximum);
+    await user.type(maximum, "1");
+    await user.click(within(sidebar).getByRole("button", { name: "Apply custom cutoffs" }));
+
+    expect(fetchCalls).toHaveLength(1);
+    expect(minimum.getAttribute("aria-invalid")).toBe("true");
+    expect(maximum.getAttribute("aria-invalid")).toBe("true");
+    expect(minimum.className).toContain("bond-cutoff-invalid-feedback-a");
+    expect(within(sidebar).getByRole("button", { name: "Apply custom cutoffs" }).isConnected)
+      .toBe(true);
   });
 
   test("keeps large Objects atom groups compact without rendering atom rows", async () => {

@@ -17,6 +17,7 @@ from pretty_lattice.structures.preview_limits import (
 )
 from pretty_lattice.structures.schema import (
     BondAlgorithm,
+    BondCutoffRange,
     CustomBondRecalculationError,
     InvalidBondCutoffOverridesError,
     SceneSpec,
@@ -36,7 +37,7 @@ def build_scene_response(
     structure: Structure,
     *,
     bond_algorithm: str | None = None,
-    bond_cutoff_overrides: dict[str, float] | None = None,
+    bond_cutoff_overrides: dict[str, BondCutoffRange] | None = None,
     include_connectivity: bool | None = None,
 ) -> SceneSpec:
     return build_scene_spec(
@@ -51,7 +52,7 @@ def build_scene_spec(
     structure: Structure,
     *,
     bond_algorithm: str | None = None,
-    bond_cutoff_overrides: dict[str, float] | None = None,
+    bond_cutoff_overrides: dict[str, BondCutoffRange] | None = None,
     include_connectivity: bool | None = None,
 ) -> SceneSpec:
     with suppress_third_party_structure_warnings():
@@ -67,7 +68,7 @@ def _build_scene_spec(
     structure: Structure,
     *,
     bond_algorithm: str | None = None,
-    bond_cutoff_overrides: dict[str, float] | None = None,
+    bond_cutoff_overrides: dict[str, BondCutoffRange] | None = None,
     include_connectivity: bool | None = None,
 ) -> SceneSpec:
     enforce_structure_atom_limit(len(structure))

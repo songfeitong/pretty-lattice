@@ -17,6 +17,11 @@ export interface SceneSpec {
 export type BondAlgorithm = "crystal-nn" | "minimum-distance" | "cut-off-dict";
 export type AtomRadiusModel = "uniform" | "atomic" | "vdw" | "ionic";
 
+export interface BondCutoffRange {
+  min: number;
+  max: number;
+}
+
 export const DEFAULT_BOND_ALGORITHM: BondAlgorithm =
   sceneContract.defaultBondAlgorithm as BondAlgorithm;
 export const LARGE_STRUCTURE_BOND_ALGORITHM: BondAlgorithm =
@@ -175,7 +180,7 @@ export async function uploadStructurePreview(
   file: File,
   options: {
     bondAlgorithm?: BondAlgorithm;
-    cutoffOverrides?: Record<string, number>;
+    cutoffOverrides?: Record<string, BondCutoffRange>;
     includeConnectivity?: boolean;
     signal?: AbortSignal;
   } = {},

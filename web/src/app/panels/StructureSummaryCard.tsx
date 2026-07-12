@@ -127,7 +127,7 @@ export function StructureSummaryCard({
         <Button
           size="sm"
           aria-label={t("actions.openStructure")}
-          className="continuous-pill h-7 gap-1.5 rounded-full px-2.5 text-xs transition-[background-color,transform] duration-100 ease-out active:translate-y-[0.5px] active:bg-primary/80 [&_svg]:size-3.5"
+          className="continuous-pill h-7 gap-1.5 rounded-full px-2.5 text-xs transition-[background-color,transform] duration-100 ease-out enabled:cursor-pointer active:translate-y-[0.5px] active:bg-primary/80 [&_svg]:size-3.5"
           disabled={previewStatus === "loading"}
           onClick={onOpenStructure}
         >

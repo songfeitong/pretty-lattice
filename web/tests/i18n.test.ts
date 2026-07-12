@@ -10,12 +10,20 @@ import {
   resources,
   setLanguagePreference,
 } from "../src/i18n";
+import { zhCN } from "../src/i18n/resources/zh-CN";
+import { zhTW } from "../src/i18n/resources/zh-TW";
 import {
   readLanguagePreference,
   writeLanguagePreference,
 } from "../src/i18n/languagePreference";
 
 describe("i18n resources", () => {
+  test("uses localized cutoff range headers in Chinese", () => {
+    expect(zhCN.objectsPanel.minimumAngstrom).toBe("下界 (Å)");
+    expect(zhCN.objectsPanel.maximumAngstrom).toBe("上界 (Å)");
+    expect(zhTW.objectsPanel.minimumAngstrom).toBe("下界 (Å)");
+    expect(zhTW.objectsPanel.maximumAngstrom).toBe("上界 (Å)");
+  });
   test("keeps translation key parity across supported languages", () => {
     const englishKeys = flattenResourceKeys(resources.en.translation);
 

@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/context-menu";
 import { AtomInspectorCard } from "./AtomInspectorCard";
 import { BondInspectorCard } from "./BondInspectorCard";
-import type { SceneSpec } from "../api/scene";
+import type { BondCutoffRange, SceneSpec } from "../api/scene";
 import { inspectedAtomInfoForId } from "./atomInspector";
 import {
   LatticeScene,
@@ -106,7 +106,7 @@ type InspectedSceneObject =
   | null;
 
 type PulsedSceneObject = Exclude<InspectedSceneObject, null> & { token: number };
-const EMPTY_BOND_CUTOFF_OVERRIDES: Record<string, number> = {};
+const EMPTY_BOND_CUTOFF_OVERRIDES: Record<string, BondCutoffRange> = {};
 
 interface ResetLoadedPreviewOptions {
   preserveActiveCommonPanelTab?: boolean;
@@ -200,8 +200,16 @@ function AppContent() {
     setIsInspectorOpen(false);
     setIsStructureSummaryCollapsed(true);
   }, [closeActiveColorPicker]);
-  const handleBondAlgorithmSceneLoaded = useCallback((_nextScene: SceneSpec) => {
+  const handleBondAlgorithmSceneLoaded = useCallback((nextScene: SceneSpec) => {
     closeActiveColorPicker();
+    const inspectedObject = inspectedSceneObjectRef.current;
+    if (
+      inspectedObject?.kind === "bond" &&
+      !nextScene.bonds.some((bond) => bond.id === inspectedObject.id)
+    ) {
+      inspectedSceneObjectRef.current = null;
+      setInspectedSceneObject(null);
+    }
   }, [closeActiveColorPicker]);
   const {
     bondAlgorithm,
@@ -213,7 +221,7 @@ function AppContent() {
     errorMessage,
     errorTitle,
     handleBondAlgorithmChange,
-    handleBondCutoffOverrideChange,
+    handleBondCutoffOverridesChange,
     handleFileChange,
     handleResetAllSettings,
     requestConnectivity,
@@ -1096,7 +1104,8 @@ function AppContent() {
                   onAtomLocateRequestHandled={handleAtomLocateRequestHandled}
                   onBondLocateRequestHandled={handleBondLocateRequestHandled}
                   onBondVisibilityChange={handleBondVisibilityChange}
-                  onBondCutoffChange={handleBondCutoffOverrideChange}
+                  onBondCutoffChange={handleBondCutoffOverridesChange}
+                  onBondCutoffEditingStart={() => handleBondInspect(null)}
                   bondOpacity={componentOpacity.bonds}
                   onBondFamilyVisibilityChange={handleBondFamilyVisibilityChange}
                   onBondAlgorithmChange={(nextBondAlgorithm) => {

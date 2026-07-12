@@ -1,6 +1,7 @@
 import type {
   AtomSpec,
   BondAlgorithm,
+  BondCutoffRange,
   BondFamilySpec,
   BondSpec,
   SceneSpec,
@@ -11,7 +12,7 @@ export type BondingMode = BondAlgorithm | typeof CUSTOM_BONDING_MODE;
 
 export interface CustomBondingProfile {
   baseAlgorithm: BondAlgorithm;
-  cutoffOverrides: Record<string, number>;
+  cutoffOverrides: Record<string, BondCutoffRange>;
 }
 
 export interface BondVisibilityOverrides {

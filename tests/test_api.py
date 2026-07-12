@@ -208,7 +208,7 @@ async def test_structure_preview_upload_endpoint_applies_sparse_family_cutoffs()
             content=payload,
             headers={
                 "x-pretty-lattice-filename": "SrTiO3.cif",
-                "x-pretty-lattice-bond-cutoff-overrides": '{"Sr|O":2.0}',
+                "x-pretty-lattice-bond-cutoff-overrides": '{"Sr|O":{"min":0,"max":2}}',
             },
         )
 
@@ -231,12 +231,12 @@ async def test_structure_preview_upload_endpoint_rejects_invalid_family_cutoffs(
             content=payload,
             headers={
                 "x-pretty-lattice-filename": "SrTiO3.cif",
-                "x-pretty-lattice-bond-cutoff-overrides": '{"Sr|O":0}',
+                "x-pretty-lattice-bond-cutoff-overrides": '{"Sr|O":{"min":2,"max":2}}',
             },
         )
 
     assert response.status_code == 400
-    assert "positive number" in response.json()["detail"]["message"]
+    assert "0 <= min < max" in response.json()["detail"]["message"]
 
 
 @pytest.mark.anyio
@@ -258,7 +258,7 @@ async def test_structure_preview_upload_endpoint_fails_custom_recalculation_atom
             content=payload,
             headers={
                 "x-pretty-lattice-filename": "SrTiO3.cif",
-                "x-pretty-lattice-bond-cutoff-overrides": '{"Sr|O":2.0}',
+                "x-pretty-lattice-bond-cutoff-overrides": '{"Sr|O":{"min":0,"max":2}}',
             },
         )
 

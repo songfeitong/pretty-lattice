@@ -396,7 +396,7 @@ def test_custom_family_cutoff_replaces_only_that_family_and_keeps_stable_ids() -
     custom_scene = build_scene_response(
         structure,
         bond_algorithm="crystal-nn",
-        bond_cutoff_overrides={"Sr|O": 2.0},
+        bond_cutoff_overrides={"Sr|O": {"min": 0.0, "max": 2.0}},
     )
     repeated_scene = build_scene_response(structure, bond_algorithm="crystal-nn")
 
@@ -427,7 +427,7 @@ def test_custom_family_cutoff_rejects_expensive_periodic_neighbor_search() -> No
         build_scene_response(
             structure,
             bond_algorithm="crystal-nn",
-            bond_cutoff_overrides={"Sr|O": 1_000.0},
+            bond_cutoff_overrides={"Sr|O": {"min": 0.0, "max": 1_000.0}},
         )
 
     assert exc_info.value.code == "bond-cutoff-search-too-expensive"
@@ -475,21 +475,36 @@ def test_custom_neighbor_preflight_matches_periodic_neighbor_count(
     ) == len(center_indices)
 
 
-def test_custom_family_cutoff_is_inclusive_and_cannot_add_a_new_family() -> None:
+def test_custom_family_cutoff_range_is_inclusive_and_cannot_add_a_new_family() -> None:
     structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
     base_scene = build_scene_response(structure, bond_algorithm="crystal-nn")
     sr_o_maximum = next(
         family["maxLength"] for family in base_scene["bondFamilies"] if family["key"] == "Sr|O"
     )
-    assert sr_o_maximum is not None
+    sr_o_minimum = next(
+        family["minLength"] for family in base_scene["bondFamilies"] if family["key"] == "Sr|O"
+    )
+    assert sr_o_minimum is not None and sr_o_maximum is not None
 
     inclusive_scene = build_scene_response(
         structure,
         bond_algorithm="crystal-nn",
-        bond_cutoff_overrides={"O|Sr": sr_o_maximum},
+        bond_cutoff_overrides={
+            "O|Sr": {"min": sr_o_minimum, "max": sr_o_maximum + 1e-3}
+        },
+    )
+    exclude_short_scene = build_scene_response(
+        structure,
+        bond_algorithm="crystal-nn",
+        bond_cutoff_overrides={
+            "Sr|O": {"min": sr_o_minimum + 1e-6, "max": sr_o_maximum + 1e-3}
+        },
     )
 
     assert sum(bond["familyKey"] == "Sr|O" for bond in inclusive_scene["bonds"]) == sum(
+        bond["familyKey"] == "Sr|O" for bond in base_scene["bonds"]
+    )
+    assert sum(bond["familyKey"] == "Sr|O" for bond in exclude_short_scene["bonds"]) < sum(
         bond["familyKey"] == "Sr|O" for bond in base_scene["bonds"]
     )
     with pytest.raises(
@@ -499,7 +514,7 @@ def test_custom_family_cutoff_is_inclusive_and_cannot_add_a_new_family() -> None
         build_scene_response(
             structure,
             bond_algorithm="crystal-nn",
-            bond_cutoff_overrides={"Sr|Ti": 3.0},
+            bond_cutoff_overrides={"Sr|Ti": {"min": 0.0, "max": 3.0}},
         )
 
 
@@ -1079,7 +1094,7 @@ def test_custom_recalculation_fails_atomically(
         build_scene_response(
             structure,
             bond_algorithm="crystal-nn",
-            bond_cutoff_overrides={"Sr|O": 2.0},
+            bond_cutoff_overrides={"Sr|O": {"min": 0.0, "max": 2.0}},
         )
 
 

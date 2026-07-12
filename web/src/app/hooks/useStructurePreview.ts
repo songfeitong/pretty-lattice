@@ -19,6 +19,7 @@ import {
   loadStaticScenePreview,
   uploadStructurePreview,
   type BondAlgorithm,
+  type BondCutoffRange,
   type SceneSpec,
 } from "../../api/scene";
 import {
@@ -267,6 +268,9 @@ export function useStructurePreview({
         });
         if (request.generation !== requestGenerationRef.current) return;
         setBondingMode(nextBondingMode);
+        setCustomBondingProfile(
+          nextBondingMode === CUSTOM_BONDING_MODE ? nextProfile : null,
+        );
         setScene(nextScene);
         onBondAlgorithmSceneLoaded(nextScene);
         setConnectivityStatus("ready");
@@ -291,8 +295,8 @@ export function useStructurePreview({
     ],
   );
 
-  const handleBondCutoffOverrideChange = useCallback(
-    async (familyKey: string, cutoff: number | null) => {
+  const handleBondCutoffOverridesChange = useCallback(
+    async (cutoffOverrides: Record<string, BondCutoffRange>) => {
       if (!currentFile) {
         if (scene) {
           setPreviewError("backend-unavailable", BACKEND_UNAVAILABLE_MESSAGE);
@@ -304,14 +308,6 @@ export function useStructurePreview({
         bondingMode === CUSTOM_BONDING_MODE
           ? customBondingProfile?.baseAlgorithm ?? DEFAULT_BOND_ALGORITHM
           : bondingMode;
-      const cutoffOverrides = {
-        ...(customBondingProfile?.cutoffOverrides ?? {}),
-      };
-      if (cutoff === null) {
-        delete cutoffOverrides[familyKey];
-      } else {
-        cutoffOverrides[familyKey] = cutoff;
-      }
       const hasOverrides = Object.keys(cutoffOverrides).length > 0;
       const nextProfile = hasOverrides
         ? { baseAlgorithm, cutoffOverrides }
@@ -431,7 +427,7 @@ export function useStructurePreview({
     errorMessage,
     errorTitle,
     handleBondAlgorithmChange,
-    handleBondCutoffOverrideChange,
+    handleBondCutoffOverridesChange,
     handleFileChange,
     handleResetAllSettings,
     requestConnectivity,

@@ -55,7 +55,7 @@ describe("BondsPanel", () => {
     expect(screen.queryByText("Hidden bonds")).toBeNull();
   });
 
-  test("commits family appearance values and uses icon-only cutoff actions", async () => {
+  test("commits family appearance values without persistent length details", async () => {
     const user = userEvent.setup();
     render(<BondsPanelHarness selected={false} />);
     const family = screen.getByRole("region", { name: "Na–Cl bonds" });
@@ -65,17 +65,34 @@ describe("BondsPanel", () => {
     await user.type(radius, "0.24{Enter}");
     expect(radius.getAttribute("value")).toBe("0.24");
 
-    const details = family.querySelector<HTMLElement>('[data-slot="bond-family-details"]');
-    expect(details?.className).not.toContain("bg-muted");
-    expect(details?.previousElementSibling?.getAttribute("data-slot")).not.toBe("separator");
-    const cutoff = screen.getByRole("textbox", { name: "Cutoff for Na–Cl" });
-    expect(cutoff.getAttribute("placeholder")).toBe("1.2");
-    expect(screen.getByRole("button", { name: "Set Na–Cl cutoff" }).textContent).toBe("");
-    expect(screen.getByRole("button", { name: "Remove Na–Cl cutoff" }).textContent).toBe("");
+    expect(family.querySelector('[data-slot="bond-family-details"]')).toBeNull();
+    expect(screen.queryByText("Bond length")).toBeNull();
+  });
+
+  test("switches every family row to compact cutoff range controls", async () => {
+    render(<BondsPanelHarness cutoffEditing selected />);
+
+    expect(screen.getByText("Min (Å)").isConnected).toBe(true);
+    expect(screen.getByText("Max (Å)").isConnected).toBe(true);
+    expect(screen.getByRole("textbox", { name: "Minimum cutoff for Na–Cl" }).getAttribute("value"))
+      .toBe("0.000");
+    expect(screen.getByRole("textbox", { name: "Maximum cutoff for Na–Cl" }).getAttribute("value"))
+      .toBe("1.200");
+    expect(
+      screen.getByRole("textbox", { name: "Maximum cutoff for Na–Cl" }).parentElement?.className,
+    ).toContain("bond-family-controls-enter-cutoff");
+    expect(
+      screen.getByRole("textbox", { name: "Maximum cutoff for Na–Cl" }).className,
+    ).toContain("focus-visible:ring-[1px]");
+    expect(screen.queryByRole("textbox", { name: "Na–Cl radius" })).toBeNull();
+    expect(screen.queryByRole("textbox", { name: "Na:0–Cl:1 radius" })).toBeNull();
   });
 });
 
-function BondsPanelHarness({ selected = true }: { selected?: boolean }) {
+function BondsPanelHarness({ cutoffEditing = false, selected = true }: {
+  cutoffEditing?: boolean;
+  selected?: boolean;
+}) {
   const scene = bondScene();
   const [style, setStyle] = useState<StyleState>(createDefaultStyle());
   const [selectedBondId, setSelectedBondId] = useState<string | null>(
@@ -89,14 +106,26 @@ function BondsPanelHarness({ selected = true }: { selected?: boolean }) {
       bondLocateRequest={null}
       bondOpacity={100}
       bondsVisible
-      cutoffOverrides={{}}
+      cutoffDrafts={cutoffEditing ? {
+        "Na|Cl": {
+          initialOverride: false,
+          maxText: "1.200",
+          minText: "0.000",
+          pendingRemoval: false,
+        },
+      } : {}}
+      cutoffEditing={cutoffEditing}
+      invalidCutoffFeedbackPhase={null}
+      invalidCutoffFields={new Set()}
       isSceneLoading={false}
       onBondLocateRequestHandled={() => {}}
       onBondVisibilityChange={(bond, visible) => {
         setVisibility((current) => setBondRelationVisible(current, bond, visible));
         if (!visible) setSelectedBondId(null);
       }}
-      onCutoffChange={async () => true}
+      onCutoffDraftChange={() => {}}
+      onCutoffEditorKeyDown={() => {}}
+      onCutoffRestoreToggle={() => {}}
       onFamilyVisibilityChange={(familyKey, visible) =>
         setVisibility((current) => setBondFamilyVisible(current, familyKey, visible))
       }
