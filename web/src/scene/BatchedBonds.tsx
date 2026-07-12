@@ -18,6 +18,7 @@ import {
 
 import type { BondColorMode } from "../model";
 import { DEFAULT_BOND_COLOR } from "../model";
+import type { SelectionActivation } from "../selection/selectionActivationPreference";
 import { BOND_RADIUS } from "./sceneGeometry";
 import { STRUCTURE_RENDER_ORDER } from "./renderOrder";
 import { twoToneBondCylinderGeometry } from "./structureGeometry";
@@ -40,6 +41,7 @@ import {
   atomPulseFade,
   easeOutCubic,
 } from "./atomHighlight";
+import { selectionPointerAction } from "./selectionActivation";
 
 interface BondBatchBuild {
   itemCount: number;
@@ -56,6 +58,7 @@ export function BatchedBonds({
   colorMode,
   inspectedBondId,
   interactionLocked,
+  selectionActivation,
   materialFamily,
   meshDetail,
   onInspect,
@@ -71,6 +74,7 @@ export function BatchedBonds({
   colorMode: BondColorMode;
   inspectedBondId: string | null;
   interactionLocked: boolean;
+  selectionActivation: SelectionActivation;
   materialFamily: ResolvedStructureMaterialFamily;
   meshDetail: SceneMeshDetail;
   onInspect?: (bondId: string | null) => void;
@@ -150,11 +154,29 @@ export function BatchedBonds({
         return;
       }
       event.stopPropagation();
-      if (!interactionLocked) {
+      const action = selectionPointerAction({
+        activation: selectionActivation,
+        event: "click",
+        interactionLocked,
+        selected: item.id === inspectedBondId,
+      });
+      if (action === "locked-feedback") {
+        onLockedInteractionAttempt?.();
+      } else if (action === "select") {
+        onInspect?.(item.id);
+      } else if (action === "pulse") {
         onPulse?.(item.id);
       }
     },
-    [interactionLocked, itemForEvent, onPulse],
+    [
+      inspectedBondId,
+      interactionLocked,
+      itemForEvent,
+      onInspect,
+      onLockedInteractionAttempt,
+      onPulse,
+      selectionActivation,
+    ],
   );
   const handleDoubleClick = useCallback(
     (event: ThreeEvent<MouseEvent>) => {
@@ -163,13 +185,26 @@ export function BatchedBonds({
         return;
       }
       event.stopPropagation();
-      if (interactionLocked) {
+      const action = selectionPointerAction({
+        activation: selectionActivation,
+        event: "double-click",
+        interactionLocked,
+        selected: item.id === inspectedBondId,
+      });
+      if (action === "locked-feedback") {
         onLockedInteractionAttempt?.();
-        return;
+      } else if (action === "select") {
+        onInspect?.(item.id);
       }
-      onInspect?.(item.id);
     },
-    [interactionLocked, itemForEvent, onInspect, onLockedInteractionAttempt],
+    [
+      interactionLocked,
+      inspectedBondId,
+      itemForEvent,
+      onInspect,
+      onLockedInteractionAttempt,
+      selectionActivation,
+    ],
   );
 
   if (!batch) {

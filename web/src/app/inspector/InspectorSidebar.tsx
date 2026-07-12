@@ -47,6 +47,7 @@ import {
 } from "@/motion/motionPreference";
 import { THEME_PREFERENCES, type ThemePreference } from "@/theme/themePreference";
 import { useTheme } from "@/theme/ThemeProvider";
+import type { SelectionActivation } from "@/selection/selectionActivationPreference";
 
 import { type BondSpec, type SceneSpec } from "../../api/scene";
 import {
@@ -140,6 +141,13 @@ const INTERACTION_MODE_LABEL_KEYS: Record<InteractionMode, "settings.orbit" | "s
   orbit: "settings.orbit",
   trackball: "settings.trackball",
 };
+const SELECTION_ACTIVATION_LABEL_KEYS: Record<
+  SelectionActivation,
+  "settings.singleClick" | "settings.doubleClick"
+> = {
+  single: "settings.singleClick",
+  double: "settings.doubleClick",
+};
 
 export function InspectorToggle({
   isOpen,
@@ -197,6 +205,7 @@ export function InspectorSidebar({
   dragSensitivity,
   isCustomColorScheme,
   interactionMode,
+  selectionActivation,
   lightStrength,
   mouseInertia,
   isOpen,
@@ -222,6 +231,7 @@ export function InspectorSidebar({
   onDistinguishSimilarColorsChange,
   onDragSensitivityChange,
   onInteractionModeChange,
+  onSelectionActivationChange,
   onLightStrengthChange,
   onMouseInertiaChange,
   onPreviewMeshQualityChange,
@@ -250,6 +260,7 @@ export function InspectorSidebar({
   dragSensitivity: number;
   isCustomColorScheme: boolean;
   interactionMode: InteractionMode;
+  selectionActivation: SelectionActivation;
   lightStrength: number;
   mouseInertia: boolean;
   isOpen: boolean;
@@ -275,6 +286,7 @@ export function InspectorSidebar({
   onDistinguishSimilarColorsChange: (distinguishSimilarColors: boolean) => void;
   onDragSensitivityChange: (dragSensitivity: number) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
+  onSelectionActivationChange: (activation: SelectionActivation) => void;
   onLightStrengthChange: (lightStrength: number) => void;
   onMouseInertiaChange: (mouseInertia: boolean) => void;
   onPreviewMeshQualityChange: (meshQuality: MeshQuality) => void;
@@ -338,6 +350,7 @@ export function InspectorSidebar({
               dragSensitivity={dragSensitivity}
               isCustomColorScheme={isCustomColorScheme}
               interactionMode={interactionMode}
+              selectionActivation={selectionActivation}
               lightStrength={lightStrength}
               mouseInertia={mouseInertia}
               isSceneLoading={isSceneLoading}
@@ -350,6 +363,7 @@ export function InspectorSidebar({
               onDistinguishSimilarColorsChange={onDistinguishSimilarColorsChange}
               onDragSensitivityChange={onDragSensitivityChange}
               onInteractionModeChange={onInteractionModeChange}
+              onSelectionActivationChange={onSelectionActivationChange}
               onLightStrengthChange={onLightStrengthChange}
               onMouseInertiaChange={onMouseInertiaChange}
               onPreviewMeshQualityChange={onPreviewMeshQualityChange}
@@ -401,6 +415,7 @@ function SettingsPanel({
   dragSensitivity,
   isCustomColorScheme,
   interactionMode,
+  selectionActivation,
   lightStrength,
   mouseInertia,
   isSceneLoading,
@@ -413,6 +428,7 @@ function SettingsPanel({
   onDistinguishSimilarColorsChange,
   onDragSensitivityChange,
   onInteractionModeChange,
+  onSelectionActivationChange,
   onLightStrengthChange,
   onMouseInertiaChange,
   onPreviewMeshQualityChange,
@@ -426,6 +442,7 @@ function SettingsPanel({
   dragSensitivity: number;
   isCustomColorScheme: boolean;
   interactionMode: InteractionMode;
+  selectionActivation: SelectionActivation;
   lightStrength: number;
   mouseInertia: boolean;
   isSceneLoading: boolean;
@@ -438,6 +455,7 @@ function SettingsPanel({
   onDistinguishSimilarColorsChange: (distinguishSimilarColors: boolean) => void;
   onDragSensitivityChange: (dragSensitivity: number) => void;
   onInteractionModeChange: (interactionMode: InteractionMode) => void;
+  onSelectionActivationChange: (activation: SelectionActivation) => void;
   onLightStrengthChange: (lightStrength: number) => void;
   onMouseInertiaChange: (mouseInertia: boolean) => void;
   onPreviewMeshQualityChange: (meshQuality: MeshQuality) => void;
@@ -738,6 +756,37 @@ function SettingsPanel({
               </SelectGroup>
             </SelectContent>
           </Select>
+        </InspectorSelectRow>
+
+        <InspectorSelectRow label={t("settings.selection")}>
+          <ToggleGroup
+            type="single"
+            variant="primary"
+            size="sm"
+            spacing={1}
+            value={selectionActivation}
+            aria-label={t("settings.selection")}
+            className="grid h-6 w-full grid-cols-2"
+            onValueChange={(value) => {
+              if (value) {
+                onSelectionActivationChange(value as SelectionActivation);
+              }
+            }}
+          >
+            {(["single", "double"] as const).map((activation) => {
+              const label = t(SELECTION_ACTIVATION_LABEL_KEYS[activation]);
+              return (
+                <ToggleGroupItem
+                  key={activation}
+                  value={activation}
+                  aria-label={label}
+                  className="h-6 w-full px-1 text-[11px]"
+                >
+                  {label}
+                </ToggleGroupItem>
+              );
+            })}
+          </ToggleGroup>
         </InspectorSelectRow>
 
         <InspectorSwitchRow

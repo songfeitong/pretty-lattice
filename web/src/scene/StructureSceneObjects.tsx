@@ -15,6 +15,10 @@ import {
   elementColorOverridesForStyle,
 } from "../model";
 import { PREVIEW_THEME_COLORS } from "../theme/previewTheme";
+import {
+  DEFAULT_SELECTION_ACTIVATION,
+  type SelectionActivation,
+} from "../selection/selectionActivationPreference";
 import type { ResolvedStructureMaterialFamilies } from "./materialPresetResolver";
 import type { SceneLayout } from "./sceneLayout";
 import type { VectorTuple } from "./viewMath";
@@ -80,6 +84,7 @@ export function PreviewSceneContent({
   inspectedAtomId,
   inspectedBondId,
   interactionLocked,
+  selectionActivation = DEFAULT_SELECTION_ACTIVATION,
   onAtomInspect,
   onAtomPulse,
   onBondInspect,
@@ -107,6 +112,7 @@ export function PreviewSceneContent({
   inspectedAtomId: string | null;
   inspectedBondId: string | null;
   interactionLocked: boolean;
+  selectionActivation?: SelectionActivation;
   onAtomInspect?: (atomId: string | null) => void;
   onAtomPulse?: (atomId: string) => void;
   onBondInspect?: (bondId: string | null) => void;
@@ -137,6 +143,7 @@ export function PreviewSceneContent({
         inspectedAtomId={inspectedAtomId}
         inspectedBondId={inspectedBondId}
         interactionLocked={interactionLocked}
+        selectionActivation={selectionActivation}
         onAtomInspect={onAtomInspect}
         onAtomPulse={onAtomPulse}
         onBondInspect={onBondInspect}
@@ -258,6 +265,7 @@ export function StructureSceneObjects({
   componentOpacity,
   groupPosition,
   interactionLocked = false,
+  selectionActivation = DEFAULT_SELECTION_ACTIVATION,
   materialFamilies,
   meshDetail,
   scene,
@@ -284,6 +292,7 @@ export function StructureSceneObjects({
   componentOpacity: ComponentOpacityState;
   groupPosition: VectorTuple;
   interactionLocked?: boolean;
+  selectionActivation?: SelectionActivation;
   materialFamilies: ResolvedStructureMaterialFamilies;
   meshDetail: SceneMeshDetail;
   scene: SceneSpec;
@@ -375,6 +384,7 @@ export function StructureSceneObjects({
             colorMode={style.bondColorMode}
             inspectedBondId={inspectedBondId}
             interactionLocked={interactionLocked}
+            selectionActivation={selectionActivation}
             materialFamily={materialFamilies.bond}
             meshDetail={meshDetail}
             onInspect={onBondInspect}
@@ -395,6 +405,7 @@ export function StructureSceneObjects({
             colorOverrides={colorOverrides}
             inspectedAtomId={inspectedAtomId}
             interactionLocked={interactionLocked}
+            selectionActivation={selectionActivation}
             materialFamily={materialFamilies.atom}
             meshDetail={meshDetail}
             onInspect={onAtomInspect}

@@ -322,7 +322,11 @@ type InspectedSceneObject =
 
 ### 点击行为
 
-交互尽量沿用现有 atom 规则：
+默认使用双击选择，并允许用户在 `Settings > Interaction > Selection` 中持久化选择
+`Single click` 或 `Double click`。该偏好同时作用于 atom 和 bond；Reset all 将它恢复为
+`Double click`，普通模式切换保持当前 selection。
+
+默认双击模式沿用现有 atom 规则：
 
 - 单击 atom：清除 selected bond，atom pulse。
 - 双击 atom：选中 atom，打开 atom card。
@@ -331,6 +335,13 @@ type InspectedSceneObject =
 - 单击已经 selected 的同一对象：保持 selection，不重复 pulse。
 - 点击背景、cell 或 polyhedron：清除 selection。
 - Interaction locked 时不 pulse、不选择；双击复用现有 lock feedback。
+
+单击模式下：
+
+- 单击 atom 或 bond 直接选择，不先播放 pulse；
+- 单击已经 selected 的同一对象保持 selection，不重复触发定位或动画；
+- 双击产生的后续 click 保持同一 selection，不重复处理 double-click；
+- Interaction locked 时，第一次单击即复用 lock feedback。
 
 Atom 与 bond 重叠时使用 Three.js/R3F 原生的最近可见表面结果：
 

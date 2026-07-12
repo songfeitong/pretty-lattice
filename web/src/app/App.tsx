@@ -11,6 +11,12 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { MotionProvider, useMotion } from "@/motion/MotionProvider";
+import {
+  DEFAULT_SELECTION_ACTIVATION,
+  readSelectionActivation,
+  type SelectionActivation,
+  writeSelectionActivation,
+} from "@/selection/selectionActivationPreference";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -148,6 +154,8 @@ function AppContent() {
   );
   const [inspectedSceneObject, setInspectedSceneObject] =
     useState<InspectedSceneObject>(null);
+  const [selectionActivation, setSelectionActivationState] =
+    useState(readSelectionActivation);
   const [pulsedSceneObject, setPulsedSceneObject] =
     useState<PulsedSceneObject | null>(null);
   const [bondVisibilityOverrides, setBondVisibilityOverrides] =
@@ -387,6 +395,8 @@ function AppContent() {
       resetExportState();
       setInspectedSceneObject(null);
       setPulsedSceneObject(null);
+      writeSelectionActivation(DEFAULT_SELECTION_ACTIVATION);
+      setSelectionActivationState(DEFAULT_SELECTION_ACTIVATION);
       setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
       setAtomLocateRequest(null);
       setBondLocateRequest(null);
@@ -533,6 +543,14 @@ function AppContent() {
       token: (currentPulse?.token ?? 0) + 1,
     }));
   }, []);
+
+  const handleSelectionActivationChange = useCallback(
+    (activation: SelectionActivation) => {
+      writeSelectionActivation(activation);
+      setSelectionActivationState(activation);
+    },
+    [],
+  );
 
   const requestAtomLocateInObjects = useCallback((atomId: string) => {
     setAtomLocateRequest((currentRequest) => ({
@@ -831,6 +849,7 @@ function AppContent() {
                 }
                 interactionLocked={viewState.interactionLocked}
                 interactionMode={viewState.interactionMode}
+                selectionActivation={selectionActivation}
                 mouseInertia={viewState.mouseInertia}
                 layoutScene={scene ?? visibleScene}
                 resetCounter={viewState.resetCounter}
@@ -1055,6 +1074,7 @@ function AppContent() {
                   hasCustomBondingProfile={customBondingProfile !== null}
                   dragSensitivity={viewState.dragSensitivity}
                   interactionMode={viewState.interactionMode}
+                  selectionActivation={selectionActivation}
                   lightStrength={viewState.lightStrength}
                   mouseInertia={viewState.mouseInertia}
                   isCustomColorScheme={style.colorSchemeMode === "custom"}
@@ -1084,6 +1104,7 @@ function AppContent() {
                   }}
                   onDragSensitivityChange={handleDragSensitivityChange}
                   onInteractionModeChange={handleInteractionModeChange}
+                  onSelectionActivationChange={handleSelectionActivationChange}
                   onLightStrengthChange={handleLightStrengthChange}
                   onMouseInertiaChange={handleMouseInertiaChange}
                   onPreviewMeshQualityChange={handlePreviewMeshQualityChange}

@@ -21,6 +21,7 @@ import {
 import type { AtomSpec } from "../api/scene";
 import type { ElementColorOverrides } from "../model/colorSchemes";
 import type { StyleState } from "../model";
+import type { SelectionActivation } from "../selection/selectionActivationPreference";
 import type { ResolvedStructureMaterialFamily } from "./materialPresetResolver";
 import { STRUCTURE_RENDER_ORDER } from "./renderOrder";
 import { StructureMaterial } from "./StructureMaterial";
@@ -48,6 +49,7 @@ import {
   type BatchPickRegistry,
 } from "./batchPicking";
 import type { VectorTuple } from "./viewMath";
+import { selectionPointerAction } from "./selectionActivation";
 import {
   batchedAtomOpacityProgramCacheKey,
   enableBatchedAtomOpacity,
@@ -70,6 +72,7 @@ export function BatchedAtoms({
   colorOverrides,
   inspectedAtomId,
   interactionLocked,
+  selectionActivation,
   materialFamily,
   meshDetail,
   onInspect,
@@ -86,6 +89,7 @@ export function BatchedAtoms({
   colorOverrides?: ElementColorOverrides;
   inspectedAtomId: string | null;
   interactionLocked: boolean;
+  selectionActivation: SelectionActivation;
   materialFamily: ResolvedStructureMaterialFamily;
   meshDetail: SceneMeshDetail;
   onInspect?: (atomId: string | null) => void;
@@ -183,13 +187,29 @@ export function BatchedAtoms({
       }
 
       event.stopPropagation();
-      if (interactionLocked) {
-        return;
+      const action = selectionPointerAction({
+        activation: selectionActivation,
+        event: "click",
+        interactionLocked,
+        selected: atom.id === inspectedAtomId,
+      });
+      if (action === "locked-feedback") {
+        onLockedInteractionAttempt?.();
+      } else if (action === "select") {
+        onInspect?.(atom.id);
+      } else if (action === "pulse") {
+        onPulse?.(atom.id);
       }
-
-      onPulse?.(atom.id);
     },
-    [atomForEvent, interactionLocked, onPulse],
+    [
+      atomForEvent,
+      inspectedAtomId,
+      interactionLocked,
+      onInspect,
+      onLockedInteractionAttempt,
+      onPulse,
+      selectionActivation,
+    ],
   );
 
   const handleDoubleClick = useCallback(
@@ -200,14 +220,26 @@ export function BatchedAtoms({
       }
 
       event.stopPropagation();
-      if (interactionLocked) {
+      const action = selectionPointerAction({
+        activation: selectionActivation,
+        event: "double-click",
+        interactionLocked,
+        selected: atom.id === inspectedAtomId,
+      });
+      if (action === "locked-feedback") {
         onLockedInteractionAttempt?.();
-        return;
+      } else if (action === "select") {
+        onInspect?.(atom.id);
       }
-
-      onInspect?.(atom.id);
     },
-    [atomForEvent, interactionLocked, onInspect, onLockedInteractionAttempt],
+    [
+      atomForEvent,
+      inspectedAtomId,
+      interactionLocked,
+      onInspect,
+      onLockedInteractionAttempt,
+      selectionActivation,
+    ],
   );
 
   if (!batch) {

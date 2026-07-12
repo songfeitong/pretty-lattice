@@ -23,6 +23,7 @@ import {
 } from "../src/model";
 import { LANGUAGE_STORAGE_KEY } from "../src/i18n";
 import { MOTION_STORAGE_KEY } from "../src/motion/motionPreference";
+import { SELECTION_ACTIVATION_STORAGE_KEY } from "../src/selection/selectionActivationPreference";
 import { MATERIAL_PRESET_OPTIONS } from "../src/model/materialPresets";
 import { THEME_STORAGE_KEY } from "../src/theme/themePreference";
 import { createAppTestHarness } from "./helpers/appHarness";
@@ -711,6 +712,14 @@ describe("App", () => {
     await user.click(await screen.findByRole("option", { name: "Jmol" }));
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
     const inspector = screen.getByRole("complementary", { name: "Sidebar" });
+    const singleClickSelection = within(inspector).getByRole("radio", {
+      name: "Single click",
+    });
+    await user.click(singleClickSelection);
+    expect(singleClickSelection.getAttribute("aria-checked")).toBe("true");
+    expect(window.localStorage.getItem(SELECTION_ACTIVATION_STORAGE_KEY)).toBe(
+      "single",
+    );
     const mouseInertiaSwitch = within(inspector).getByRole("switch", {
       name: "Mouse inertia",
     });
@@ -754,6 +763,14 @@ describe("App", () => {
 
     expect(screen.queryByTestId("fps-overlay")).toBeNull();
     const resetInspector = screen.getByRole("complementary", { name: "Sidebar" });
+    expect(
+      within(resetInspector)
+        .getByRole("radio", { name: "Double click" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+    expect(window.localStorage.getItem(SELECTION_ACTIVATION_STORAGE_KEY)).toBe(
+      "double",
+    );
     expect(
       within(resetInspector).getByRole("switch", { name: "Show FPS" }).getAttribute(
         "aria-checked",

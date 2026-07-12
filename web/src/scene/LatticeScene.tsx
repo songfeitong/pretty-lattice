@@ -18,6 +18,10 @@ import {
 } from "../model";
 import type { PreviewFpsStore } from "../model/previewFpsStore";
 import type { InteractionMode } from "../model/viewState";
+import {
+  DEFAULT_SELECTION_ACTIVATION,
+  type SelectionActivation,
+} from "../selection/selectionActivationPreference";
 import { PREVIEW_THEME_COLORS } from "../theme/previewTheme";
 import type { ResolvedTheme } from "../theme/themePreference";
 import {
@@ -102,6 +106,7 @@ export function LatticeScene({
   dragSensitivity = DEFAULT_DRAG_SENSITIVITY,
   interactionLocked,
   interactionMode,
+  selectionActivation = DEFAULT_SELECTION_ACTIVATION,
   layoutScene,
   lightStrength = 1,
   mouseInertia = DEFAULT_MOUSE_INERTIA,
@@ -144,6 +149,7 @@ export function LatticeScene({
   dragSensitivity?: number;
   interactionLocked: boolean;
   interactionMode: InteractionMode;
+  selectionActivation?: SelectionActivation;
   layoutScene?: SceneSpec;
   lightStrength?: number;
   mouseInertia?: boolean;
@@ -266,6 +272,7 @@ export function LatticeScene({
         inspectedAtomId={inspectedAtomId}
         inspectedBondId={inspectedBondId}
         interactionLocked={interactionLocked}
+        selectionActivation={selectionActivation}
         onAtomInspect={onAtomInspect}
         onAtomPulse={onAtomPulse}
         onBondInspect={onBondInspect}
