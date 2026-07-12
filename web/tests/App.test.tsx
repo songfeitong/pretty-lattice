@@ -579,7 +579,7 @@ describe("App", () => {
       (await screen.findByRole("listbox")).querySelector(
         '[data-slot="select-separator"]',
       ),
-    ).toBeTruthy();
+    ).toBeNull();
     expect(screen.getByRole("option", { name: "简体中文" })).toBeTruthy();
     await user.click(await screen.findByRole("option", { name: "繁體中文" }));
 

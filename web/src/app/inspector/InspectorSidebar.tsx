@@ -31,7 +31,6 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -541,7 +540,6 @@ function SettingsPanel({
                 <SelectItem value="system" className={INSPECTOR_SELECT_ITEM_CLASS}>
                   {t(INSPECTOR_LANGUAGE_LABEL_KEYS.system)}
                 </SelectItem>
-                <SelectSeparator />
                 {SUPPORTED_LANGUAGES.map((language) => (
                   <SelectItem
                     key={language}
@@ -758,6 +756,27 @@ function SettingsPanel({
           </Select>
         </InspectorSelectRow>
 
+        <InspectorSwitchRow
+          checked={mouseInertia && !reducedMotion}
+          disabled={interactionMode !== "trackball" || reducedMotion}
+          label={t("settings.mouseInertia")}
+          onCheckedChange={onMouseInertiaChange}
+        />
+
+        <InspectorRangeRow
+          label={t("settings.dragSensitivity")}
+          value={dragSensitivity}
+          min={MIN_DRAG_SENSITIVITY}
+          max={MAX_DRAG_SENSITIVITY}
+          clampValue={clampDragSensitivity}
+          formatPercent={formatDragSensitivityPercent}
+          onValueChange={onDragSensitivityChange}
+          parsePercentInput={parseDragSensitivityPercentInput}
+          sliderPositionToValue={sliderPositionToDragSensitivity}
+          snapSliderPosition={snapDragSensitivitySliderPosition}
+          valueToSliderPosition={dragSensitivityToSliderPosition}
+        />
+
         <InspectorSelectRow label={t("settings.selection")}>
           <ToggleGroup
             type="single"
@@ -788,27 +807,6 @@ function SettingsPanel({
             })}
           </ToggleGroup>
         </InspectorSelectRow>
-
-        <InspectorSwitchRow
-          checked={mouseInertia && !reducedMotion}
-          disabled={interactionMode !== "trackball" || reducedMotion}
-          label={t("settings.mouseInertia")}
-          onCheckedChange={onMouseInertiaChange}
-        />
-
-        <InspectorRangeRow
-          label={t("settings.dragSensitivity")}
-          value={dragSensitivity}
-          min={MIN_DRAG_SENSITIVITY}
-          max={MAX_DRAG_SENSITIVITY}
-          clampValue={clampDragSensitivity}
-          formatPercent={formatDragSensitivityPercent}
-          onValueChange={onDragSensitivityChange}
-          parsePercentInput={parseDragSensitivityPercentInput}
-          sliderPositionToValue={sliderPositionToDragSensitivity}
-          snapSliderPosition={snapDragSensitivitySliderPosition}
-          valueToSliderPosition={dragSensitivityToSliderPosition}
-        />
       </InspectorSettingsSection>
 
     </div>
