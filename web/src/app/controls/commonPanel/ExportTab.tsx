@@ -79,7 +79,7 @@ const EXPORT_LEGEND_LAYOUT_LABEL_KEYS: Record<ExportLegendLayout, "exportPanel.h
   vertical: "exportPanel.vertical",
 };
 const EXPORT_SEGMENTED_TRIGGER_CLASS =
-  "!h-5 rounded-[4px] px-0.5 py-0 text-[0.68rem] font-medium transition-[background-color,color,box-shadow] duration-75 ease-out motion-reduced:transition-none md:text-[0.68rem]";
+  "!h-5 rounded-[4px] px-0.5 py-0 text-[0.68rem] font-medium transition-[background-color,color,box-shadow] duration-75 ease-out dark:data-[state=active]:bg-background/50 motion-reduced:transition-none md:text-[0.68rem]";
 
 export function ExportTabContent({
   error,

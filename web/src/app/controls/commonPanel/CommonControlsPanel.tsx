@@ -291,7 +291,7 @@ export function CommonControlsPanel({
               <span
                 aria-hidden="true"
                 data-slot="common-controls-active-indicator"
-                className="pointer-events-none absolute inset-y-1 left-0 z-0 rounded-md bg-background shadow-sm transition-[transform,width] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none"
+                className="pointer-events-none absolute inset-y-1 left-0 z-0 rounded-md bg-background shadow-sm transition-[transform,width] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] dark:bg-background/50 dark:ring-1 dark:ring-foreground/10 motion-reduced:transition-none"
                 style={{
                   transform: `translateX(${tabIndicatorRect.left}px)`,
                   width: tabIndicatorRect.width,

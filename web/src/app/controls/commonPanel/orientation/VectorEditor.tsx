@@ -290,7 +290,7 @@ function VectorEditorRow({
       })}
       className={cn(
         VECTOR_AXIS_TOKEN_CLASS,
-        "border border-foreground/10 bg-background text-xs text-muted-foreground shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-[background-color,border-color,color,box-shadow] hover:border-foreground/15 hover:bg-accent/80 hover:text-foreground hover:shadow-[0_1px_3px_rgb(0_0_0/0.06)] focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-ring/25",
+        "border border-foreground/10 bg-background text-xs text-muted-foreground shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-[background-color,border-color,color,box-shadow] hover:border-foreground/15 hover:bg-accent/80 hover:text-foreground hover:shadow-[0_1px_3px_rgb(0_0_0/0.06)] focus-visible:outline-none focus-visible:ring-[2px] focus-visible:ring-ring/25 dark:bg-background/50",
       )}
       onClick={() => onSecondaryChange(nextSecondaryDirection)}
     >
