@@ -22,7 +22,7 @@
 - **灵活**：颜色、半径、材质、透明度、视角和导出参数都可以按需要修改
 
 <p align="center">
-  <img src="assets/demo.png" alt="Pretty Lattice interface preview" width="90%">
+  <img src="https://github.com/user-attachments/assets/2c70cb8e-d908-4455-9908-dc6009792177" alt="Pretty Lattice interface preview" width="90%">
 </p>
 
 
@@ -85,13 +85,13 @@ prl -p 0          # 自动选择可用端口
 ### 材质预设
 
 <p align="center">
-  <img src="assets/SrTiO3-material-presets.png" alt="SrTiO3 material preset examples" width="75%">
+  <img src="https://github.com/user-attachments/assets/9f7ce8f2-939f-4221-ac1c-087d7d5f2664" alt="SrTiO3 material preset examples" width="75%">
 </p>
 
 ### 配色预设
 
 <p align="center">
-  <img src="assets/Ba2Ca2Cu3HgO8-color-schemes.png" alt="Ba2Ca2Cu3HgO8 color scheme examples" width="90%">
+  <img src="https://github.com/user-attachments/assets/51f2d5de-b73a-466e-931c-cd0b50b98c32" alt="Ba2Ca2Cu3HgO8 color scheme examples" width="90%">
 </p>
 
 ## 参与

@@ -21,7 +21,7 @@
 - **Customizable**: tune colors, radii, materials, opacity, orientation, and export settings
 
 <p align="center">
-  <img src="assets/demo.png" alt="Pretty Lattice interface preview" width="90%">
+  <img src="https://github.com/user-attachments/assets/2c70cb8e-d908-4455-9908-dc6009792177" alt="Pretty Lattice interface preview" width="90%">
 </p>
 
 
@@ -84,13 +84,13 @@ prl -p 0          # choose any available port automatically
 ### Material presets
 
 <p align="center">
-  <img src="assets/SrTiO3-material-presets.png" alt="SrTiO3 material preset examples" width="75%">
+  <img src="https://github.com/user-attachments/assets/9f7ce8f2-939f-4221-ac1c-087d7d5f2664" alt="SrTiO3 material preset examples" width="75%">
 </p>
 
 ### Color scheme presets
 
 <p align="center">
-  <img src="assets/Ba2Ca2Cu3HgO8-color-schemes.png" alt="Ba2Ca2Cu3HgO8 color scheme examples" width="90%">
+  <img src="https://github.com/user-attachments/assets/51f2d5de-b73a-466e-931c-cd0b50b98c32" alt="Ba2Ca2Cu3HgO8 color scheme examples" width="90%">
 </p>
 
 ## Contributing
