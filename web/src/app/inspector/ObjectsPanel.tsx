@@ -262,6 +262,15 @@ export function ObjectsPanel({
 
       <TabsContent value="bonds" className="m-0 min-h-0">
         <div data-slot="bond-global-controls" className="mb-3 flex flex-col gap-1 text-[13px]">
+          <PercentSliderRow
+            accessibleLabel={t("style.bond")}
+            label={t("style.atomRadiusScale")}
+            max={STYLE_SCALE_MAX.bondThickness}
+            min={STYLE_SCALE_MIN.bondThickness}
+            value={style.bondThickness}
+            valueLabel={t("style.scale")}
+            onValueChange={setBondRadiusScale}
+          />
           <div className="grid h-7 grid-cols-[minmax(5.5rem,1fr)_9.6rem] items-center gap-2 rounded-md px-1.5">
             <span className="min-w-0 leading-tight">{t("settings.bondingAlgorithm")}</span>
             <Select
@@ -299,15 +308,6 @@ export function ObjectsPanel({
               </SelectContent>
             </Select>
           </div>
-          <PercentSliderRow
-            accessibleLabel={t("style.bond")}
-            label={t("style.atomRadiusScale")}
-            max={STYLE_SCALE_MAX.bondThickness}
-            min={STYLE_SCALE_MIN.bondThickness}
-            value={style.bondThickness}
-            valueLabel={t("style.scale")}
-            onValueChange={setBondRadiusScale}
-          />
           <TooltipProvider delayDuration={500}>
             <div className="grid h-7 grid-cols-[minmax(5.5rem,1fr)_9.6rem] items-center gap-2 rounded-md px-1.5">
               <span className="min-w-0 leading-tight">{t("objectsPanel.customCutoff")}</span>

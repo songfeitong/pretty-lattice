@@ -140,8 +140,8 @@ profile 立即清空；之后再次进入 cutoff 编辑模式时，必须从该 
 
 separator 上方依次显示：
 
-1. Bonding algorithm。
-2. Bond radius scale。
+1. Bond radius scale。
+2. Bonding algorithm。
 3. Custom cutoff。
 
 Custom cutoff 使用与前两行相同的左右布局：左侧固定标签，右侧是 icon-only 入口。

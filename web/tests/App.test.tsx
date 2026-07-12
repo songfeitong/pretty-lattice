@@ -1581,10 +1581,6 @@ describe("App", () => {
     expect(within(commonControls).queryByText("Radius scale")).toBeNull();
     expect(within(commonControls).queryByRole("combobox", { name: "Radius model" })).toBeNull();
     expect(within(commonControls).queryByRole("slider", { name: "Bond scale" })).toBeNull();
-    const atomGlobalControls = sidebar.querySelector<HTMLElement>(
-      '[data-slot="atom-radius-controls"]',
-    );
-    const atomControlRowClass = atomGlobalControls?.firstElementChild?.className;
     const atomRadiusModelSelect = within(sidebar).getByRole("combobox", {
       name: "Radius model",
     });
@@ -1770,7 +1766,9 @@ describe("App", () => {
     const bondGlobalControls = sidebar.querySelector<HTMLElement>(
       '[data-slot="bond-global-controls"]',
     );
-    expect(bondGlobalControls?.firstElementChild?.className).toBe(atomControlRowClass);
+    expect(bondGlobalControls?.children[0]?.textContent).toContain("Radius scale");
+    expect(bondGlobalControls?.children[1]?.textContent).toContain("Bonding algorithm");
+    expect(bondGlobalControls?.children[2]?.textContent).toContain("Custom cutoff");
     expect(within(bondGlobalControls!).getByText("Bonding algorithm").isConnected).toBe(true);
     expect(within(bondGlobalControls!).getByText("Radius scale").isConnected).toBe(true);
     const bondThicknessSlider = within(bondGlobalControls!).getByRole("slider", {
