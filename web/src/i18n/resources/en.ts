@@ -40,7 +40,7 @@ export const en = {
   bondInspector: {
     bondLength: "Bond length",
     bondVector: "Vector\u2009(frac)",
-    cellOffset: "Cell offset",
+    cellShift: "Cell shift",
     selectedBond: "Selected bond",
   },
   colorPicker: {
@@ -163,7 +163,8 @@ export const en = {
     maximumCutoffFor: "Maximum cutoff for {{family}}",
     restoreAutomaticCutoff: "Restore {{family}} automatic rule",
     keepCustomCutoff: "Keep {{family}} custom cutoff",
-    restoreBondVisibility: "Restore {{bond}} to family visibility",
+    restoreBondVisibility: "Restore visibility",
+    restoreBondVisibilityFor: "Restore visibility for {{bond}}",
     visible: "Visible",
     visibility: "{{target}} visibility",
     radiusControl: "{{target}} radius",

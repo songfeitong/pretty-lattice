@@ -35,14 +35,14 @@ export const zhTW = {
   },
   atomInspector: {
     cartesian: "笛卡兒座標\u2009(Å)",
-    cellOffset: "晶胞偏移",
+    cellOffset: "晶胞位置",
     fractional: "分率座標",
     selectedAtom: "已選取的原子",
   },
   bondInspector: {
     bondLength: "鍵長",
-    bondVector: "向量（分率座標）",
-    cellOffset: "晶胞偏移",
+    bondVector: "向量（分率）",
+    cellShift: "晶胞平移",
     selectedBond: "已選取的鍵結",
   },
   colorPicker: {
@@ -165,7 +165,8 @@ export const zhTW = {
     maximumCutoffFor: "{{family}} 的截斷距離上界",
     restoreAutomaticCutoff: "讓 {{family}} 恢復自動成鍵規則",
     keepCustomCutoff: "保留 {{family}} 的自訂截斷距離",
-    restoreBondVisibility: "讓 {{bond}} 恢復繼承鍵族可見性",
+    restoreBondVisibility: "恢復可見性",
+    restoreBondVisibilityFor: "恢復 {{bond}} 的可見性",
     visible: "顯示",
     visibility: "{{target}} 顯示狀態",
     radiusControl: "{{target}} 半徑",

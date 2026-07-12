@@ -29,6 +29,7 @@ import {
   clampBondRadius,
   clearBondOverridePropertyForFamily,
   elementColorOverridesForStyle,
+  formatCellOffset,
   resolveAtomAppearance,
   resolveBondOpacityForStyle,
   resolveBondRadiusForStyle,
@@ -543,14 +544,16 @@ function HiddenBonds({ bonds, onRestore, scene, style }: {
           <div className="mt-0.5 flex flex-col gap-0.5">
             {bonds.map((bond) => (
               <div key={bond.id} className="flex h-7 items-center justify-between rounded-md px-2.5 text-muted-foreground hover:bg-muted/35">
-                <BondLabel bond={bond} scene={scene} style={style} />
+                <BondLabel bond={bond} scene={scene} showCellShift style={style} />
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      aria-label={t("objectsPanel.restoreBondVisibility", { bond: bondLabel(bond, scene) })}
+                      aria-label={t("objectsPanel.restoreBondVisibilityFor", {
+                        bond: hiddenBondLabel(bond, scene),
+                      })}
                       className={cn(TOOL_ICON_BUTTON_CLASS, "size-6 rounded-[8px]")}
                       onClick={() => onRestore(bond)}
                     >
@@ -558,7 +561,7 @@ function HiddenBonds({ bonds, onRestore, scene, style }: {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="left">
-                    {t("objectsPanel.restoreBondVisibility", { bond: bondLabel(bond, scene) })}
+                    {t("objectsPanel.restoreBondVisibility")}
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -585,14 +588,19 @@ function FamilyLabel({ family, scene, style }: { family: BondFamilySpec; scene: 
   );
 }
 
-function BondLabel({ bond, scene, style }: { bond: BondSpec; scene: SceneSpec; style: StyleState }) {
+function BondLabel({ bond, scene, showCellShift = false, style }: {
+  bond: BondSpec;
+  scene: SceneSpec;
+  showCellShift?: boolean;
+  style: StyleState;
+}) {
   const startAtom = scene.atoms[bond.startAtomIndex];
   const endAtom = scene.atoms[bond.endAtomIndex];
   if (!startAtom || !endAtom) return null;
   return (
     <PairLabel
       endColor={tokenColor(endAtom, scene, style)}
-      endLabel={atomSiteLabel(endAtom)}
+      endLabel={`${atomSiteLabel(endAtom)}${showCellShift ? ` (${formatCellOffset(bond.relativeImageOffset)})` : ""}`}
       startColor={tokenColor(startAtom, scene, style)}
       startLabel={atomSiteLabel(startAtom)}
     />
@@ -665,9 +673,13 @@ function NumericCell({ ariaLabel, digits, max, min, onCommit, value, width }: {
   width: string;
 }) {
   const [draft, setDraft] = useState(value.toFixed(digits));
+  const [hasEdited, setHasEdited] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const cancelCommitRef = useRef(false);
+  const displayedValue = isFocused && !hasEdited ? "" : draft;
   useEffect(() => setDraft(value.toFixed(digits)), [digits, value]);
-  function commit() {
-    const parsed = Number(draft.trim());
+  function commit(text: string) {
+    const parsed = Number(text.trim());
     if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
       setDraft(value.toFixed(digits));
       return;
@@ -680,18 +692,35 @@ function NumericCell({ ariaLabel, digits, max, min, onCommit, value, width }: {
       type="text"
       inputMode="decimal"
       aria-label={ariaLabel}
-      value={draft}
+      value={displayedValue}
       className={cn(
         "h-[22px] justify-self-center rounded-md px-1.5 py-0 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]",
         width,
       )}
-      onBlur={commit}
-      onChange={(event) => setDraft(event.currentTarget.value)}
+      onBlur={(event) => {
+        setIsFocused(false);
+        setHasEdited(false);
+        if (cancelCommitRef.current || !hasEdited) {
+          cancelCommitRef.current = false;
+          setDraft(value.toFixed(digits));
+          return;
+        }
+        commit(event.currentTarget.value);
+      }}
+      onChange={(event) => {
+        setHasEdited(true);
+        setDraft(event.currentTarget.value);
+      }}
+      onFocus={() => {
+        cancelCommitRef.current = false;
+        setIsFocused(true);
+        setHasEdited(false);
+      }}
       onKeyDown={(event) => {
         if (event.key === "Enter") {
-          commit();
           event.currentTarget.blur();
         } else if (event.key === "Escape") {
+          cancelCommitRef.current = true;
           setDraft(value.toFixed(digits));
           event.currentTarget.blur();
         }
@@ -721,6 +750,10 @@ function bondLabel(bond: BondSpec, scene: SceneSpec): string {
   const startAtom = scene.atoms[bond.startAtomIndex];
   const endAtom = scene.atoms[bond.endAtomIndex];
   return startAtom && endAtom ? `${atomSiteLabel(startAtom)}–${atomSiteLabel(endAtom)}` : bond.id;
+}
+
+function hiddenBondLabel(bond: BondSpec, scene: SceneSpec): string {
+  return `${bondLabel(bond, scene)} (${formatCellOffset(bond.relativeImageOffset)})`;
 }
 
 function scrollElementIntoInspectorBody(element: HTMLElement) {

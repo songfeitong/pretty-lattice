@@ -314,7 +314,8 @@ Hidden bonds 区域的位置、折叠、计数和恢复按钮样式与 Hidden at
 
 - `Bond length / 键长`
 - `Vector (frac)`：start 指向 end 的 fractional vector，三个分量用逗号分隔。
-- `Cell offset`：`(start) - (end)`。
+- `Cell shift / 晶胞平移`：显示 `endImageOffset - startImageOffset`，即从 start 到 end
+  跨越的整数晶格平移 `relativeImageOffset`。
 
 Header actions 与 Atom 信息卡对齐：Close、Hide、Copy、Locate。Hide 位于相同位置并采用
 相同图标。信息卡不放 cutoff、Delete 或其他成键设置。

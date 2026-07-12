@@ -43,6 +43,6 @@ export default defineConfig({
     strictPort: true,
   },
   build: {
-    chunkSizeWarningLimit: 1400,
+    chunkSizeWarningLimit: 2000,
   },
 });

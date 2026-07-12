@@ -35,14 +35,14 @@ export const zhCN = {
   },
   atomInspector: {
     cartesian: "笛卡尔坐标\u2009(Å)",
-    cellOffset: "晶胞偏移",
+    cellOffset: "晶胞位置",
     fractional: "分数坐标",
     selectedAtom: "选中的原子",
   },
   bondInspector: {
     bondLength: "键长",
-    bondVector: "向量（分数坐标）",
-    cellOffset: "晶胞偏移",
+    bondVector: "向量（分数）",
+    cellShift: "晶胞平移",
     selectedBond: "选中的键",
   },
   colorPicker: {
@@ -165,7 +165,8 @@ export const zhCN = {
     maximumCutoffFor: "{{family}} 的截断距离上界",
     restoreAutomaticCutoff: "让 {{family}} 恢复自动成键规则",
     keepCustomCutoff: "保留 {{family}} 的自定义截断距离",
-    restoreBondVisibility: "让 {{bond}} 恢复继承键族可见性",
+    restoreBondVisibility: "恢复可见性",
+    restoreBondVisibilityFor: "恢复 {{bond}} 的可见性",
     visible: "显示",
     visibility: "{{target}} 显示状态",
     radiusControl: "{{target}} 半径",

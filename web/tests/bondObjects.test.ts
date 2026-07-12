@@ -79,6 +79,7 @@ describe("bond objects", () => {
 
   test("resolves stable bond information and the read-only copy format", () => {
     const info = inspectedBondInfoForId(bondScene(), "bond:one");
+    info!.bond.relativeImageOffset = [1, -1, 0];
 
     expect(info?.bond.relationId).toBe("relation:one");
     expect(formatBondVector(info!, 3)).toBe("1.000, 0.000, 0.000");
@@ -87,7 +88,7 @@ describe("bond objects", () => {
         "Bond: Na:0 -- Cl:1",
         "Bond length (A): 1.000000",
         "Vector\u2009(frac): 1.000000, 0.000000, 0.000000",
-        "Cell offset: (0, 0, 0) - (0, 0, 0)",
+        "Cell shift: 1, -1, 0",
       ].join("\n"),
     );
   });

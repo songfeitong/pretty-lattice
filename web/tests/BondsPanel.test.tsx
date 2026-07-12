@@ -44,11 +44,15 @@ describe("BondsPanel", () => {
     await waitFor(() => expect(screen.getByText("Hidden bonds").isConnected).toBe(true));
     expect(screen.getByRole("button", { name: "Hidden bonds 1" }).getAttribute("aria-expanded"))
       .toBe("true");
+    expect(screen.getByText("Cl:1 (0, 0, 0)").className).toContain("truncate");
     expect(screen.queryByRole("button", { name: "Reset Na–Cl" })).toBeNull();
 
-    await user.click(
-      screen.getByRole("button", { name: "Restore Na:0–Cl:1 to family visibility" }),
-    );
+    const restoreButton = screen.getByRole("button", {
+      name: "Restore visibility for Na:0–Cl:1 (0, 0, 0)",
+    });
+    await user.hover(restoreButton);
+    expect((await screen.findByRole("tooltip")).textContent).toBe("Restore visibility");
+    await user.click(restoreButton);
     await waitFor(() => expect(screen.queryByText("Hidden bonds")).toBeNull());
 
     await user.click(screen.getByRole("button", { name: "Na–Cl visibility" }));
@@ -67,6 +71,21 @@ describe("BondsPanel", () => {
 
     expect(family.querySelector('[data-slot="bond-family-details"]')).toBeNull();
     expect(screen.queryByText("Bond length")).toBeNull();
+  });
+
+  test("clears appearance inputs on focus and restores them on Escape", async () => {
+    const user = userEvent.setup();
+    render(<BondsPanelHarness selected={false} />);
+
+    for (const name of ["Na–Cl radius", "Na–Cl opacity"]) {
+      const input = screen.getByRole("textbox", { name }) as HTMLInputElement;
+      const initialValue = input.value;
+
+      await user.click(input);
+      expect(input.value).toBe("");
+      await user.keyboard("{Escape}");
+      expect(input.value).toBe(initialValue);
+    }
   });
 
   test("switches every family row to compact cutoff range controls", async () => {

@@ -110,10 +110,9 @@ export function BondInspectorCard({
         <dd className="truncate text-right text-foreground">
           {formatBondVector(info, 3)}
         </dd>
-        <dt className="text-muted-foreground">{t("bondInspector.cellOffset")}</dt>
+        <dt className="text-muted-foreground">{t("bondInspector.cellShift")}</dt>
         <dd className="truncate text-right text-foreground">
-          ({formatCellOffset(info.bond.startImageOffset)}) - (
-          {formatCellOffset(info.bond.endImageOffset)})
+          {formatCellOffset(info.bond.relativeImageOffset)}
         </dd>
       </dl>
     </aside>

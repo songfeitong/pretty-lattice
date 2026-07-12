@@ -137,7 +137,7 @@ export function bondInspectorCopyText(info: InspectedBondInfo): string {
     `Bond: ${atomSiteLabel(info.startAtom)} -- ${atomSiteLabel(info.endAtom)}`,
     `Bond length (A): ${info.bond.length.toFixed(6)}`,
     `Vector\u2009(frac): ${formatBondVector(info, 6)}`,
-    `Cell offset: (${formatCellOffset(info.bond.startImageOffset)}) - (${formatCellOffset(info.bond.endImageOffset)})`,
+    `Cell shift: ${formatCellOffset(info.bond.relativeImageOffset)}`,
   ].join("\n");
 }
 

@@ -39,6 +39,8 @@ describe("BondInspectorCard", () => {
       "Copy bond info",
       "Locate bond in Objects",
     ]);
+    expect(screen.getByText("Cell shift").isConnected).toBe(true);
+    expect(screen.getByText("1, -1, 0").isConnected).toBe(true);
 
     await user.click(screen.getByRole("button", { name: "Hide bond" }));
     expect(onHide).toHaveBeenCalledWith(bond);
@@ -70,7 +72,7 @@ function selectedBond(): BondSpec {
     id: "bond:one",
     length: 1,
     relationId: "relation:one",
-    relativeImageOffset: [0, 0, 0],
+    relativeImageOffset: [1, -1, 0],
     startAtomIndex: 0,
     startImageOffset: [0, 0, 0],
     startSiteId: "Na-0",

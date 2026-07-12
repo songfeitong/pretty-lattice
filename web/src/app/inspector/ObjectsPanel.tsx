@@ -342,6 +342,7 @@ export function ObjectsPanel({
                       entry
                       label={t("objectsPanel.editCustomCutoff")}
                       onClick={startCutoffEditing}
+                      tooltip={null}
                     >
                       <SquarePen aria-hidden="true" />
                     </CutoffModeButton>
