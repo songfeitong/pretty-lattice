@@ -20,11 +20,13 @@ export type AtomRadiusStyleModel =
 
 export interface AtomObjectStyleOverride {
   color?: string;
+  opacity?: number;
   radius?: number;
   visible?: boolean;
 }
 
 export interface ElementObjectStyleOverride {
+  opacity?: number;
   radius?: number;
   visible?: boolean;
 }
@@ -39,20 +41,24 @@ export interface ObjectStyleState {
 
 export interface AtomAppearance {
   color: string;
+  opacity: number;
   radius: number;
   visible: boolean;
 }
 
 export interface AtomAppearanceStyleContext {
+  atomOpacity?: number;
   atomRadius: number;
   atomRadiusModel: AtomRadiusStyleModel;
   globalAtomsVisible?: boolean;
   objectStyles: ObjectStyleState;
 }
 
-export type ObjectStyleProperty = "color" | "radius" | "visible";
+export type ObjectStyleProperty = "color" | "opacity" | "radius" | "visible";
 
 const MIN_ATOM_RADIUS = 0.01;
+const MIN_ATOM_OPACITY = 0;
+const MAX_ATOM_OPACITY = 100;
 
 export function createDefaultObjectStyleState(): ObjectStyleState {
   return {
@@ -82,6 +88,11 @@ export function resolveAtomAppearance({
     color:
       atomOverride?.color ??
       atomColorForScheme(atom, colorScheme, colorOverrides),
+    opacity: resolveAtomOpacityForStyle(
+      atom,
+      style.objectStyles,
+      style.atomOpacity,
+    ),
     radius: clampAtomRadius(
       atomOverride?.radius ??
         elementOverride?.radius ??
@@ -115,6 +126,18 @@ export function resolveAtomVisibleForStyle(
   const atomOverride = atomOverrideForAtom(objectStyles, atom);
   const elementOverride = objectStyles.elementOverrides[atom.element];
   return (atomOverride?.visible ?? elementOverride?.visible ?? true) && globalAtomsVisible;
+}
+
+export function resolveAtomOpacityForStyle(
+  atom: AtomSpec,
+  objectStyles: ObjectStyleState,
+  atomOpacity = 100,
+): number {
+  const atomOverride = atomOverrideForAtom(objectStyles, atom);
+  const elementOverride = objectStyles.elementOverrides[atom.element];
+  return clampAtomOpacity(
+    atomOverride?.opacity ?? elementOverride?.opacity ?? atomOpacity,
+  );
 }
 
 export function baseAtomRadiusForStyle(
@@ -250,7 +273,7 @@ export function setAtomOverrideProperty(
     ...objectStyles.atomOverrides,
     [atomId]: {
       ...currentOverride,
-      [property]: property === "radius" ? clampAtomRadius(Number(value)) : value,
+      [property]: clampObjectStyleValue(property, value),
     },
   };
 
@@ -271,7 +294,7 @@ export function setElementOverrideProperty(
     ...objectStyles.elementOverrides,
     [element]: {
       ...currentOverride,
-      [property]: property === "radius" ? clampAtomRadius(Number(value)) : value,
+      [property]: clampObjectStyleValue(property, value),
     },
   };
 
@@ -313,6 +336,16 @@ export function clampAtomRadius(value: number): number {
   }
 
   return Math.max(MIN_ATOM_RADIUS, value);
+}
+
+export function clampAtomOpacity(value: number): number {
+  if (!Number.isFinite(value)) {
+    return MAX_ATOM_OPACITY;
+  }
+
+  return Math.round(
+    Math.min(MAX_ATOM_OPACITY, Math.max(MIN_ATOM_OPACITY, value)),
+  );
 }
 
 export function atomObjectStyleKey(atom: AtomSpec): string {
@@ -374,13 +407,31 @@ function removeAtomOverrideProperty(
 function hasAtomOverride(override: AtomObjectStyleOverride): boolean {
   return (
     override.color !== undefined ||
+    override.opacity !== undefined ||
     override.radius !== undefined ||
     override.visible !== undefined
   );
 }
 
 function hasElementOverride(override: ElementObjectStyleOverride): boolean {
-  return override.radius !== undefined || override.visible !== undefined;
+  return (
+    override.opacity !== undefined ||
+    override.radius !== undefined ||
+    override.visible !== undefined
+  );
+}
+
+function clampObjectStyleValue(
+  property: ObjectStyleProperty,
+  value: string | number | boolean,
+): string | number | boolean {
+  if (property === "radius") {
+    return clampAtomRadius(Number(value));
+  }
+  if (property === "opacity") {
+    return clampAtomOpacity(Number(value));
+  }
+  return value;
 }
 
 function cleanObjectStyleState(objectStyles: ObjectStyleState): ObjectStyleState {

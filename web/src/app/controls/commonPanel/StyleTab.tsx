@@ -1,4 +1,4 @@
-import { Check, ChevronDown, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import {
   type CSSProperties,
   type Dispatch,
@@ -10,7 +10,6 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -38,14 +37,10 @@ import {
   STYLE_FOG_AMOUNT_MIN,
   STYLE_FOG_START_MAX,
   STYLE_FOG_START_MIN,
-  STYLE_SCALE_MAX,
-  STYLE_SCALE_MIN,
   createDefaultStyle,
   createCustomColormapFromScheme,
   DEFAULT_BOND_COLOR,
-  CUSTOM_ATOM_RADIUS_MODEL,
   clearObjectStyleProperty,
-  type AtomRadiusStyleModel,
   type BondColorMode,
   type StyleState,
 } from "../../../model";
@@ -70,21 +65,6 @@ const BOND_COLOR_OPTIONS: { labelKey: "style.unicolor" | "style.bicolor"; value:
   { labelKey: "style.bicolor", value: "bicolor" },
 ];
 const CUSTOM_COLOR_SCHEME_VALUE = "__custom";
-const ATOM_RADIUS_MODEL_OPTIONS: {
-  labelKey:
-    | "style.atomic"
-    | "style.custom"
-    | "style.ionic"
-    | "style.uniform"
-    | "style.vanDerWaals";
-  value: AtomRadiusStyleModel;
-}[] = [
-  { labelKey: "style.uniform", value: "uniform" },
-  { labelKey: "style.atomic", value: "atomic" },
-  { labelKey: "style.vanDerWaals", value: "vdw" },
-  { labelKey: "style.ionic", value: "ionic" },
-  { labelKey: "style.custom", value: CUSTOM_ATOM_RADIUS_MODEL },
-];
 const BY_ATOM_TOKEN_STYLE = { background: "linear-gradient(90deg, #f58c9a 0 50%, #78a7ff 50% 100%)" } as const;
 const CUSTOM_COLOR_SCHEME_TOKEN_STYLE = {
   background:
@@ -94,26 +74,13 @@ const CUSTOM_COLOR_SCHEME_TOKEN_STYLE = {
 } satisfies CSSProperties;
 
 export function StyleTabContent({
-  onAtomRadiusModelChange,
   onStyleChange,
   style,
 }: {
-  onAtomRadiusModelChange: (atomRadiusModel: AtomRadiusStyleModel) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   style: StyleState;
 }) {
   const { t } = useTranslation();
-
-  function setStyleScale(key: keyof typeof STYLE_SCALE_MIN, value: number) {
-    onStyleChange((currentStyle) => ({
-      ...currentStyle,
-      [key]: clampPercentValue(value, STYLE_SCALE_MIN[key], STYLE_SCALE_MAX[key]),
-    }));
-  }
-
-  function setAtomRadiusModel(atomRadiusModel: AtomRadiusStyleModel) {
-    onAtomRadiusModelChange(atomRadiusModel);
-  }
 
   function setBondColorMode(bondColorMode: BondColorMode) {
     onStyleChange((currentStyle) => ({
@@ -197,9 +164,6 @@ export function StyleTabContent({
     }));
   }
 
-  const [resetFeedbackPhase, setResetFeedbackPhase] = useState<"a" | "b" | null>(null);
-  const resetFeedbackTickRef = useRef(0);
-  const resetFeedbackTimeoutRef = useRef<number | null>(null);
   const [fogResetFeedbackPhase, setFogResetFeedbackPhase] = useState<"a" | "b" | null>(null);
   const fogResetFeedbackTickRef = useRef(0);
   const fogResetFeedbackTimeoutRef = useRef<number | null>(null);
@@ -210,38 +174,15 @@ export function StyleTabContent({
     style.colorSchemeMode === "custom" && style.customColormap
       ? CUSTOM_COLOR_SCHEME_VALUE
       : style.colorScheme;
-  const isCustomAtomRadiusModel = style.atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL;
 
   useEffect(
     () => () => {
-      if (resetFeedbackTimeoutRef.current !== null) {
-        window.clearTimeout(resetFeedbackTimeoutRef.current);
-      }
       if (fogResetFeedbackTimeoutRef.current !== null) {
         window.clearTimeout(fogResetFeedbackTimeoutRef.current);
       }
     },
     [],
   );
-
-  function handleResetScaleClick() {
-    onStyleChange((currentStyle) => ({
-      ...currentStyle,
-      atomRadius: createDefaultStyle().atomRadius,
-      bondThickness: createDefaultStyle().bondThickness,
-    }));
-
-    if (resetFeedbackTimeoutRef.current !== null) {
-      window.clearTimeout(resetFeedbackTimeoutRef.current);
-    }
-
-    resetFeedbackTickRef.current += 1;
-    setResetFeedbackPhase(resetFeedbackTickRef.current % 2 === 0 ? "b" : "a");
-    resetFeedbackTimeoutRef.current = window.setTimeout(() => {
-      setResetFeedbackPhase(null);
-      resetFeedbackTimeoutRef.current = null;
-    }, TOOL_ICON_BUTTON_FEEDBACK_ANIMATION_MS);
-  }
 
   function handleResetFogClick() {
     onStyleChange((currentStyle) => ({
@@ -264,67 +205,6 @@ export function StyleTabContent({
 
   return (
     <div className="flex flex-col gap-2.5">
-      <section aria-labelledby="style-size-label">
-        <div className="grid grid-cols-[minmax(5.5rem,1fr)_6.75rem_2.35rem] items-center gap-2 px-1.5">
-          <h2
-            id="style-size-label"
-            className={cn(COMMON_PANEL_SECTION_TITLE_TEXT_CLASS, "leading-tight text-muted-foreground")}
-          >
-            {t("style.size")}
-          </h2>
-          <span aria-hidden="true" />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="flex justify-end">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={t("actions.resetScale")}
-                  className={cn(
-                    TOOL_ICON_BUTTON_CLASS,
-                    resetFeedbackPhase === "a" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS : null,
-                    resetFeedbackPhase === "b" ? TOOL_ICON_BUTTON_RESET_FEEDBACK_B_CLASS : null,
-                  )}
-                  onClick={handleResetScaleClick}
-                >
-                  <RotateCcw aria-hidden="true" />
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top">{t("actions.resetScale")}</TooltipContent>
-          </Tooltip>
-        </div>
-
-        <div className={cn("mt-1", COMMON_PANEL_ROW_STACK_CLASS)}>
-          <PercentSliderRow
-            accessibleLabel={t("style.atom")}
-            label={(
-              <AtomRadiusModelPopover
-                value={style.atomRadiusModel}
-                onValueChange={setAtomRadiusModel}
-              />
-            )}
-            max={STYLE_SCALE_MAX.atomRadius}
-            min={STYLE_SCALE_MIN.atomRadius}
-            value={style.atomRadius}
-            disabled={isCustomAtomRadiusModel}
-            valueLabel={t("style.scale")}
-            onValueChange={(value) => setStyleScale("atomRadius", value)}
-          />
-          <PercentSliderRow
-            accessibleLabel={t("style.bond")}
-            label={t("style.bond")}
-            max={STYLE_SCALE_MAX.bondThickness}
-            min={STYLE_SCALE_MIN.bondThickness}
-            value={style.bondThickness}
-            valueLabel={t("style.scale")}
-            onValueChange={(value) => setStyleScale("bondThickness", value)}
-          />
-        </div>
-      </section>
-
-      <Separator />
-
       <section aria-labelledby="style-fog-label">
         <div className="grid grid-cols-[minmax(5.5rem,1fr)_6.75rem_2.35rem] items-center gap-2 px-1.5">
           <div className="col-span-2 flex min-w-0 items-center gap-2">
@@ -547,125 +427,6 @@ export function StyleTabContent({
         </div>
       </div>
     </div>
-  );
-}
-
-function AtomRadiusModelPopover({
-  onValueChange,
-  value,
-}: {
-  onValueChange: (value: AtomRadiusStyleModel) => void;
-  value: AtomRadiusStyleModel;
-}) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [tooltipOpen, setTooltipOpen] = useState(false);
-  const [tooltipSuppressed, setTooltipSuppressed] = useState(false);
-  const selectedOption = ATOM_RADIUS_MODEL_OPTIONS.find((option) => option.value === value);
-  const selectedLabel = selectedOption ? t(selectedOption.labelKey) : t("style.unknown");
-
-  function handlePopoverOpenChange(nextOpen: boolean) {
-    setOpen(nextOpen);
-    if (nextOpen) {
-      setTooltipOpen(false);
-      setTooltipSuppressed(true);
-    }
-  }
-
-  function handleTooltipOpenChange(nextOpen: boolean) {
-    if (nextOpen && (open || tooltipSuppressed)) {
-      return;
-    }
-
-    setTooltipOpen(nextOpen);
-  }
-
-  function restoreTooltipHover() {
-    setTooltipSuppressed(false);
-    setTooltipOpen(false);
-  }
-
-  return (
-    <Popover open={open} onOpenChange={handlePopoverOpenChange}>
-      <span className="inline-flex min-w-0 items-center gap-1">
-        <span className="min-w-0 truncate">{t("style.atom")}</span>
-        <Tooltip
-          delayDuration={300}
-          open={tooltipOpen}
-          onOpenChange={handleTooltipOpenChange}
-        >
-          <PopoverTrigger asChild>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={t("style.atomRadiusModelValue", { value: selectedLabel })}
-                aria-haspopup="listbox"
-                className={cn(
-                  TOOL_ICON_BUTTON_CLASS,
-                  "size-5 rounded-[7px] border-input hover:border-foreground/15 hover:bg-accent hover:text-accent-foreground hover:shadow-sm focus-visible:ring-[2px] focus-visible:ring-ring/25 [&_svg]:size-3",
-                )}
-                onBlur={restoreTooltipHover}
-                onPointerLeave={restoreTooltipHover}
-              >
-                <ChevronDown aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-          </PopoverTrigger>
-          <TooltipContent side="top">{t("style.selectAtomRadiusModel")}</TooltipContent>
-        </Tooltip>
-      </span>
-      <PopoverContent
-        align="start"
-        className="w-40"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
-        <div
-          className={cn(
-            "px-2 pb-1 pt-1.5 leading-none text-muted-foreground",
-            COMMON_PANEL_BODY_TEXT_CLASS,
-          )}
-        >
-          {t("style.atomRadiusModel")}
-        </div>
-        <div role="listbox" aria-label={t("style.atomRadiusModel")} className="grid gap-0.5">
-          {ATOM_RADIUS_MODEL_OPTIONS.map((option) => {
-            const label = t(option.labelKey);
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="option"
-                aria-selected={option.value === value}
-                className={cn(
-                  "flex h-7 w-full items-center gap-2 rounded-sm px-2 text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground",
-                  COMMON_PANEL_BODY_TEXT_CLASS,
-                  option.value === value
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-foreground",
-                )}
-                onClick={() => {
-                  setTooltipOpen(false);
-                  setTooltipSuppressed(true);
-                  onValueChange(option.value);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  aria-hidden="true"
-                  className={cn(
-                    "size-3 shrink-0",
-                    option.value === value ? "opacity-100" : "opacity-0",
-                  )}
-                />
-                <span className="min-w-0 truncate">{label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 }
 

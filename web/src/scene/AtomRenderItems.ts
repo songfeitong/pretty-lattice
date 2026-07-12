@@ -11,16 +11,19 @@ export interface AtomRenderItem {
   baseColor: Color;
   color: string;
   id: string;
+  opacity: number;
   position: VectorTuple;
   radius: number;
 }
 
 export function createAtomRenderItems({
+  atomOpacity,
   atoms,
   colorScheme,
   colorOverrides,
   style,
 }: {
+  atomOpacity: number;
   atoms: AtomSpec[];
   colorScheme: StyleState["colorScheme"];
   colorOverrides?: ElementColorOverrides;
@@ -31,13 +34,14 @@ export function createAtomRenderItems({
       atom,
       colorOverrides,
       colorScheme,
-      style,
+      style: { ...style, atomOpacity },
     });
     return {
       atom,
       baseColor: new Color(appearance.color),
       color: appearance.color,
       id: atom.id,
+      opacity: appearance.opacity / 100,
       position: atom.position,
       radius: appearance.radius,
     };

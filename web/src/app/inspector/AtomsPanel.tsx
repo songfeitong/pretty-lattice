@@ -26,6 +26,14 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -33,10 +41,13 @@ import { cn } from "@/lib/utils";
 import type { AtomSpec, SceneSpec } from "../../api/scene";
 import {
   CUSTOM_ATOM_RADIUS_MODEL,
+  STYLE_SCALE_MAX,
+  STYLE_SCALE_MIN,
   atomHasExplicitHiddenOverride,
   baseAtomRadiusForStyle,
   baseColorSchemeForStyle,
   canonicalAtomsForObjectStyles,
+  clampAtomOpacity,
   clampAtomRadius,
   clearAtomOverridePropertyForAtom,
   clearAtomOverridePropertyForElement,
@@ -48,6 +59,7 @@ import {
   setAtomOverrideProperty,
   setElementOverrideProperty,
   type AtomAppearance,
+  type AtomRadiusStyleModel,
   type StyleState,
 } from "../../model";
 import { lambertLegendSwatchBackground } from "../../scene/renderAppearance";
@@ -56,6 +68,7 @@ import {
   objectsElementColorPickerId,
 } from "../colorPickerRegistry";
 import { HexColorPicker, normalizeHexColor } from "../controls/HexColorPicker";
+import { PercentSliderRow, clampPercentValue } from "../controls/commonPanel/sharedControls";
 import { TOOL_ICON_BUTTON_CLASS } from "../surface";
 
 export interface AtomLocateRequest {
@@ -74,9 +87,28 @@ interface HiddenAtomRow {
 }
 
 const RADIUS_STEP = 0.01;
+const OPACITY_STEP = 1;
+const ATOM_CONTROL_GRID_CLASS =
+  "grid grid-cols-[minmax(0,1fr)_2.75rem_2.75rem_1.5rem] items-center gap-2";
+const ATOM_RADIUS_MODEL_OPTIONS: {
+  labelKey:
+    | "style.atomic"
+    | "style.custom"
+    | "style.ionic"
+    | "style.uniform"
+    | "style.vanDerWaals";
+  value: AtomRadiusStyleModel;
+}[] = [
+  { labelKey: "style.uniform", value: "uniform" },
+  { labelKey: "style.atomic", value: "atomic" },
+  { labelKey: "style.vanDerWaals", value: "vdw" },
+  { labelKey: "style.ionic", value: "ionic" },
+  { labelKey: "style.custom", value: CUSTOM_ATOM_RADIUS_MODEL },
+];
 
 export function AtomsPanel({
   atomLocateRequest,
+  atomOpacity,
   atomsVisible,
   onAtomLocateRequestHandled,
   onElementColorChange,
@@ -86,6 +118,7 @@ export function AtomsPanel({
   style,
 }: {
   atomLocateRequest: AtomLocateRequest | null;
+  atomOpacity: number;
   atomsVisible: boolean;
   onAtomLocateRequestHandled: (token: number) => void;
   onElementColorChange: (element: string, color: string) => void;
@@ -116,8 +149,9 @@ export function AtomsPanel({
         colorScheme,
         colorOverrides,
         atomsVisible,
+        atomOpacity,
       ),
-    [atomsVisible, colorOverrides, colorScheme, elementGroups, style],
+    [atomOpacity, atomsVisible, colorOverrides, colorScheme, elementGroups, style],
   );
   const hiddenAtoms = useMemo(
     () =>
@@ -128,8 +162,9 @@ export function AtomsPanel({
         colorScheme,
         colorOverrides,
         atomsVisible,
+        atomOpacity,
       ),
-    [atomsVisible, colorOverrides, colorScheme, objectAtoms, selectedAtom?.id, style],
+    [atomOpacity, atomsVisible, colorOverrides, colorScheme, objectAtoms, selectedAtom?.id, style],
   );
 
   useLayoutEffect(() => {
@@ -174,6 +209,82 @@ export function AtomsPanel({
         radius,
       ),
     });
+  }
+
+  function setElementOpacity(element: string, opacity: number) {
+    let objectStyles = setElementOverrideProperty(
+      style.objectStyles,
+      element,
+      "opacity",
+      opacity,
+    );
+    objectStyles = clearAtomOverridePropertyForElement(
+      objectStyles,
+      objectAtoms,
+      element,
+      "opacity",
+    );
+    onStyleChange({ ...style, objectStyles });
+  }
+
+  function setAtomOpacity(atom: AtomSpec, opacity: number) {
+    onStyleChange({
+      ...style,
+      objectStyles: setAtomOverrideProperty(
+        style.objectStyles,
+        atom.siteId,
+        "opacity",
+        opacity,
+      ),
+    });
+  }
+
+  function setAtomRadiusModel(atomRadiusModel: AtomRadiusStyleModel) {
+    onStyleChange((currentStyle) => {
+      if (atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL) {
+        if (currentStyle.atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL) {
+          return currentStyle;
+        }
+
+        const customAtomRadii = createCustomAtomRadii(objectAtoms, currentStyle);
+        const objectStylesWithoutRadius = clearObjectStyleProperty(
+          currentStyle.objectStyles,
+          "radius",
+        );
+        return {
+          ...currentStyle,
+          atomRadiusModel,
+          objectStyles: {
+            ...objectStylesWithoutRadius,
+            customAtomRadii,
+            customRadiusBaseModel: currentStyle.atomRadiusModel,
+            customRadiusPreviousScale: currentStyle.atomRadius,
+          },
+        };
+      }
+
+      return {
+        ...currentStyle,
+        atomRadius:
+          currentStyle.atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL &&
+          currentStyle.objectStyles.customRadiusPreviousScale !== null
+            ? currentStyle.objectStyles.customRadiusPreviousScale
+            : currentStyle.atomRadius,
+        atomRadiusModel,
+        objectStyles: clearObjectStyleProperty(currentStyle.objectStyles, "radius"),
+      };
+    });
+  }
+
+  function setAtomRadiusScale(atomRadius: number) {
+    onStyleChange((currentStyle) => ({
+      ...currentStyle,
+      atomRadius: clampPercentValue(
+        atomRadius,
+        STYLE_SCALE_MIN.atomRadius,
+        STYLE_SCALE_MAX.atomRadius,
+      ),
+    }));
   }
 
   function setElementVisible(element: string, visible: boolean) {
@@ -237,6 +348,7 @@ export function AtomsPanel({
         colorScheme,
         colorOverrides,
         atomsVisible,
+        atomOpacity,
       );
     const nextStyle = ensureCustomRadiusStyle(style, objectAtoms);
     let objectStyles = setElementOverrideProperty(
@@ -248,10 +360,16 @@ export function AtomsPanel({
     objectStyles = setElementOverrideProperty(
       objectStyles,
       group.element,
+      "opacity",
+      elementAppearance.opacity,
+    );
+    objectStyles = setElementOverrideProperty(
+      objectStyles,
+      group.element,
       "visible",
       elementAppearance.visible,
     );
-    for (const property of ["radius", "visible", "color"] as const) {
+    for (const property of ["radius", "opacity", "visible", "color"] as const) {
       objectStyles = clearAtomOverridePropertyForElement(
         objectStyles,
         objectAtoms,
@@ -265,8 +383,62 @@ export function AtomsPanel({
 
   return (
     <TooltipProvider delayDuration={500}>
-      <div className="flex min-h-0 flex-col gap-2 text-[13px]">
-        {elementGroups.map((group) => {
+      <div className="flex min-h-0 flex-col text-[13px]">
+        <div data-slot="atom-radius-controls" className="flex flex-col gap-1">
+          <div className="grid h-7 grid-cols-[minmax(5.5rem,1fr)_9.6rem] items-center gap-2 rounded-md px-1.5">
+            <span className="min-w-0 leading-tight">{t("style.atomRadiusModel")}</span>
+            <Select
+              value={style.atomRadiusModel}
+              onValueChange={(value) => setAtomRadiusModel(value as AtomRadiusStyleModel)}
+            >
+              <SelectTrigger
+                size="sm"
+                aria-label={t("style.atomRadiusModel")}
+                className="!h-6 w-full !px-2 !py-0 bg-background text-[13px]"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper" className="!bg-background !text-foreground">
+                <SelectGroup>
+                  {ATOM_RADIUS_MODEL_OPTIONS.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="min-h-6 py-0.5 text-[13px]"
+                    >
+                      {t(option.labelKey)}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <PercentSliderRow
+            accessibleLabel={t("style.atom")}
+            label={t("style.atomRadiusScale")}
+            max={STYLE_SCALE_MAX.atomRadius}
+            min={STYLE_SCALE_MIN.atomRadius}
+            value={style.atomRadius}
+            disabled={style.atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL}
+            valueLabel={t("style.scale")}
+            onValueChange={setAtomRadiusScale}
+          />
+        </div>
+        <AtomSectionSeparator dataSlot="atom-radius-controls-separator" />
+        <div
+          data-slot="atom-column-header"
+          className={cn(
+            ATOM_CONTROL_GRID_CLASS,
+            "min-h-4 border-x border-transparent px-2.5 text-[11px] font-medium leading-none text-muted-foreground",
+          )}
+        >
+          <span>{t("objectsPanel.atom")}</span>
+          <span className="text-center">{t("objectsPanel.radius")}</span>
+          <span className="text-center">{t("objectsPanel.opacity")}</span>
+          <span aria-hidden="true" />
+        </div>
+        <div data-slot="atom-element-groups" className="mt-1 flex flex-col gap-2">
+          {elementGroups.map((group) => {
           const elementAppearance =
             elementAppearanceByElement.get(group.element) ??
             elementRowAppearance(
@@ -275,6 +447,7 @@ export function AtomsPanel({
               colorScheme,
               colorOverrides,
               atomsVisible,
+              atomOpacity,
             );
           const selectedGroupAtom =
             selectedAtom?.element === group.element ? selectedAtom : null;
@@ -289,9 +462,12 @@ export function AtomsPanel({
                 }
               }}
               aria-label={t("objectsPanel.elementGroup", { element: group.element })}
-              className="overflow-hidden rounded-xl border border-border/60 bg-background/45 shadow-xs shadow-foreground/[0.025]"
+              className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-xs shadow-foreground/[0.025]"
             >
-              <div className="grid min-h-7 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-2.5 py-2">
+              <div
+                data-slot="atom-control-row"
+                className={cn(ATOM_CONTROL_GRID_CLASS, "min-h-7 px-2.5 py-2")}
+              >
                 <div className="flex min-w-0 items-center gap-2.5">
                   <ColorCell
                     ariaLabel={t("objectsPanel.setElementColor", { element: group.element })}
@@ -300,21 +476,25 @@ export function AtomsPanel({
                     onChange={(color) => onElementColorChange(group.element, color)}
                     pickerId={objectsElementColorPickerId(group.element)}
                   />
-                  <span className="font-semibold leading-tight text-foreground">
-                    {group.element}
-                  </span>
-                  <span className="text-[11px] leading-none text-muted-foreground tabular-nums">
-                    {group.atoms.length}
-                  </span>
+                  <div className="flex min-w-0 items-center gap-0.5">
+                    <span className="w-5 shrink-0 text-left font-semibold leading-tight text-foreground">
+                      {group.element}
+                    </span>
+                    <span className="min-w-0 text-left text-[11px] leading-none text-muted-foreground tabular-nums">
+                      {group.atoms.length}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-muted-foreground">{t("objectsPanel.radius")}</span>
-                  <RadiusCell
-                    ariaLabel={t("objectsPanel.radiusControl", { target: group.element })}
-                    value={elementAppearance.radius}
-                    onCommit={(radius) => setElementRadius(group.element, radius)}
-                  />
-                </div>
+                <RadiusCell
+                  ariaLabel={t("objectsPanel.radiusControl", { target: group.element })}
+                  value={elementAppearance.radius}
+                  onCommit={(radius) => setElementRadius(group.element, radius)}
+                />
+                <OpacityCell
+                  ariaLabel={t("objectsPanel.opacityControl", { target: group.element })}
+                  value={elementAppearance.opacity}
+                  onCommit={(opacity) => setElementOpacity(group.element, opacity)}
+                />
                 <VisibilityCell
                   ariaLabel={t("objectsPanel.visibility", { target: group.element })}
                   visible={elementAppearance.visible}
@@ -331,8 +511,10 @@ export function AtomsPanel({
                     colorScheme,
                     colorOverrides,
                     atomsVisible,
+                    atomOpacity,
                   ),
                   onColorChange: (color) => setAtomColor(selectedGroupAtom, color),
+                  onOpacityChange: (opacity) => setAtomOpacity(selectedGroupAtom, opacity),
                   onRadiusChange: (radius) => setAtomRadius(selectedGroupAtom, radius),
                   onVisibilityChange: (visible) => setAtomVisible(selectedGroupAtom, visible),
                 } : null}
@@ -352,7 +534,8 @@ export function AtomsPanel({
               </ContextMenuContent>
             </ContextMenu>
           );
-        })}
+          })}
+        </div>
         <HiddenAtoms atoms={hiddenAtoms} onRestore={restoreAtomVisibility} />
       </div>
     </TooltipProvider>
@@ -363,6 +546,7 @@ interface SelectedAtomWorkspaceModel {
   appearance: AtomAppearance;
   atom: AtomSpec;
   onColorChange: (color: string) => void;
+  onOpacityChange: (opacity: number) => void;
   onRadiusChange: (radius: number) => void;
   onVisibilityChange: (visible: boolean) => void;
 }
@@ -421,6 +605,7 @@ function SelectedAtomWorkspaceContent({
   appearance,
   atom,
   onColorChange,
+  onOpacityChange,
   onRadiusChange,
   onVisibilityChange,
 }: SelectedAtomWorkspaceModel) {
@@ -430,7 +615,10 @@ function SelectedAtomWorkspaceContent({
   return (
     <div data-slot="selected-atom-content" className="bg-muted/45">
       <Separator className="opacity-70" />
-      <div className="grid min-h-7 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-3.5 py-1.5">
+      <div
+        data-slot="atom-control-row"
+        className={cn(ATOM_CONTROL_GRID_CLASS, "min-h-7 px-2.5 py-1.5")}
+      >
         <div className="flex min-w-0 items-center gap-2.5">
           <ColorCell
             ariaLabel={t("objectsPanel.setAtomColor", { atom: atomLabel })}
@@ -441,14 +629,16 @@ function SelectedAtomWorkspaceContent({
           />
           <span className="truncate font-mono text-[12px] text-foreground">{atomLabel}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-muted-foreground">{t("objectsPanel.radius")}</span>
-          <RadiusCell
-            ariaLabel={t("objectsPanel.radiusControl", { target: atomLabel })}
-            value={appearance.radius}
-            onCommit={onRadiusChange}
-          />
-        </div>
+        <RadiusCell
+          ariaLabel={t("objectsPanel.radiusControl", { target: atomLabel })}
+          value={appearance.radius}
+          onCommit={onRadiusChange}
+        />
+        <OpacityCell
+          ariaLabel={t("objectsPanel.opacityControl", { target: atomLabel })}
+          value={appearance.opacity}
+          onCommit={onOpacityChange}
+        />
         <VisibilityCell
           ariaLabel={t("objectsPanel.visibility", { target: atomLabel })}
           visible={appearance.visible}
@@ -490,29 +680,35 @@ function HiddenAtoms({
       open={expanded}
       onOpenChange={setExpanded}
       data-slot="hidden-atoms"
-      className="pt-1"
     >
-      <Separator className="mb-1 opacity-70" />
-      <CollapsibleTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-8 w-full justify-start rounded-lg px-2 text-[11px] font-medium text-muted-foreground hover:bg-muted/35 hover:text-foreground"
-        >
-          <ChevronDown
-            data-slot="hidden-atoms-chevron"
-            aria-hidden="true"
-            className={cn(
-              "text-foreground/70 transition-transform duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none",
-              expanded ? "rotate-0" : "-rotate-90",
-            )}
-          />
-          <span className="flex items-baseline gap-1.5">
-            <span>{t("objectsPanel.hiddenAtoms")}</span>
-            <span className="tabular-nums">{atoms.length}</span>
-          </span>
-        </Button>
-      </CollapsibleTrigger>
+      <AtomSectionSeparator dataSlot="hidden-atoms-separator" muted />
+      <div
+        data-slot="hidden-atoms-header"
+        className="flex min-h-6 items-center gap-1 px-2.5 text-[11px] font-medium text-muted-foreground"
+      >
+        <span data-slot="hidden-atoms-label" className="flex items-baseline gap-1.5">
+          <span>{t("objectsPanel.hiddenAtoms")}</span>
+          <span className="tabular-nums">{atoms.length}</span>
+        </span>
+        <CollapsibleTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={`${t("objectsPanel.hiddenAtoms")} ${atoms.length}`}
+            className="size-6 rounded-md text-foreground/70 hover:bg-muted/35 hover:text-foreground"
+          >
+            <ChevronDown
+              data-slot="hidden-atoms-chevron"
+              aria-hidden="true"
+              className={cn(
+                "transition-transform duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduced:transition-none",
+                expanded ? "rotate-0" : "-rotate-90",
+              )}
+            />
+          </Button>
+        </CollapsibleTrigger>
+      </div>
       <CollapsibleContent
         forceMount
         aria-hidden={!expanded}
@@ -531,7 +727,8 @@ function HiddenAtoms({
               return (
                 <div
                   key={atom.id}
-                  className="flex h-7 items-center justify-between rounded-md px-1.5 text-muted-foreground hover:bg-muted/35"
+                  data-slot="hidden-atom-row"
+                  className="flex h-7 items-center justify-between rounded-md px-2.5 text-muted-foreground hover:bg-muted/35"
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
                     <StaticColorToken color={color} />
@@ -567,6 +764,20 @@ function HiddenAtoms({
   );
 }
 
+function AtomSectionSeparator({
+  dataSlot,
+  muted = false,
+}: {
+  dataSlot: string;
+  muted?: boolean;
+}) {
+  return (
+    <div data-slot={dataSlot} className="py-4">
+      <Separator className={cn(muted && "opacity-70")} />
+    </div>
+  );
+}
+
 function StaticColorToken({ color }: { color: string }) {
   const hexColor = normalizeHexColor(color);
 
@@ -590,26 +801,86 @@ function RadiusCell({
   onCommit: (value: number) => void;
   value: number;
 }) {
-  const [valueText, setValueText] = useState(formatRadius(value));
+  return (
+    <CompactNumberCell
+      ariaLabel={ariaLabel}
+      clampValue={clampAtomRadius}
+      formatValue={formatRadius}
+      inputMode="decimal"
+      inputClassName="w-[42px] justify-self-center"
+      parseValue={parseRadiusInput}
+      step={RADIUS_STEP}
+      value={value}
+      onCommit={onCommit}
+    />
+  );
+}
+
+function OpacityCell({
+  ariaLabel,
+  onCommit,
+  value,
+}: {
+  ariaLabel: string;
+  onCommit: (value: number) => void;
+  value: number;
+}) {
+  return (
+    <CompactNumberCell
+      ariaLabel={ariaLabel}
+      clampValue={clampAtomOpacity}
+      formatValue={formatOpacity}
+      inputMode="numeric"
+      inputClassName="w-9 justify-self-center"
+      parseValue={parseOpacityInput}
+      step={OPACITY_STEP}
+      value={value}
+      onCommit={onCommit}
+    />
+  );
+}
+
+function CompactNumberCell({
+  ariaLabel,
+  clampValue,
+  formatValue,
+  inputMode,
+  inputClassName,
+  onCommit,
+  parseValue,
+  step,
+  value,
+}: {
+  ariaLabel: string;
+  clampValue: (value: number) => number;
+  formatValue: (value: number) => string;
+  inputMode: "decimal" | "numeric";
+  inputClassName?: string;
+  onCommit: (value: number) => void;
+  parseValue: (value: string) => number | null;
+  step: number;
+  value: number;
+}) {
+  const [valueText, setValueText] = useState(formatValue(value));
   const [hasEdited, setHasEdited] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const cancelCommitRef = useRef(false);
   const displayedValue = isFocused && !hasEdited ? "" : valueText;
 
   useEffect(() => {
-    setValueText(formatRadius(value));
-  }, [value]);
+    setValueText(formatValue(value));
+  }, [formatValue, value]);
 
   function commitValueText(text: string) {
-    const parsedRadius = parseRadiusInput(text);
-    if (parsedRadius === null) {
-      setValueText(formatRadius(value));
+    const parsedValue = parseValue(text);
+    if (parsedValue === null) {
+      setValueText(formatValue(value));
       return;
     }
 
-    const nextRadius = clampAtomRadius(parsedRadius);
-    setValueText(formatRadius(nextRadius));
-    onCommit(nextRadius);
+    const nextValue = clampValue(parsedValue);
+    setValueText(formatValue(nextValue));
+    onCommit(nextValue);
   }
 
   function handleBlur(event: FocusEvent<HTMLInputElement>) {
@@ -617,7 +888,7 @@ function RadiusCell({
     setHasEdited(false);
     if (cancelCommitRef.current || !hasEdited) {
       cancelCommitRef.current = false;
-      setValueText(formatRadius(value));
+      setValueText(formatValue(value));
       return;
     }
     commitValueText(event.currentTarget.value);
@@ -630,27 +901,30 @@ function RadiusCell({
     }
     if (event.key === "Escape") {
       cancelCommitRef.current = true;
-      setValueText(formatRadius(value));
+      setValueText(formatValue(value));
       event.currentTarget.blur();
       return;
     }
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       event.preventDefault();
-      const direction = event.key === "ArrowUp" ? RADIUS_STEP : -RADIUS_STEP;
-      const nextRadius = clampAtomRadius(value + direction);
+      const direction = event.key === "ArrowUp" ? step : -step;
+      const nextValue = clampValue(value + direction);
       setHasEdited(true);
-      setValueText(formatRadius(nextRadius));
-      onCommit(nextRadius);
+      setValueText(formatValue(nextValue));
+      onCommit(nextValue);
     }
   }
 
   return (
     <Input
       type="text"
-      inputMode="decimal"
+      inputMode={inputMode}
       aria-label={ariaLabel}
       value={displayedValue}
-      className="h-[22px] w-11 rounded-md px-1.5 py-0 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]"
+      className={cn(
+        "h-[22px] w-11 rounded-md px-1.5 py-0 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]",
+        inputClassName,
+      )}
       onBlur={handleBlur}
       onChange={(event: ChangeEvent<HTMLInputElement>) => {
         setHasEdited(true);
@@ -752,6 +1026,7 @@ function hiddenAtomRowsForAtoms(
   colorScheme: StyleState["colorScheme"],
   colorOverrides: ReturnType<typeof elementColorOverridesForStyle>,
   atomsVisible: boolean,
+  atomOpacity: number,
 ): HiddenAtomRow[] {
   const rows: HiddenAtomRow[] = [];
   for (const atom of atoms) {
@@ -769,6 +1044,7 @@ function hiddenAtomRowsForAtoms(
         colorScheme,
         colorOverrides,
         atomsVisible,
+        atomOpacity,
       ).color,
     });
   }
@@ -815,12 +1091,20 @@ function elementAppearanceByElementForGroups(
   colorScheme: StyleState["colorScheme"],
   colorOverrides: ReturnType<typeof elementColorOverridesForStyle>,
   atomsVisible: boolean,
+  atomOpacity: number,
 ): Map<string, AtomAppearance> {
   const appearanceByElement = new Map<string, AtomAppearance>();
   for (const group of elementGroups) {
     appearanceByElement.set(
       group.element,
-      elementRowAppearance(group, style, colorScheme, colorOverrides, atomsVisible),
+      elementRowAppearance(
+        group,
+        style,
+        colorScheme,
+        colorOverrides,
+        atomsVisible,
+        atomOpacity,
+      ),
     );
   }
   return appearanceByElement;
@@ -832,12 +1116,14 @@ function elementRowAppearance(
   colorScheme: StyleState["colorScheme"],
   colorOverrides: ReturnType<typeof elementColorOverridesForStyle>,
   atomsVisible: boolean,
+  atomOpacity: number,
 ): AtomAppearance {
   const representativeAtom = group.atoms[0];
   const elementOverride = style.objectStyles.elementOverrides[group.element];
   if (!representativeAtom) {
     return {
       color: "#808080",
+      opacity: elementOverride?.opacity ?? atomOpacity,
       radius: 1,
       visible: (elementOverride?.visible ?? true) && atomsVisible,
     };
@@ -852,6 +1138,7 @@ function elementRowAppearance(
     colorScheme,
     colorOverrides,
     atomsVisible,
+    atomOpacity,
   );
   return {
     ...appearance,
@@ -866,12 +1153,13 @@ function resolveAtomAppearanceForRow(
   colorScheme: StyleState["colorScheme"],
   colorOverrides: ReturnType<typeof elementColorOverridesForStyle>,
   atomsVisible: boolean,
+  atomOpacity: number,
 ) {
   return resolveAtomAppearance({
     atom,
     colorOverrides,
     colorScheme,
-    style: { ...style, globalAtomsVisible: atomsVisible },
+    style: { ...style, atomOpacity, globalAtomsVisible: atomsVisible },
   });
 }
 
@@ -917,10 +1205,19 @@ function formatAtomSite(atom: AtomSpec): string {
 }
 
 function formatRadius(value: number): string {
-  return String(Math.round(value * 100) / 100);
+  return value.toFixed(2);
 }
 
 function parseRadiusInput(value: string): number | null {
   const parsedValue = Number(value.trim());
   return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : null;
+}
+
+function formatOpacity(value: number): string {
+  return String(Math.round(clampAtomOpacity(value)));
+}
+
+function parseOpacityInput(value: string): number | null {
+  const parsedValue = Number(value.trim());
+  return Number.isFinite(parsedValue) ? clampAtomOpacity(parsedValue) : null;
 }

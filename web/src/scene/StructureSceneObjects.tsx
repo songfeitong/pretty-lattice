@@ -374,6 +374,7 @@ export function StructureSceneObjects({
         />
         {showAtoms ? (
           <BatchedAtoms
+            atomOpacity={componentOpacity.atoms}
             atoms={scene.atoms}
             colorScheme={colorScheme}
             colorOverrides={colorOverrides}
@@ -387,7 +388,6 @@ export function StructureSceneObjects({
             pulseAtomId={pulseAtomId}
             pulseToken={pulseToken}
             selectionHighlightColor={selectionHighlightColor}
-            opacity={componentOpacity.atoms / 100}
             style={style}
           />
         ) : null}

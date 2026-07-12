@@ -3,7 +3,10 @@ import { OrthographicCamera, Quaternion, Vector3 } from "three";
 import type { SceneSpec } from "../api/scene";
 import type { StyleState } from "../model/appearance";
 import type { ComponentOpacityState } from "../model/displayState";
-import { resolveAtomRadiusForStyle } from "../model/objectStyles";
+import {
+  resolveAtomOpacityForStyle,
+  resolveAtomRadiusForStyle,
+} from "../model/objectStyles";
 import type { CameraPoseSnapshot } from "./cameraPose";
 import {
   BOND_RADIUS,
@@ -159,6 +162,15 @@ export function computeStructureProjectedBounds({
 
   if (showAtoms && componentOpacity.atoms > 0 && style.atomRadius > 0) {
     for (const atom of scene.atoms) {
+      if (
+        resolveAtomOpacityForStyle(
+          atom,
+          style.objectStyles,
+          componentOpacity.atoms,
+        ) === 0
+      ) {
+        continue;
+      }
       bounds.includePoint(
         projector.projectPoint(atom.position),
         resolveAtomRadiusForStyle(atom, style),

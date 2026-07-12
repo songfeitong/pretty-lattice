@@ -22,10 +22,13 @@ import {
 } from "../../api/scene";
 import {
   CUSTOM_BONDING_MODE,
+  STYLE_SCALE_MAX,
+  STYLE_SCALE_MIN,
   type BondVisibilityOverrides,
   type BondingMode,
   type StyleState,
 } from "../../model";
+import { PercentSliderRow, clampPercentValue } from "../controls/commonPanel/sharedControls";
 import { AtomsPanel, type AtomLocateRequest } from "./AtomsPanel";
 import { BondsPanel, type BondLocateRequest } from "./BondsPanel";
 
@@ -34,6 +37,7 @@ export type ObjectsPanelTab = "atoms" | "bonds";
 export function ObjectsPanel({
   activeTab,
   atomLocateRequest,
+  atomOpacity,
   atomsVisible,
   bondAlgorithm,
   bondLocateRequest,
@@ -60,6 +64,7 @@ export function ObjectsPanel({
 }: {
   activeTab: ObjectsPanelTab;
   atomLocateRequest: AtomLocateRequest | null;
+  atomOpacity: number;
   atomsVisible: boolean;
   bondAlgorithm: BondingMode;
   bondLocateRequest: BondLocateRequest | null;
@@ -85,6 +90,17 @@ export function ObjectsPanel({
   style: StyleState;
 }) {
   const { t } = useTranslation();
+
+  function setBondRadiusScale(bondThickness: number) {
+    onStyleChange((currentStyle) => ({
+      ...currentStyle,
+      bondThickness: clampPercentValue(
+        bondThickness,
+        STYLE_SCALE_MIN.bondThickness,
+        STYLE_SCALE_MAX.bondThickness,
+      ),
+    }));
+  }
 
   return (
     <Tabs
@@ -113,6 +129,7 @@ export function ObjectsPanel({
       <TabsContent value="atoms" className="m-0 min-h-0">
         <AtomsPanel
           atomLocateRequest={atomLocateRequest}
+          atomOpacity={atomOpacity}
           atomsVisible={atomsVisible}
           onAtomLocateRequestHandled={onAtomLocateRequestHandled}
           onElementColorChange={onElementColorChange}
@@ -124,44 +141,53 @@ export function ObjectsPanel({
       </TabsContent>
 
       <TabsContent value="bonds" className="m-0 min-h-0">
-        <div className="mb-3 grid min-h-8 grid-cols-[minmax(0,1fr)_9.5rem] items-center gap-2 text-[13px]">
-          <span className="leading-tight text-foreground">
-            {t("settings.bondingAlgorithm")}
-          </span>
-          <Select
-            value={bondAlgorithm}
-            disabled={isSceneLoading}
-            onValueChange={(value) => onBondAlgorithmChange(value as BondingMode)}
-          >
-            <SelectTrigger
-              size="sm"
-              aria-label={t("settings.bondingAlgorithm")}
-              className="!h-6 w-full !px-2 !py-0 bg-background text-[13px]"
+        <div data-slot="bond-global-controls" className="mb-3 flex flex-col gap-1 text-[13px]">
+          <div className="grid h-7 grid-cols-[minmax(5.5rem,1fr)_9.6rem] items-center gap-2 rounded-md px-1.5">
+            <span className="min-w-0 leading-tight">{t("settings.bondingAlgorithm")}</span>
+            <Select
+              value={bondAlgorithm}
+              disabled={isSceneLoading}
+              onValueChange={(value) => onBondAlgorithmChange(value as BondingMode)}
             >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper" className="!bg-background !text-foreground">
-              <SelectGroup>
-                {BOND_ALGORITHM_OPTIONS.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className="min-h-6 py-0.5 text-[13px]"
-                  >
-                    {option.label}
-                  </SelectItem>
-                ))}
-                {hasCustomBondingProfile ? (
-                  <SelectItem
-                    value={CUSTOM_BONDING_MODE}
-                    className="min-h-6 py-0.5 text-[13px]"
-                  >
-                    {t("style.custom")}
-                  </SelectItem>
-                ) : null}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+              <SelectTrigger
+                size="sm"
+                aria-label={t("settings.bondingAlgorithm")}
+                className="!h-6 w-full !px-2 !py-0 bg-background text-[13px]"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper" className="!bg-background !text-foreground">
+                <SelectGroup>
+                  {BOND_ALGORITHM_OPTIONS.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="min-h-6 py-0.5 text-[13px]"
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                  {hasCustomBondingProfile ? (
+                    <SelectItem
+                      value={CUSTOM_BONDING_MODE}
+                      className="min-h-6 py-0.5 text-[13px]"
+                    >
+                      {t("style.custom")}
+                    </SelectItem>
+                  ) : null}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <PercentSliderRow
+            accessibleLabel={t("style.bond")}
+            label={t("style.atomRadiusScale")}
+            max={STYLE_SCALE_MAX.bondThickness}
+            min={STYLE_SCALE_MIN.bondThickness}
+            value={style.bondThickness}
+            valueLabel={t("style.scale")}
+            onValueChange={setBondRadiusScale}
+          />
         </div>
         <Separator className="mb-3" />
         {isSceneLoading ? <BondFamiliesSkeleton /> : null}

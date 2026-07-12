@@ -26,7 +26,6 @@ import {
 import { cn } from "@/lib/utils";
 
 import type {
-  AtomRadiusStyleModel,
   ComponentOpacityState,
   ComponentVisibilityState,
   CrystalCameraPrimaryDirection,
@@ -79,8 +78,8 @@ export function CommonControlsPanel({
   hasPolyhedra,
   isExporting,
   onComponentOpacityChange,
+  onComponentOpacityReset,
   onComponentVisibilityChange,
-  onAtomRadiusModelChange,
   onCameraPrimaryChange,
   onCameraRollPreviewChange,
   onCameraRollPreviewStart,
@@ -105,7 +104,6 @@ export function CommonControlsPanel({
   exportSettings: ExportSettingsState;
   hasPolyhedra: boolean;
   isExporting: boolean;
-  onAtomRadiusModelChange: (atomRadiusModel: AtomRadiusStyleModel) => void;
   onCameraPrimaryChange: (primary: CrystalCameraPrimaryDirection) => void;
   onCameraRollPreviewChange: (rollDegrees: number) => void;
   onCameraRollPreviewStart: () => void;
@@ -113,7 +111,8 @@ export function CommonControlsPanel({
   onCameraSecondaryChange: (secondary: CrystalCameraScreenDirection) => void;
   onCameraStateChange: (cameraState: CrystalCameraState) => void;
   onActiveTabChange?: (tab: CommonPanelTab) => void;
-  onComponentOpacityChange: Dispatch<SetStateAction<ComponentOpacityState>>;
+  onComponentOpacityChange: (key: keyof ComponentOpacityState, value: number) => void;
+  onComponentOpacityReset: () => void;
   onComponentVisibilityChange: (key: keyof ComponentVisibilityState, value: boolean) => void;
   onExport: () => void;
   onExportSettingsChange: (settings: ExportSettingsState) => void;
@@ -370,13 +369,13 @@ export function CommonControlsPanel({
                 hasPolyhedra={hasPolyhedra}
                 opacity={componentOpacity}
                 onOpacityChange={onComponentOpacityChange}
+                onOpacityReset={onComponentOpacityReset}
                 visibility={componentVisibility}
                 onVisibilityChange={onComponentVisibilityChange}
               />
             </TabsContent>
             <TabsContent value="style">
               <StyleTabContent
-                onAtomRadiusModelChange={onAtomRadiusModelChange}
                 onStyleChange={onStyleChange}
                 style={style}
               />

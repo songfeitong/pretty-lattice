@@ -486,6 +486,12 @@ describe("settings", () => {
     objectStyles = setAtomOverrideProperty(
       objectStyles,
       "Na-0",
+      "opacity",
+      35,
+    );
+    objectStyles = setAtomOverrideProperty(
+      objectStyles,
+      "Na-0",
       "visible",
       false,
     );
@@ -502,6 +508,7 @@ describe("settings", () => {
       }),
     ).toEqual({
       color: "#123456",
+      opacity: 35,
       radius: 1.23,
       visible: false,
     });

@@ -183,6 +183,7 @@ export function InspectorSidebar({
   activeObjectsTab,
   activeTab,
   atomLocateRequest,
+  atomOpacity,
   atomsVisible,
   bondAlgorithm,
   bondLocateRequest,
@@ -235,6 +236,7 @@ export function InspectorSidebar({
   activeObjectsTab: ObjectsPanelTab;
   activeTab: InspectorSidebarTab;
   atomLocateRequest: { atomId: string; token: number } | null;
+  atomOpacity: number;
   atomsVisible: boolean;
   bondAlgorithm: BondingMode;
   bondLocateRequest: { bondId: string; token: number } | null;
@@ -362,6 +364,7 @@ export function InspectorSidebar({
             <ObjectsPanel
               activeTab={activeObjectsTab}
               atomLocateRequest={atomLocateRequest}
+              atomOpacity={atomOpacity}
               atomsVisible={atomsVisible}
               bondLocateRequest={bondLocateRequest}
               bondAlgorithm={bondAlgorithm}

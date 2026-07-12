@@ -10,6 +10,7 @@ import {
   BatchedMesh,
   BufferGeometry,
   Color,
+  type DataTexture,
   Matrix4,
   Quaternion,
   ShaderMaterial,
@@ -47,6 +48,10 @@ import {
   type BatchPickRegistry,
 } from "./batchPicking";
 import type { VectorTuple } from "./viewMath";
+import {
+  batchedAtomOpacityProgramCacheKey,
+  enableBatchedAtomOpacity,
+} from "./batchedAtomOpacity";
 
 interface AtomBatchBuild {
   itemCount: number;
@@ -59,6 +64,7 @@ interface AtomBatchBuild {
 }
 
 export function BatchedAtoms({
+  atomOpacity,
   atoms,
   colorScheme,
   colorOverrides,
@@ -69,12 +75,12 @@ export function BatchedAtoms({
   onInspect,
   onPulse,
   onLockedInteractionAttempt,
-  opacity,
   pulseAtomId,
   pulseToken,
   selectionHighlightColor = SELECTION_HIGHLIGHT_COLOR,
   style,
 }: {
+  atomOpacity: number;
   atoms: AtomSpec[];
   colorScheme: StyleState["colorScheme"];
   colorOverrides?: ElementColorOverrides;
@@ -85,7 +91,6 @@ export function BatchedAtoms({
   onInspect?: (atomId: string | null) => void;
   onPulse?: (atomId: string) => void;
   onLockedInteractionAttempt?: () => void;
-  opacity: number;
   pulseAtomId: string | null;
   pulseToken: number;
   selectionHighlightColor?: string;
@@ -98,17 +103,18 @@ export function BatchedAtoms({
   const populatedBatchMeshRef = useRef<BatchedMesh | null>(null);
   const populatedBatchKeyRef = useRef<string | null>(null);
   const invalidate = useThree((state) => state.invalidate);
-  const isTransparent = opacity < 1;
   const atomRenderItems = useMemo(
     () =>
       createAtomRenderItems({
+        atomOpacity,
         atoms,
         colorScheme,
         colorOverrides,
         style,
       }),
-    [atoms, colorOverrides, colorScheme, style],
+    [atomOpacity, atoms, colorOverrides, colorScheme, style],
   );
+  const isTransparent = atomRenderItems.some((item) => item.opacity < 1);
   const itemByAtomId = useMemo(
     () => atomRenderItemById(atomRenderItems),
     [atomRenderItems],
@@ -224,8 +230,10 @@ export function BatchedAtoms({
           // so atoms keep stable structure-layer occlusion against bonds.
           depthWrite={true}
           materialFamily={materialFamily}
-          opacity={opacity}
+          onBeforeCompile={enableBatchedAtomOpacity}
+          opacity={1}
           transparent={isTransparent}
+          customProgramCacheKey={batchedAtomOpacityProgramCacheKey}
         />
       </batchedMesh>
       {activeHighlightItem ? (
@@ -316,6 +324,7 @@ function populateBatchedAtomMesh(
     matrix.compose(position, quaternion, scale);
     mesh.setMatrixAt(batchId, matrix);
     mesh.setColorAt(batchId, item.baseColor);
+    setAtomBatchOpacity(mesh, batchId, item.opacity);
     registerBatchPickItem(pickRegistry, batchId, item);
   }
 
@@ -335,6 +344,18 @@ function itemForAtomId(
 
 function setAtomBatchColor(mesh: BatchedMesh, batchId: number, color: Color) {
   mesh.setColorAt(batchId, color);
+}
+
+function setAtomBatchOpacity(mesh: BatchedMesh, batchId: number, opacity: number) {
+  const colorTexture = (mesh as BatchedMesh & { _colorsTexture: DataTexture | null })
+    ._colorsTexture;
+  if (!colorTexture) {
+    return;
+  }
+
+  // Three stores batched colors in RGBA texels but its public setter only writes RGB.
+  colorTexture.image.data[batchId * 4 + 3] = opacity;
+  colorTexture.needsUpdate = true;
 }
 
 function AtomHighlightAnimator({
@@ -571,7 +592,7 @@ function atomBatchKey({
   let hash = hashString(`${sphereWidthSegments}:${sphereHeightSegments}`);
   for (const item of items) {
     hash = hashString(
-      [hash, item.id, item.position.join(","), item.radius, item.color].join(
+      [hash, item.id, item.position.join(","), item.radius, item.color, item.opacity].join(
         ":",
       ),
     );

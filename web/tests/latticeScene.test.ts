@@ -6,6 +6,7 @@ import {
   createDefaultComponentOpacity,
   createDefaultComponentVisibility,
   createDefaultStyle,
+  setAtomOverrideProperty,
   visibleSceneForComponents,
 } from "../src/model";
 import {
@@ -241,11 +242,19 @@ describe("computeSceneLayout", () => {
   });
 
   test("builds atom render items for batched atom rendering", () => {
+    const defaultStyle = createDefaultStyle();
     const style = {
-      ...createDefaultStyle(),
+      ...defaultStyle,
       atomRadius: 150,
+      objectStyles: setAtomOverrideProperty(
+        defaultStyle.objectStyles,
+        "Si-0",
+        "opacity",
+        35,
+      ),
     };
     const [item] = createAtomRenderItems({
+      atomOpacity: 70,
       atoms: [atom("Si-0", [1, 2, 3])],
       colorScheme: style.colorScheme,
       style,
@@ -254,8 +263,17 @@ describe("computeSceneLayout", () => {
     expect(item?.id).toBe("Si-0");
     expect(item?.atom.id).toBe("Si-0");
     expect(item?.position).toEqual([1, 2, 3]);
+    expect(item?.opacity).toBe(0.35);
     expect(item?.radius).toBeCloseTo(1.5);
     expect(item?.color.startsWith("#")).toBe(true);
+
+    const [inheritedItem] = createAtomRenderItems({
+      atomOpacity: 70,
+      atoms: [atom("Si-0", [1, 2, 3])],
+      colorScheme: defaultStyle.colorScheme,
+      style: defaultStyle,
+    });
+    expect(inheritedItem?.opacity).toBe(0.7);
   });
 
   test("resolves batched pick items including batch id zero", () => {
@@ -554,6 +572,26 @@ describe("computeSceneLayout", () => {
         style,
       }),
     ).toBeCloseTo(9 / 14);
+
+    const transparentOneHopStyle = {
+      ...style,
+      objectStyles: setAtomOverrideProperty(
+        style.objectStyles,
+        "Cl-1-one-hop",
+        "opacity",
+        0,
+      ),
+    };
+    expect(
+      computeStructureExportAspectRatio({
+        cameraPose,
+        componentOpacity,
+        scene: withOneHopScene!,
+        showAtoms: true,
+        showUnitCell: false,
+        style: transparentOneHopStyle,
+      }),
+    ).toBeCloseTo(2.25);
   });
 
   test("builds polyhedron geometry from returned hull atoms and faces", () => {

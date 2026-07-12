@@ -973,7 +973,7 @@ describe("App", () => {
     await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
 
     expect(within(sidebar).getByRole("tab", { name: "Atoms" })).toBeTruthy();
-    expect(within(sidebar).getAllByText("R (Å)")).toHaveLength(2);
+    expect(within(sidebar).getAllByText("R (Å)")).toHaveLength(1);
     expect(within(sidebar).queryByText("Na:0")).toBeNull();
     expect(within(sidebar).queryByText(/image/)).toBeNull();
 
@@ -1408,10 +1408,30 @@ describe("App", () => {
     expect(atomsOpacityInput.value).toBe("100");
     expect(atomsOpacitySlider.value).toBe("100");
 
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
+    const sodiumObjectOpacityInput = within(sidebar).getByRole("textbox", {
+      name: "Na opacity",
+    }) as HTMLInputElement;
+    const chlorineObjectOpacityInput = within(sidebar).getByRole("textbox", {
+      name: "Cl opacity",
+    }) as HTMLInputElement;
+    expect(sodiumObjectOpacityInput.value).toBe("100");
+    expect(chlorineObjectOpacityInput.value).toBe("100");
+
+    await user.click(sodiumObjectOpacityInput);
+    await user.type(sodiumObjectOpacityInput, "55{Enter}");
+    fireEvent.change(atomsOpacitySlider, { target: { value: "90" } });
+    expect(sodiumObjectOpacityInput.value).toBe("90");
+    expect(chlorineObjectOpacityInput.value).toBe("90");
+
     await user.click(resetOpacityButton);
 
     expect(resetOpacityButton.className).toContain("tool-icon-button-reset-feedback");
     expect(polyhedraOpacityInput.value).toBe("75");
+    expect(sodiumObjectOpacityInput.value).toBe("100");
+    expect(chlorineObjectOpacityInput.value).toBe("100");
 
     const polyhedraCheckbox = within(commonControls).getByRole("checkbox", {
       name: "Polyhedra",
@@ -1460,29 +1480,33 @@ describe("App", () => {
     expect(resetOpacityButton.disabled).toBe(false);
   });
 
-  test("lets style controls scale sizes and choose bond color mode", async () => {
+  test("keeps radius scales with their object panels and configures style", async () => {
     const user = userEvent.setup();
 
     await renderLoadedStructure(user);
 
     const commonControls = screen.getByRole("complementary", { name: "Common controls" });
     await user.click(within(commonControls).getByRole("tab", { name: "Style" }));
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
 
-    expect(within(commonControls).getByText("Size").isConnected).toBe(true);
-    const atomRadiusModelButton = within(commonControls).getByRole("button", {
-      name: "Atom radius model: Uniform",
+    expect(within(commonControls).queryByText("Size")).toBeNull();
+    expect(within(commonControls).queryByText("Radius scale")).toBeNull();
+    expect(within(commonControls).queryByRole("combobox", { name: "Radius model" })).toBeNull();
+    expect(within(commonControls).queryByRole("slider", { name: "Bond scale" })).toBeNull();
+    const atomGlobalControls = sidebar.querySelector<HTMLElement>(
+      '[data-slot="atom-radius-controls"]',
+    );
+    const atomControlRowClass = atomGlobalControls?.firstElementChild?.className;
+    const atomRadiusModelSelect = within(sidebar).getByRole("combobox", {
+      name: "Radius model",
     });
-    const atomRadiusSlider = within(commonControls).getByRole("slider", {
+    const atomRadiusSlider = within(sidebar).getByRole("slider", {
       name: "Atom scale",
     }) as HTMLInputElement;
-    const atomRadiusInput = within(commonControls).getByRole("textbox", {
+    const atomRadiusInput = within(sidebar).getByRole("textbox", {
       name: "Atom scale value",
-    }) as HTMLInputElement;
-    const bondThicknessSlider = within(commonControls).getByRole("slider", {
-      name: "Bond scale",
-    }) as HTMLInputElement;
-    const bondThicknessInput = within(commonControls).getByRole("textbox", {
-      name: "Bond scale value",
     }) as HTMLInputElement;
     const bondStyleSelect = within(commonControls).getByRole("combobox", {
       name: "Bond style",
@@ -1517,35 +1541,30 @@ describe("App", () => {
     expect(atomRadiusSlider.value).toBe("40");
     expect(atomRadiusInput.value).toBe("40");
     expect(atomRadiusInput.parentElement?.textContent).toContain("%");
-    expect(bondThicknessSlider.max).toBe("200");
-    expect(bondThicknessSlider.value).toBe("100");
-    expect(bondThicknessInput.value).toBe("100");
     expect(commonControls.querySelectorAll(".opacity-slider-snap-marker")).toHaveLength(0);
-    expect(within(commonControls).getByText("Atom").isConnected).toBe(true);
-    expect(atomRadiusModelButton.className).toContain("hover:bg-accent");
-    await user.hover(atomRadiusModelButton);
-    expect(await screen.findByRole("tooltip", { name: "Select atom radius model" })).toBeTruthy();
-    await user.unhover(atomRadiusModelButton);
+    expect(within(sidebar).getByText("Radius scale").isConnected).toBe(true);
+    expect(atomRadiusModelSelect.textContent).toContain("Uniform");
     expect(materialSelect.textContent).toContain("Modern Matte");
     expect(bondStyleSelect.textContent).toContain("Bicolor");
     expect(within(commonControls).queryByRole("button", { name: "Bond color" })).toBeNull();
     expect(colorSchemeSelect.textContent).toContain("VESTA Soft");
+    const elementLegend = screen.getByRole("navigation", { name: "Element legend" });
     async function readSodiumColorValue() {
-      await user.click(screen.getByRole("button", { name: "Set Na color" }));
+      await user.click(within(elementLegend).getByRole("button", { name: "Set Na color" }));
       const sodiumColorInput = await screen.findByLabelText("Na color value") as HTMLInputElement;
       const sodiumColorValue = sodiumColorInput.value;
       expect(screen.queryByLabelText("Alpha transparency percentage")).toBeNull();
-      await user.click(screen.getByRole("button", { name: "Set Na color" }));
+      await user.click(within(elementLegend).getByRole("button", { name: "Set Na color" }));
       return sodiumColorValue;
     }
 
     async function setSodiumColorValue(value: string) {
-      await user.click(screen.getByRole("button", { name: "Set Na color" }));
+      await user.click(within(elementLegend).getByRole("button", { name: "Set Na color" }));
       const sodiumColorInput = await screen.findByLabelText("Na color value") as HTMLInputElement;
       fireEvent.change(sodiumColorInput, { target: { value } });
       expect(sodiumColorInput.value).toBe(value);
       expect(screen.queryByLabelText("Alpha transparency percentage")).toBeNull();
-      await user.click(screen.getByRole("button", { name: "Set Na color" }));
+      await user.click(within(elementLegend).getByRole("button", { name: "Set Na color" }));
     }
 
     await user.click(colorSchemeSelect);
@@ -1570,17 +1589,11 @@ describe("App", () => {
     expect(fogAmountSlider.disabled).toBe(false);
     expect(fogAmountInput.disabled).toBe(false);
 
-    await user.click(atomRadiusModelButton);
-    expect(await screen.findByRole("listbox", { name: "Atom radius model" })).toBeTruthy();
+    await user.click(atomRadiusModelSelect);
     await user.click(await screen.findByRole("option", { name: "Van der Waals" }));
-    await waitFor(() =>
-      expect(screen.queryByRole("tooltip", { name: "Select atom radius model" })).toBeNull(),
-    );
 
     expect(fetchCalls).toHaveLength(1);
-    expect(atomRadiusModelButton.getAttribute("aria-label")).toBe(
-      "Atom radius model: Van der Waals",
-    );
+    expect(atomRadiusModelSelect.textContent).toContain("Van der Waals");
 
     await user.click(bondStyleSelect);
     expect(await screen.findByRole("option", { name: "Bicolor" })).toBeTruthy();
@@ -1623,11 +1636,13 @@ describe("App", () => {
     await user.click(resetBondColorButton);
     expect(fetchCalls).toHaveLength(1);
 
-    const sodiumColorButton = screen.getByRole("button", { name: "Set Na color" });
+    const sodiumColorButton = within(elementLegend).getByRole("button", {
+      name: "Set Na color",
+    });
     expect(sodiumColorButton.isConnected).toBe(true);
     await user.click(sodiumColorButton);
     expect(await screen.findByLabelText("Na color value")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Set Na color" }));
+    await user.click(within(elementLegend).getByRole("button", { name: "Set Na color" }));
     expect(screen.queryByLabelText("Na color value")).toBeNull();
     await setSodiumColorValue("#112233");
     expect(colorSchemeSelect.textContent).toContain("Custom");
@@ -1665,43 +1680,55 @@ describe("App", () => {
     expect(atomRadiusInput.value).toBe("44");
     expect(atomRadiusSlider.value).toBe("44");
 
-    await user.clear(bondThicknessInput);
-    await user.type(bondThicknessInput, "240{Enter}");
-
-    expect(bondThicknessInput.value).toBe("200");
-    expect(bondThicknessSlider.value).toBe("200");
-
-    await user.clear(bondThicknessInput);
-    await user.type(bondThicknessInput, "240{Enter}");
-
-    expect(bondThicknessInput.value).toBe("200");
-    expect(bondThicknessSlider.value).toBe("200");
-
-    await user.clear(atomRadiusInput);
-    await user.type(atomRadiusInput, "50{Enter}");
-
-    expect(atomRadiusInput.value).toBe("50");
-    expect(atomRadiusSlider.value).toBe("50");
-
-    await user.clear(atomRadiusInput);
-    await user.type(atomRadiusInput, "-10{Enter}");
-
-    expect(atomRadiusInput.value).toBe("50");
-    expect(atomRadiusSlider.value).toBe("50");
-
-    const resetScaleButton = within(commonControls).getByRole("button", {
-      name: "Reset scale",
-    }) as HTMLButtonElement;
-    await user.click(resetScaleButton);
-
-    expect(resetScaleButton.className).toContain("tool-icon-button-reset-feedback");
-    expect(atomRadiusInput.value).toBe("40");
-    expect(atomRadiusSlider.value).toBe("40");
-    expect(bondThicknessInput.value).toBe("100");
-    expect(bondThicknessSlider.value).toBe("100");
-    expect(atomRadiusModelButton.getAttribute("aria-label")).toBe(
-      "Atom radius model: Van der Waals",
+    await user.click(within(sidebar).getByRole("tab", { name: "Bonds" }));
+    const bondGlobalControls = sidebar.querySelector<HTMLElement>(
+      '[data-slot="bond-global-controls"]',
     );
+    expect(bondGlobalControls?.firstElementChild?.className).toBe(atomControlRowClass);
+    expect(within(bondGlobalControls!).getByText("Bonding algorithm").isConnected).toBe(true);
+    expect(within(bondGlobalControls!).getByText("Radius scale").isConnected).toBe(true);
+    const bondThicknessSlider = within(bondGlobalControls!).getByRole("slider", {
+      name: "Bond scale",
+    }) as HTMLInputElement;
+    const bondThicknessInput = within(bondGlobalControls!).getByRole("textbox", {
+      name: "Bond scale value",
+    }) as HTMLInputElement;
+    expect(bondThicknessSlider.max).toBe("200");
+    expect(bondThicknessSlider.value).toBe("100");
+    expect(bondThicknessInput.value).toBe("100");
+
+    await user.clear(bondThicknessInput);
+    await user.type(bondThicknessInput, "240{Enter}");
+
+    expect(bondThicknessInput.value).toBe("200");
+    expect(bondThicknessSlider.value).toBe("200");
+
+    await user.clear(bondThicknessInput);
+    await user.type(bondThicknessInput, "240{Enter}");
+
+    expect(bondThicknessInput.value).toBe("200");
+    expect(bondThicknessSlider.value).toBe("200");
+
+    await user.click(within(sidebar).getByRole("tab", { name: "Atoms" }));
+    const restoredAtomRadiusSlider = within(sidebar).getByRole("slider", {
+      name: "Atom scale",
+    }) as HTMLInputElement;
+    const restoredAtomRadiusInput = within(sidebar).getByRole("textbox", {
+      name: "Atom scale value",
+    }) as HTMLInputElement;
+
+    await user.clear(restoredAtomRadiusInput);
+    await user.type(restoredAtomRadiusInput, "50{Enter}");
+
+    expect(restoredAtomRadiusInput.value).toBe("50");
+    expect(restoredAtomRadiusSlider.value).toBe("50");
+
+    await user.clear(restoredAtomRadiusInput);
+    await user.type(restoredAtomRadiusInput, "-10{Enter}");
+
+    expect(restoredAtomRadiusInput.value).toBe("50");
+    expect(restoredAtomRadiusSlider.value).toBe("50");
+    expect(within(commonControls).queryByRole("button", { name: "Reset scale" })).toBeNull();
     expect(bondStyleSelect.textContent).toContain("Unicolor");
     expect(colorSchemeSelect.textContent).toContain("Jmol");
     expect(fogSwitch.getAttribute("aria-checked")).toBe("true");
@@ -2513,17 +2540,17 @@ describe("App", () => {
       name: "Polyhedra",
     });
     await user.click(polyhedraCheckbox);
-    await user.click(within(commonControls).getByRole("tab", { name: "Style" }));
-    const atomRadiusModelButton = within(commonControls).getByRole("button", {
-      name: "Atom radius model: Uniform",
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await user.click(within(sidebar).getByRole("tab", { name: "Objects" }));
+    const atomRadiusModelSelect = within(sidebar).getByRole("combobox", {
+      name: "Radius model",
     });
-    await user.click(atomRadiusModelButton);
+    await user.click(atomRadiusModelSelect);
     await user.click(await screen.findByRole("option", { name: "Van der Waals" }));
 
     expect(fetchCalls).toHaveLength(1);
 
-    await user.click(screen.getByRole("button", { name: "Sidebar" }));
-    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
     await openBondObjectsTab(user, sidebar);
     queueFetchResponse(jsonResponse(sceneWithPeriodicImages()));
 

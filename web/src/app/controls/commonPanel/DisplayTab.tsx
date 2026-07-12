@@ -1,9 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import {
   type CSSProperties,
-  type Dispatch,
   type KeyboardEvent,
-  type SetStateAction,
   useEffect,
   useRef,
   useState,
@@ -21,7 +19,6 @@ import { cn } from "@/lib/utils";
 
 import {
   COMPONENT_OPACITY_MAX,
-  createDefaultComponentOpacity,
   type ComponentOpacityState,
   type ComponentVisibilityState,
 } from "../../../model";
@@ -49,6 +46,7 @@ export function DisplayTabContent({
   connectivityStatus,
   hasPolyhedra,
   onOpacityChange,
+  onOpacityReset,
   onVisibilityChange,
   opacity,
   visibility,
@@ -56,7 +54,8 @@ export function DisplayTabContent({
   connectivityIntent: string | null;
   connectivityStatus: "deferred" | "loading" | "ready" | "error";
   hasPolyhedra: boolean;
-  onOpacityChange: Dispatch<SetStateAction<ComponentOpacityState>>;
+  onOpacityChange: (key: keyof ComponentOpacityState, value: number) => void;
+  onOpacityReset: () => void;
   onVisibilityChange: (key: keyof ComponentVisibilityState, value: boolean) => void;
   opacity: ComponentOpacityState;
   visibility: ComponentVisibilityState;
@@ -68,10 +67,10 @@ export function DisplayTabContent({
   }
 
   function setOpacity(key: keyof ComponentOpacityState, value: number) {
-    onOpacityChange((currentOpacity) => ({
-      ...currentOpacity,
-      [key]: clampOpacityValue(value, COMPONENT_OPACITY_MAX[key]),
-    }));
+    onOpacityChange(
+      key,
+      clampOpacityValue(value, COMPONENT_OPACITY_MAX[key]),
+    );
   }
 
   const [resetFeedbackPhase, setResetFeedbackPhase] = useState<"a" | "b" | null>(null);
@@ -88,7 +87,7 @@ export function DisplayTabContent({
   );
 
   function handleResetOpacityClick() {
-    onOpacityChange(createDefaultComponentOpacity());
+    onOpacityReset();
 
     if (resetFeedbackTimeoutRef.current !== null) {
       window.clearTimeout(resetFeedbackTimeoutRef.current);

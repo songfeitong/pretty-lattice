@@ -64,7 +64,6 @@ import {
 } from "./inspector/InspectorSidebar";
 import type { ObjectsPanelTab } from "./inspector/ObjectsPanel";
 import {
-  CUSTOM_ATOM_RADIUS_MODEL,
   createDefaultComponentOpacity,
   createDefaultComponentVisibility,
   createDefaultBondVisibilityOverrides,
@@ -76,11 +75,9 @@ import {
   DEFAULT_SHOW_CRYSTAL_AXIS_LABELS,
   DEFAULT_STRUCTURE_LINE_WIDTH,
   DEFAULT_UNIT_CELL_LINE_STYLE,
-  createCustomAtomRadii,
   createCustomColormapFromStyle,
   defaultPreviewMeshQualityForScene,
   elementColorOverridesForStyle,
-  type AtomRadiusStyleModel,
   type MeshQuality,
   type StructureLineWidthState,
   type UnitCellLineStyle,
@@ -94,6 +91,7 @@ import {
   setBondFamilyVisible,
   setBondInstanceVisible,
   type BondVisibilityOverrides,
+  type ComponentOpacityState,
   type ComponentVisibilityState,
 } from "../model";
 
@@ -464,6 +462,36 @@ function AppContent() {
     setComponentVisibility((current) => ({ ...current, [key]: value }));
   }, [connectivityStatus, requestConnectivity]);
 
+  const handleComponentOpacityChange = useCallback((
+    key: keyof ComponentOpacityState,
+    value: number,
+  ) => {
+    setComponentOpacity((currentOpacity) => ({
+      ...currentOpacity,
+      [key]: value,
+    }));
+    if (key === "atoms") {
+      setStyle((currentStyle) => ({
+        ...currentStyle,
+        objectStyles: clearObjectStyleProperty(
+          currentStyle.objectStyles,
+          "opacity",
+        ),
+      }));
+    }
+  }, []);
+
+  const handleComponentOpacityReset = useCallback(() => {
+    setComponentOpacity(createDefaultComponentOpacity());
+    setStyle((currentStyle) => ({
+      ...currentStyle,
+      objectStyles: clearObjectStyleProperty(
+        currentStyle.objectStyles,
+        "opacity",
+      ),
+    }));
+  }, []);
+
   const handleFogAffectsUnitCellChange = useCallback((fogAffectsUnitCell: boolean) => {
     setStyle((currentStyle) => ({
       ...currentStyle,
@@ -643,53 +671,6 @@ function AppContent() {
       );
     },
     [customBondingProfile, handleBondCutoffOverrideChange, scene?.bonds],
-  );
-
-  const handleAtomRadiusModelChange = useCallback(
-    (atomRadiusModel: AtomRadiusStyleModel) => {
-      setStyle((currentStyle) => {
-        if (atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL) {
-          if (currentStyle.atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL) {
-            return currentStyle;
-          }
-
-          const customAtomRadii = createCustomAtomRadii(
-            objectStyleAtoms,
-            currentStyle,
-          );
-          const objectStylesWithoutRadius = clearObjectStyleProperty(
-            currentStyle.objectStyles,
-            "radius",
-          );
-
-          return {
-            ...currentStyle,
-            atomRadiusModel,
-            objectStyles: {
-              ...objectStylesWithoutRadius,
-              customAtomRadii,
-              customRadiusBaseModel: currentStyle.atomRadiusModel,
-              customRadiusPreviousScale: currentStyle.atomRadius,
-            },
-          };
-        }
-
-        return {
-          ...currentStyle,
-          atomRadius:
-            currentStyle.atomRadiusModel === CUSTOM_ATOM_RADIUS_MODEL &&
-            currentStyle.objectStyles.customRadiusPreviousScale !== null
-              ? currentStyle.objectStyles.customRadiusPreviousScale
-              : currentStyle.atomRadius,
-          atomRadiusModel,
-          objectStyles: clearObjectStyleProperty(
-            currentStyle.objectStyles,
-            "radius",
-          ),
-        };
-      });
-    },
-    [objectStyleAtoms],
   );
 
   const elementColorOverrides = useMemo(
@@ -1012,14 +993,14 @@ function AppContent() {
               hasPolyhedra={hasPolyhedra(scene)}
               isExporting={isExporting}
               onActiveTabChange={handleActiveCommonPanelTabChange}
-              onAtomRadiusModelChange={handleAtomRadiusModelChange}
               onCameraPrimaryChange={handleCameraPrimaryChange}
               onCameraRollPreviewChange={handleCameraRollPreviewChange}
               onCameraRollPreviewStart={handleCameraRollPreviewStart}
               onCameraRollChange={handleCameraRollChange}
               onCameraSecondaryChange={handleCameraSecondaryChange}
               onCameraStateChange={handleCameraStateChange}
-              onComponentOpacityChange={setComponentOpacity}
+              onComponentOpacityChange={handleComponentOpacityChange}
+              onComponentOpacityReset={handleComponentOpacityReset}
               onExport={handleExportFigure}
               onExportSettingsChange={handleExportSettingsChange}
               onStyleChange={setStyle}
@@ -1076,6 +1057,7 @@ function AppContent() {
                   activeObjectsTab={activeObjectsTab}
                   activeTab={activeInspectorTab}
                   atomLocateRequest={atomLocateRequest}
+                  atomOpacity={componentOpacity.atoms}
                   atomsVisible={componentVisibility.atoms}
                   bondAlgorithm={bondAlgorithm}
                   bondLocateRequest={bondLocateRequest}

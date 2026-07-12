@@ -110,7 +110,7 @@ export function HexColorPicker({
           aria-label={ariaLabel}
           data-color-picker-trigger=""
           className={cn(
-            "inline-flex size-[18px] shrink-0 items-center justify-center rounded-md bg-transparent p-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+            "inline-flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent p-0 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
             triggerClassName,
           )}
           onClick={(event) => {
