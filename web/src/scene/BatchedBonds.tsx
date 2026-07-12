@@ -49,7 +49,6 @@ interface BondBatchBuild {
   maxVertexCount: number;
   mode: BondColorMode;
   radialSegments: number;
-  radius: number;
 }
 
 export function BatchedBonds({
@@ -209,7 +208,7 @@ export function BatchedBonds({
           ].join(":")}
           inspected={inspectedItem !== null}
           item={activeHighlightItem}
-          radius={batch.radius}
+          radius={activeHighlightItem.radius}
           selectionHighlightColor={selectionHighlightColor}
         />
       ) : null}
@@ -246,11 +245,10 @@ function createBondBatchBuild({
       maxVertexCount: vertexCount,
       mode: colorMode,
       radialSegments: segments,
-      radius,
     };
   }
 
-  const geometry = unicolorBondGeometry(radius, segments);
+  const geometry = unicolorBondGeometry(1, segments);
   const maxVertexCount = geometry.getAttribute("position").count;
   const maxIndexCount = geometry.getIndex()?.count ?? maxVertexCount;
   geometry.dispose();
@@ -263,7 +261,6 @@ function createBondBatchBuild({
     maxVertexCount,
     mode: colorMode,
     radialSegments: segments,
-    radius,
   };
 }
 
@@ -275,7 +272,7 @@ function populateBatchedBondMesh(
   const matrix = new Matrix4();
   const unicolorGeometry =
     batch.mode === "unicolor"
-      ? unicolorBondGeometry(batch.radius, batch.radialSegments)
+      ? unicolorBondGeometry(1, batch.radialSegments)
       : null;
   const unicolorGeometryId = unicolorGeometry
     ? mesh.addGeometry(prepareBatchGeometry(unicolorGeometry))
@@ -290,7 +287,7 @@ function populateBatchedBondMesh(
     const batchId = mesh.addInstance(geometryId);
     const scale =
       batch.mode === "unicolor"
-        ? new Vector3(1, item.length, 1)
+        ? new Vector3(item.radius, item.length, item.radius)
         : new Vector3(1, 1, 1);
     matrix.compose(item.center, item.quaternion, scale);
     mesh.setMatrixAt(batchId, matrix);
@@ -389,7 +386,7 @@ function addTwoToneBondGeometry(
       endColor: item.endColor,
       length: item.length,
       radialSegments: batch.radialSegments,
-      radius: batch.radius,
+      radius: item.radius,
       startColor: item.startColor,
     }),
   );
@@ -440,6 +437,7 @@ function bondBatchKey({
         item.startAtomIndex,
         item.endAtomIndex,
         item.length,
+        item.radius,
         item.center.toArray().join(","),
         item.quaternion.toArray().join(","),
         item.startColor,

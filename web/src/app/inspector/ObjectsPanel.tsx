@@ -41,6 +41,7 @@ export function ObjectsPanel({
   atomsVisible,
   bondAlgorithm,
   bondLocateRequest,
+  bondOpacity,
   bondsVisible,
   bondVisibilityOverrides,
   cutoffOverrides,
@@ -53,7 +54,6 @@ export function ObjectsPanel({
   onBondVisibilityChange,
   onCutoffChange,
   onElementColorChange,
-  onFamilyReset,
   onFamilyVisibilityChange,
   onStyleChange,
   scene,
@@ -68,6 +68,7 @@ export function ObjectsPanel({
   atomsVisible: boolean;
   bondAlgorithm: BondingMode;
   bondLocateRequest: BondLocateRequest | null;
+  bondOpacity: number;
   bondsVisible: boolean;
   bondVisibilityOverrides: BondVisibilityOverrides;
   cutoffOverrides: Record<string, number>;
@@ -80,7 +81,6 @@ export function ObjectsPanel({
   onBondVisibilityChange: (bond: BondSpec, visible: boolean) => void;
   onCutoffChange: (familyKey: string, cutoff: number | null) => Promise<boolean>;
   onElementColorChange: (element: string, color: string) => void;
-  onFamilyReset: (familyKey: string) => Promise<void>;
   onFamilyVisibilityChange: (familyKey: string, visible: boolean) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   scene: SceneSpec;
@@ -194,14 +194,15 @@ export function ObjectsPanel({
         <div className={cn(isSceneLoading ? "hidden" : null)}>
           <BondsPanel
             bondLocateRequest={bondLocateRequest}
+            bondOpacity={bondOpacity}
             bondsVisible={bondsVisible}
             cutoffOverrides={cutoffOverrides}
             isSceneLoading={isSceneLoading}
             onBondLocateRequestHandled={onBondLocateRequestHandled}
             onBondVisibilityChange={onBondVisibilityChange}
             onCutoffChange={onCutoffChange}
-            onFamilyReset={onFamilyReset}
             onFamilyVisibilityChange={onFamilyVisibilityChange}
+            onStyleChange={onStyleChange}
             resetToken={bondObjectsResetToken}
             scene={scene}
             selectedBondId={selectedBondId}

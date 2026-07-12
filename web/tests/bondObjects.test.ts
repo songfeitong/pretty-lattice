@@ -5,16 +5,22 @@ import {
   bondInspectorCopyText,
   createDefaultBondVisibilityOverrides,
   createDefaultComponentVisibility,
+  createDefaultStyle,
+  clearBondOverridePropertyForFamily,
   formatBondFamilyLength,
+  formatBondVector,
   inspectedBondInfoForId,
-  resetBondFamilyVisibility,
+  resolveBondOpacityForStyle,
+  resolveBondRadiusForStyle,
+  setBondFamilyOverrideProperty,
+  setBondOverrideProperty,
   setBondFamilyVisible,
-  setBondInstanceVisible,
+  setBondRelationVisible,
   visibleSceneForComponents,
 } from "../src/model";
 
 describe("bond objects", () => {
-  test("filters family and individual visibility without changing connectivity metadata", () => {
+  test("filters family and relation visibility without changing connectivity metadata", () => {
     const scene = bondScene();
     const defaults = createDefaultComponentVisibility(scene);
     const familyHidden = setBondFamilyVisible(
@@ -33,7 +39,7 @@ describe("bond objects", () => {
     expect(withoutFamily?.bondFamilies).toEqual(scene.bondFamilies);
     expect(withoutFamily?.polyhedra).toEqual(scene.polyhedra);
 
-    const oneHidden = setBondInstanceVisible(
+    const oneHidden = setBondRelationVisible(
       createDefaultBondVisibilityOverrides(),
       scene.bonds[0]!,
       false,
@@ -46,23 +52,77 @@ describe("bond objects", () => {
     );
     expect(withoutOne?.bonds.map((bond) => bond.id)).toEqual(["bond:two"]);
 
-    const reset = resetBondFamilyVisibility(oneHidden, "Na|Cl", scene.bonds);
-    expect(reset.hiddenFamilies.size).toBe(0);
-    expect(reset.hiddenBondInstances.size).toBe(0);
+  });
+
+  test("hides every periodic instance of the same logical bond relation", () => {
+    const scene = bondScene();
+    scene.bonds.push({
+      ...scene.bonds[0]!,
+      id: "bond:one-periodic-copy",
+      startImageOffset: [1, 0, 0],
+      endImageOffset: [1, 0, 0],
+    });
+    const hidden = setBondRelationVisible(
+      createDefaultBondVisibilityOverrides(),
+      scene.bonds[0]!,
+      false,
+    );
+    const visible = visibleSceneForComponents(
+      scene,
+      createDefaultComponentVisibility(scene),
+      undefined,
+      hidden,
+    );
+
+    expect(visible?.bonds.map((bond) => bond.id)).toEqual(["bond:two"]);
   });
 
   test("resolves stable bond information and the read-only copy format", () => {
     const info = inspectedBondInfoForId(bondScene(), "bond:one");
 
     expect(info?.bond.relationId).toBe("relation:one");
+    expect(formatBondVector(info!, 3)).toBe("1.000, 0.000, 0.000");
     expect(bondInspectorCopyText(info!)).toBe(
       [
         "Bond: Na:0 -- Cl:1",
-        "Length (A): 1.000000",
-        "Start cell: 0, 0, 0",
-        "End cell: 0, 0, 0",
+        "Bond length (A): 1.000000",
+        "Vector\u2009(frac): 1.000000, 0.000000, 0.000000",
+        "Cell offset: (0, 0, 0) - (0, 0, 0)",
       ].join("\n"),
     );
+  });
+
+  test("formats signed fractional components as coordinates", () => {
+    const scene = bondScene();
+    scene.atoms[1]!.fractionalPosition = [0.5, -0.25, 0];
+    const info = inspectedBondInfoForId(scene, "bond:one");
+
+    expect(formatBondVector(info!, 3)).toBe("0.500, -0.250, 0.000");
+  });
+
+  test("resolves family and individual appearance overrides with atom-style inheritance", () => {
+    const scene = bondScene();
+    const bond = scene.bonds[0]!;
+    let objectStyles = createDefaultStyle().objectStyles;
+    objectStyles = setBondFamilyOverrideProperty(objectStyles, "Na|Cl", "radius", 0.2);
+    objectStyles = setBondFamilyOverrideProperty(objectStyles, "Na|Cl", "opacity", 60);
+
+    expect(resolveBondRadiusForStyle(bond, objectStyles, 0.1)).toBe(0.2);
+    expect(resolveBondOpacityForStyle(bond, objectStyles, 100)).toBe(60);
+
+    objectStyles = setBondOverrideProperty(objectStyles, bond.id, "radius", 0.3);
+    objectStyles = setBondOverrideProperty(objectStyles, bond.id, "opacity", 35);
+    expect(resolveBondRadiusForStyle(bond, objectStyles, 0.1)).toBe(0.3);
+    expect(resolveBondOpacityForStyle(bond, objectStyles, 100)).toBe(35);
+
+    objectStyles = clearBondOverridePropertyForFamily(
+      objectStyles,
+      scene.bonds,
+      "Na|Cl",
+      "radius",
+    );
+    expect(resolveBondRadiusForStyle(bond, objectStyles, 0.1)).toBe(0.2);
+    expect(resolveBondOpacityForStyle(bond, objectStyles, 100)).toBe(35);
   });
 });
 

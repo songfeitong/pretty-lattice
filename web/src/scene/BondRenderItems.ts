@@ -12,6 +12,7 @@ import type {
   StyleState,
 } from "../model";
 import { resolveAtomAppearance } from "../model";
+import { resolveBondOpacityForStyle, resolveBondRadiusForStyle } from "../model";
 
 const BOND_UP_AXIS = new Vector3(0, 1, 0);
 
@@ -22,7 +23,9 @@ export interface BondRenderItem {
   endColor: string;
   id: string;
   length: number;
+  opacity: number;
   quaternion: Quaternion;
+  radius: number;
   startAtomIndex: number;
   startColor: string;
 }
@@ -30,6 +33,8 @@ export interface BondRenderItem {
 export function createBondRenderItems({
   atoms,
   bondColor,
+  bondOpacity,
+  bondRadius,
   bonds,
   colorMode,
   colorScheme,
@@ -38,6 +43,8 @@ export function createBondRenderItems({
 }: {
   atoms: AtomSpec[];
   bondColor: string;
+  bondOpacity: number;
+  bondRadius: number;
   bonds: BondSpec[];
   colorMode: BondColorMode;
   colorScheme: StyleState["colorScheme"];
@@ -86,9 +93,19 @@ export function createBondRenderItems({
       endColor,
       id: bond.id,
       length,
+      opacity: resolveBondOpacityForStyle(
+        bond,
+        style.objectStyles,
+        bondOpacity,
+      ),
       quaternion: new Quaternion().setFromUnitVectors(
         BOND_UP_AXIS,
         direction.clone().normalize(),
+      ),
+      radius: resolveBondRadiusForStyle(
+        bond,
+        style.objectStyles,
+        bondRadius,
       ),
       startAtomIndex: bond.startAtomIndex,
       startColor,

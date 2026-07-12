@@ -74,6 +74,8 @@ describe("settings", () => {
       materialPreset: "modern-matte",
       objectStyles: {
         atomOverrides: {},
+        bondFamilyOverrides: {},
+        bondOverrides: {},
         customAtomRadii: {},
         customRadiusBaseModel: null,
         customRadiusPreviousScale: null,

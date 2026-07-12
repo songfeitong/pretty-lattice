@@ -21,6 +21,7 @@ import type { VectorTuple } from "./viewMath";
 import { BatchedAtoms } from "./BatchedAtoms";
 import { BatchedBonds } from "./BatchedBonds";
 import { createBondRenderItems } from "./BondRenderItems";
+import { BOND_RADIUS } from "./sceneGeometry";
 import { CellFrame } from "./CellFrame";
 import { MemoizedBatchedPolyhedra } from "./BatchedPolyhedra";
 export {
@@ -316,14 +317,25 @@ export function StructureSceneObjects({
       createBondRenderItems({
         atoms: scene.atoms,
         bondColor: style.bondColor,
+        bondOpacity: componentOpacity.bonds,
+        bondRadius: BOND_RADIUS * (style.bondThickness / 100),
         bonds: scene.bonds,
         colorMode: style.bondColorMode,
         colorScheme,
         colorOverrides,
         style,
       }),
-    [colorScheme, colorOverrides, scene.atoms, scene.bonds, style],
+    [colorScheme, colorOverrides, componentOpacity.bonds, scene.atoms, scene.bonds, style],
   );
+  const bondRenderItemGroups = useMemo(() => {
+    const groups = new Map<number, typeof bondRenderItems>();
+    for (const item of bondRenderItems) {
+      const group = groups.get(item.opacity) ?? [];
+      group.push(item);
+      groups.set(item.opacity, group);
+    }
+    return [...groups.entries()];
+  }, [bondRenderItems]);
   const handleSceneClear = useCallback(() => {
     if (interactionLocked) {
       return;
@@ -356,22 +368,25 @@ export function StructureSceneObjects({
           lineWidthScale={polyhedronEdgeLineWidthScale}
           style={style}
         />
-        <BatchedBonds
-          bondRenderItems={bondRenderItems}
-          colorMode={style.bondColorMode}
-          inspectedBondId={inspectedBondId}
-          interactionLocked={interactionLocked}
-          materialFamily={materialFamilies.bond}
-          meshDetail={meshDetail}
-          onInspect={onBondInspect}
-          onLockedInteractionAttempt={onLockedInteractionAttempt}
-          onPulse={onBondPulse}
-          pulseBondId={pulseBondId}
-          pulseToken={pulseBondToken}
-          selectionHighlightColor={selectionHighlightColor}
-          thicknessScale={style.bondThickness / 100}
-          opacity={componentOpacity.bonds / 100}
-        />
+        {bondRenderItemGroups.map(([opacity, items]) => (
+          <BatchedBonds
+            key={opacity}
+            bondRenderItems={items}
+            colorMode={style.bondColorMode}
+            inspectedBondId={inspectedBondId}
+            interactionLocked={interactionLocked}
+            materialFamily={materialFamilies.bond}
+            meshDetail={meshDetail}
+            onInspect={onBondInspect}
+            onLockedInteractionAttempt={onLockedInteractionAttempt}
+            onPulse={onBondPulse}
+            pulseBondId={pulseBondId}
+            pulseToken={pulseBondToken}
+            selectionHighlightColor={selectionHighlightColor}
+            thicknessScale={style.bondThickness / 100}
+            opacity={opacity / 100}
+          />
+        ))}
         {showAtoms ? (
           <BatchedAtoms
             atomOpacity={componentOpacity.atoms}

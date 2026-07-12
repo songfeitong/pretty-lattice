@@ -1,4 +1,4 @@
-import { Copy, SquareMousePointer, X } from "lucide-react";
+import { Copy, EyeOff, SquareMousePointer, X } from "lucide-react";
 import { useCallback, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -15,6 +15,7 @@ import {
   atomSiteLabel,
   bondInspectorCopyText,
   formatBondLengthForDisplay,
+  formatBondVector,
   formatCellOffset,
   resolveAtomAppearance,
   type InspectedBondInfo,
@@ -29,6 +30,7 @@ export function BondInspectorCard({
   info,
   isInspectorOpen,
   onClose,
+  onHide,
   onLocateInObjects,
   style,
 }: {
@@ -37,6 +39,7 @@ export function BondInspectorCard({
   info: InspectedBondInfo;
   isInspectorOpen: boolean;
   onClose: () => void;
+  onHide: (bond: InspectedBondInfo["bond"]) => void;
   onLocateInObjects?: (bondId: string) => void;
   style: StyleState;
 }) {
@@ -68,7 +71,7 @@ export function BondInspectorCard({
         GLASS_SURFACE_CLASS,
       )}
     >
-      <div className="grid h-7 grid-cols-[1.5rem_minmax(0,1fr)_1.5rem_1.5rem] items-center gap-2">
+      <div className="grid h-7 grid-cols-[1.5rem_minmax(0,1fr)_1.5rem_1.5rem_1.5rem] items-center gap-2">
         <CardAction
           label={t("actions.closeBondInfo")}
           onClick={onClose}
@@ -82,6 +85,11 @@ export function BondInspectorCard({
           <span>{atomSiteLabel(info.endAtom)}</span>
         </div>
         <CardAction
+          label={t("actions.hideBond")}
+          onClick={() => onHide(info.bond)}
+          icon={<EyeOff aria-hidden="true" />}
+        />
+        <CardAction
           label={t("actions.copyBondInfo")}
           onClick={handleCopy}
           icon={<Copy aria-hidden="true" />}
@@ -93,18 +101,19 @@ export function BondInspectorCard({
         />
       </div>
 
-      <dl className="mt-2 grid grid-cols-[5.8rem_minmax(0,1fr)] gap-x-2 gap-y-1 tabular-nums">
-        <dt className="text-muted-foreground">{t("bondInspector.length")}</dt>
+      <dl className="mt-2 grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-2 gap-y-1 tabular-nums">
+        <dt className="text-muted-foreground">{t("bondInspector.bondLength")}</dt>
         <dd className="truncate text-right text-foreground">
           {formatBondLengthForDisplay(info.bond.length)}
         </dd>
-        <dt className="text-muted-foreground">{t("bondInspector.startCell")}</dt>
+        <dt className="text-muted-foreground">{t("bondInspector.bondVector")}</dt>
         <dd className="truncate text-right text-foreground">
-          {formatCellOffset(info.bond.startImageOffset)}
+          {formatBondVector(info, 3)}
         </dd>
-        <dt className="text-muted-foreground">{t("bondInspector.endCell")}</dt>
+        <dt className="text-muted-foreground">{t("bondInspector.cellOffset")}</dt>
         <dd className="truncate text-right text-foreground">
-          {formatCellOffset(info.bond.endImageOffset)}
+          ({formatCellOffset(info.bond.startImageOffset)}) - (
+          {formatCellOffset(info.bond.endImageOffset)})
         </dd>
       </dl>
     </aside>

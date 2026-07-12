@@ -16,8 +16,7 @@ export interface CustomBondingProfile {
 
 export interface BondVisibilityOverrides {
   hiddenFamilies: ReadonlySet<string>;
-  hiddenBondInstances: ReadonlySet<string>;
-  hiddenBondFamilyByInstance: ReadonlyMap<string, string>;
+  hiddenBondRelations: ReadonlySet<string>;
 }
 
 export interface InspectedBondInfo {
@@ -30,8 +29,7 @@ export interface InspectedBondInfo {
 export function createDefaultBondVisibilityOverrides(): BondVisibilityOverrides {
   return {
     hiddenFamilies: new Set<string>(),
-    hiddenBondInstances: new Set<string>(),
-    hiddenBondFamilyByInstance: new Map<string, string>(),
+    hiddenBondRelations: new Set<string>(),
   };
 }
 
@@ -43,7 +41,7 @@ export function isBondVisible(
   return (
     globallyVisible &&
     !overrides.hiddenFamilies.has(bond.familyKey) &&
-    !overrides.hiddenBondInstances.has(bond.id)
+    !overrides.hiddenBondRelations.has(bond.relationId)
   );
 }
 
@@ -61,55 +59,18 @@ export function setBondFamilyVisible(
   return { ...overrides, hiddenFamilies };
 }
 
-export function setBondInstanceVisible(
+export function setBondRelationVisible(
   overrides: BondVisibilityOverrides,
   bond: BondSpec,
   visible: boolean,
 ): BondVisibilityOverrides {
-  const hiddenBondInstances = new Set(overrides.hiddenBondInstances);
-  const hiddenBondFamilyByInstance = new Map(
-    overrides.hiddenBondFamilyByInstance,
-  );
+  const hiddenBondRelations = new Set(overrides.hiddenBondRelations);
   if (visible) {
-    hiddenBondInstances.delete(bond.id);
-    hiddenBondFamilyByInstance.delete(bond.id);
+    hiddenBondRelations.delete(bond.relationId);
   } else {
-    hiddenBondInstances.add(bond.id);
-    hiddenBondFamilyByInstance.set(bond.id, bond.familyKey);
+    hiddenBondRelations.add(bond.relationId);
   }
-  return { ...overrides, hiddenBondFamilyByInstance, hiddenBondInstances };
-}
-
-export function resetBondFamilyVisibility(
-  overrides: BondVisibilityOverrides,
-  familyKey: string,
-  bonds: readonly BondSpec[],
-): BondVisibilityOverrides {
-  const hiddenFamilies = new Set(overrides.hiddenFamilies);
-  hiddenFamilies.delete(familyKey);
-  const familyBondIds = new Set(
-    bonds.filter((bond) => bond.familyKey === familyKey).map((bond) => bond.id),
-  );
-  for (const [bondId, hiddenFamilyKey] of overrides.hiddenBondFamilyByInstance) {
-    if (hiddenFamilyKey === familyKey) {
-      familyBondIds.add(bondId);
-    }
-  }
-  const hiddenBondInstances = new Set(
-    [...overrides.hiddenBondInstances].filter(
-      (bondId) => !familyBondIds.has(bondId),
-    ),
-  );
-  const hiddenBondFamilyByInstance = new Map(
-    [...overrides.hiddenBondFamilyByInstance].filter(
-      ([bondId]) => !familyBondIds.has(bondId),
-    ),
-  );
-  return {
-    hiddenFamilies,
-    hiddenBondFamilyByInstance,
-    hiddenBondInstances,
-  };
+  return { ...overrides, hiddenBondRelations };
 }
 
 export function inspectedBondInfoForId(
@@ -134,33 +95,25 @@ export function inspectedBondInfoForId(
   return { bond, endAtom, family, startAtom };
 }
 
-export function bondFamilyHasVisibilityOverride(
-  overrides: BondVisibilityOverrides,
-  familyKey: string,
-  bonds: readonly BondSpec[],
-): boolean {
-  if (overrides.hiddenFamilies.has(familyKey)) {
-    return true;
-  }
-  if (
-    [...overrides.hiddenBondFamilyByInstance.values()].some(
-      (hiddenFamilyKey) => hiddenFamilyKey === familyKey,
-    )
-  ) {
-    return true;
-  }
-  return bonds.some(
-    (bond) =>
-      bond.familyKey === familyKey && overrides.hiddenBondInstances.has(bond.id),
-  );
-}
-
 export function atomSiteLabel(atom: AtomSpec): string {
   return `${atom.element}:${atom.siteIndex}`;
 }
 
 export function formatBondLengthForDisplay(length: number): string {
   return `${length.toFixed(3)} Å`;
+}
+
+export function formatBondVector(
+  info: InspectedBondInfo,
+  digits: number,
+): string {
+  return info.endAtom.fractionalPosition
+    .map((value, index) => value - info.startAtom.fractionalPosition[index]!)
+    .map((value) => {
+      const normalizedValue = Math.abs(value) < 10 ** -digits ? 0 : value;
+      return normalizedValue.toFixed(digits);
+    })
+    .join(", ");
 }
 
 export function formatBondFamilyLength(family: BondFamilySpec): string {
@@ -181,9 +134,9 @@ export function formatCellOffset(offset: readonly number[]): string {
 export function bondInspectorCopyText(info: InspectedBondInfo): string {
   return [
     `Bond: ${atomSiteLabel(info.startAtom)} -- ${atomSiteLabel(info.endAtom)}`,
-    `Length (A): ${info.bond.length.toFixed(6)}`,
-    `Start cell: ${formatCellOffset(info.bond.startImageOffset)}`,
-    `End cell: ${formatCellOffset(info.bond.endImageOffset)}`,
+    `Bond length (A): ${info.bond.length.toFixed(6)}`,
+    `Vector\u2009(frac): ${formatBondVector(info, 6)}`,
+    `Cell offset: (${formatCellOffset(info.bond.startImageOffset)}) - (${formatCellOffset(info.bond.endImageOffset)})`,
   ].join("\n");
 }
 

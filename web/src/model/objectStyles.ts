@@ -31,8 +31,15 @@ export interface ElementObjectStyleOverride {
   visible?: boolean;
 }
 
+export interface BondObjectStyleOverride {
+  opacity?: number;
+  radius?: number;
+}
+
 export interface ObjectStyleState {
   atomOverrides: Record<string, AtomObjectStyleOverride>;
+  bondFamilyOverrides: Record<string, BondObjectStyleOverride>;
+  bondOverrides: Record<string, BondObjectStyleOverride>;
   customAtomRadii: Record<string, number>;
   customRadiusBaseModel: AtomRadiusModel | null;
   customRadiusPreviousScale: number | null;
@@ -63,11 +70,97 @@ const MAX_ATOM_OPACITY = 100;
 export function createDefaultObjectStyleState(): ObjectStyleState {
   return {
     atomOverrides: {},
+    bondFamilyOverrides: {},
+    bondOverrides: {},
     customAtomRadii: {},
     customRadiusBaseModel: null,
     customRadiusPreviousScale: null,
     elementOverrides: {},
   };
+}
+
+export function resolveBondRadiusForStyle(
+  bond: BondSpec,
+  objectStyles: ObjectStyleState,
+  baseRadius: number,
+): number {
+  return clampBondRadius(
+    objectStyles.bondOverrides[bond.id]?.radius ??
+      objectStyles.bondFamilyOverrides[bond.familyKey]?.radius ??
+      baseRadius,
+  );
+}
+
+export function resolveBondOpacityForStyle(
+  bond: BondSpec,
+  objectStyles: ObjectStyleState,
+  baseOpacity: number,
+): number {
+  return clampAtomOpacity(
+    objectStyles.bondOverrides[bond.id]?.opacity ??
+      objectStyles.bondFamilyOverrides[bond.familyKey]?.opacity ??
+      baseOpacity,
+  );
+}
+
+export function setBondFamilyOverrideProperty(
+  objectStyles: ObjectStyleState,
+  familyKey: string,
+  property: keyof BondObjectStyleOverride,
+  value: number,
+): ObjectStyleState {
+  const bondFamilyOverrides = {
+    ...objectStyles.bondFamilyOverrides,
+    [familyKey]: {
+      ...objectStyles.bondFamilyOverrides[familyKey],
+      [property]: property === "radius" ? clampBondRadius(value) : clampAtomOpacity(value),
+    },
+  };
+  return { ...objectStyles, bondFamilyOverrides };
+}
+
+export function setBondOverrideProperty(
+  objectStyles: ObjectStyleState,
+  bondId: string,
+  property: keyof BondObjectStyleOverride,
+  value: number,
+): ObjectStyleState {
+  const bondOverrides = {
+    ...objectStyles.bondOverrides,
+    [bondId]: {
+      ...objectStyles.bondOverrides[bondId],
+      [property]: property === "radius" ? clampBondRadius(value) : clampAtomOpacity(value),
+    },
+  };
+  return { ...objectStyles, bondOverrides };
+}
+
+export function clearBondOverridePropertyForFamily(
+  objectStyles: ObjectStyleState,
+  bonds: readonly BondSpec[],
+  familyKey: string,
+  property: keyof BondObjectStyleOverride,
+): ObjectStyleState {
+  const bondIds = new Set(
+    bonds.filter((bond) => bond.familyKey === familyKey).map((bond) => bond.id),
+  );
+  const bondOverrides: Record<string, BondObjectStyleOverride> = {};
+  for (const [bondId, override] of Object.entries(objectStyles.bondOverrides)) {
+    const nextOverride = bondIds.has(bondId)
+      ? removeBondOverrideProperty(override, property)
+      : override;
+    if (hasBondOverride(nextOverride)) {
+      bondOverrides[bondId] = nextOverride;
+    }
+  }
+  return { ...objectStyles, bondOverrides };
+}
+
+export function clampBondRadius(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0.01;
+  }
+  return Math.max(0.01, value);
 }
 
 export function resolveAtomAppearance({
@@ -421,6 +514,19 @@ function hasElementOverride(override: ElementObjectStyleOverride): boolean {
   );
 }
 
+function removeBondOverrideProperty(
+  override: BondObjectStyleOverride,
+  property: keyof BondObjectStyleOverride,
+): BondObjectStyleOverride {
+  const nextOverride = { ...override };
+  delete nextOverride[property];
+  return nextOverride;
+}
+
+function hasBondOverride(override: BondObjectStyleOverride): boolean {
+  return override.opacity !== undefined || override.radius !== undefined;
+}
+
 function clampObjectStyleValue(
   property: ObjectStyleProperty,
   value: string | number | boolean,
@@ -445,6 +551,16 @@ function cleanObjectStyleState(objectStyles: ObjectStyleState): ObjectStyleState
     elementOverrides: Object.fromEntries(
       Object.entries(objectStyles.elementOverrides).filter(([, override]) =>
         hasElementOverride(override),
+      ),
+    ),
+    bondFamilyOverrides: Object.fromEntries(
+      Object.entries(objectStyles.bondFamilyOverrides).filter(([, override]) =>
+        hasBondOverride(override),
+      ),
+    ),
+    bondOverrides: Object.fromEntries(
+      Object.entries(objectStyles.bondOverrides).filter(([, override]) =>
+        hasBondOverride(override),
       ),
     ),
   };

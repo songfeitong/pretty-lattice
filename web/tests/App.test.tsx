@@ -1092,18 +1092,14 @@ describe("App", () => {
     const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
     await openBondObjectsTab(user, sidebar);
 
-    expect(within(sidebar).getByText("Length (Å)").isConnected).toBe(true);
+    expect(within(sidebar).getByText("R (Å)").isConnected).toBe(true);
+    expect(within(sidebar).getByText("Opacity").isConnected).toBe(true);
     expect(within(sidebar).getByText("Na").isConnected).toBe(true);
     expect(within(sidebar).getByText("Cl").isConnected).toBe(true);
-    expect(within(sidebar).getByText("1.00").isConnected).toBe(true);
-    const bondFamilyRow = within(sidebar)
-      .getByRole("button", { name: "Expand Na–Cl" })
-      .closest("tr");
-    expect(bondFamilyRow?.classList.contains("bg-transparent")).toBe(true);
-    expect(bondFamilyRow?.classList.contains("bg-muted/30")).toBe(false);
-    const bondAtomTokens = bondFamilyRow?.querySelectorAll(
-      '[data-bond-atom-token=""]',
-    );
+    const bondFamilyCard = within(sidebar).getByRole("region", { name: "Na–Cl bonds" });
+    expect(bondFamilyCard?.classList.contains("rounded-xl")).toBe(true);
+    expect(bondFamilyCard?.classList.contains("bg-card")).toBe(true);
+    const bondAtomTokens = bondFamilyCard?.querySelectorAll(".rounded-full");
     expect(bondAtomTokens).toHaveLength(2);
     for (const token of bondAtomTokens ?? []) {
       expect(token.classList.contains("size-3.5")).toBe(true);
@@ -1111,18 +1107,13 @@ describe("App", () => {
       expect(token.className).not.toContain("transition");
       expect(token.getAttribute("style")).toContain("linear-gradient");
     }
-    expect(
-      bondFamilyRow
-        ?.querySelector('[data-bond-connector=""]')
-        ?.classList.contains("w-2"),
-    ).toBe(true);
+    expect(bondFamilyCard?.textContent).not.toContain(" 1 ");
 
     const familyVisibility = () =>
       within(sidebar).getByRole("button", { name: "Na–Cl visibility" });
     await user.click(familyVisibility());
     expect(familyVisibility().getAttribute("aria-pressed")).toBe("false");
     expect(fetchCalls).toHaveLength(1);
-    expect(within(sidebar).getByText("1.00").isConnected).toBe(true);
 
     await openPreviewContextMenu();
     await user.click(await screen.findByRole("menuitem", { name: "Export" }));
@@ -1141,20 +1132,19 @@ describe("App", () => {
     await user.click(bondsCheckbox);
     expect(familyVisibility().getAttribute("aria-pressed")).toBe("true");
 
-    await user.click(
-      within(sidebar).getByRole("button", { name: "Expand Na–Cl" }),
-    );
-    expect(bondFamilyRow?.classList.contains("bg-muted/30")).toBe(true);
-    expect(within(sidebar).getByText("Automatic").isConnected).toBe(true);
-    await user.click(within(sidebar).getByRole("button", { name: "Set" }));
+    expect(within(bondFamilyCard!).getByText("Bond length").isConnected).toBe(true);
+    expect(within(bondFamilyCard!).getByText("1.00 Å").isConnected).toBe(true);
+    expect(within(sidebar).queryByText("Automatic")).toBeNull();
     const cutoffInput = within(sidebar).getByRole("textbox", {
-      name: "Maximum length for Na–Cl",
+      name: "Cutoff for Na–Cl",
     });
-    expect(cutoffInput.getAttribute("value")).toBe("1");
+    expect(cutoffInput.getAttribute("value")).toBe("");
+    expect(cutoffInput.getAttribute("placeholder")).toBe("1");
 
     queueFetchResponse(jsonResponse(scene));
     await user.clear(cutoffInput);
-    await user.type(cutoffInput, "0.8{Enter}");
+    await user.type(cutoffInput, "0.8");
+    await user.click(within(sidebar).getByRole("button", { name: "Set Na–Cl cutoff" }));
     await waitFor(() => expect(fetchCalls).toHaveLength(2));
     expect(fetchCalls[1]?.input).toBe(
       "/api/structure-preview?bondAlgorithm=crystal-nn&includeConnectivity=true",
@@ -1177,27 +1167,24 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
     const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
     await openBondObjectsTab(user, sidebar);
-    await user.click(
-      within(sidebar).getByRole("button", { name: "Expand Na–Cl" }),
-    );
-    await user.click(within(sidebar).getByRole("button", { name: "Set" }));
-
     queueFetchResponse(
       errorResponse(
         "Custom bonding recalculation failed: Bond analysis with CrystalNN failed",
       ),
     );
     const cutoffInput = within(sidebar).getByRole("textbox", {
-      name: "Maximum length for Na–Cl",
+      name: "Cutoff for Na–Cl",
     });
     await user.clear(cutoffInput);
-    await user.type(cutoffInput, "0.8{Enter}");
+    await user.type(cutoffInput, "0.8");
+    await user.click(within(sidebar).getByRole("button", { name: "Set Na–Cl cutoff" }));
 
     expect((await screen.findByRole("alert")).textContent).toContain(
       "Custom bonding recalculation failed",
     );
     expect(screen.getByTestId("lattice-canvas").isConnected).toBe(true);
-    expect(within(sidebar).getByText("Automatic").isConnected).toBe(true);
+    expect(cutoffInput.getAttribute("value")).toBe("0.8");
+    expect(within(sidebar).queryByText("Automatic")).toBeNull();
     expect(
       within(sidebar).getByRole("combobox", { name: "Bonding algorithm" })
         .textContent,
@@ -2830,7 +2817,7 @@ describe("App", () => {
     await waitFor(() => expect(fetchCalls).toHaveLength(2));
     expect(fetchCalls[1]?.input).toBe("/api/structure-preview?bondAlgorithm=cut-off-dict&includeConnectivity=true");
     expect(within(commonControls).getByRole("checkbox", { name: "Bonds" }).getAttribute("aria-checked")).toBe("false");
-    expect((await within(sidebar).findByRole("button", { name: "Expand Na–Cl" })).isConnected).toBe(true);
+    expect((await within(sidebar).findByRole("region", { name: "Na–Cl bonds" })).isConnected).toBe(true);
   });
 });
 

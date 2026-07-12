@@ -87,9 +87,8 @@ import {
   setAtomOverrideProperty,
   visibleSceneForComponents,
   inspectedBondInfoForId,
-  resetBondFamilyVisibility,
   setBondFamilyVisible,
-  setBondInstanceVisible,
+  setBondRelationVisible,
   type BondVisibilityOverrides,
   type ComponentOpacityState,
   type ComponentVisibilityState,
@@ -647,7 +646,7 @@ function AppContent() {
   const handleBondVisibilityChange = useCallback(
     (bond: SceneSpec["bonds"][number], visible: boolean) => {
       setBondVisibilityOverrides((current) =>
-        setBondInstanceVisible(current, bond, visible),
+        setBondRelationVisible(current, bond, visible),
       );
       if (!visible) {
         inspectedSceneObjectRef.current = null;
@@ -655,22 +654,6 @@ function AppContent() {
       }
     },
     [],
-  );
-
-  const handleBondFamilyReset = useCallback(
-    async (familyKey: string) => {
-      const hasCutoff = customBondingProfile?.cutoffOverrides[familyKey] !== undefined;
-      if (hasCutoff) {
-        const succeeded = await handleBondCutoffOverrideChange(familyKey, null);
-        if (!succeeded) {
-          return;
-        }
-      }
-      setBondVisibilityOverrides((current) =>
-        resetBondFamilyVisibility(current, familyKey, scene?.bonds ?? []),
-      );
-    },
-    [customBondingProfile, handleBondCutoffOverrideChange, scene?.bonds],
   );
 
   const elementColorOverrides = useMemo(
@@ -956,6 +939,7 @@ function AppContent() {
           info={inspectedBondInfo}
           isInspectorOpen={isInspectorOpen}
           onClose={() => setInspectedSceneObject(null)}
+          onHide={(bond) => handleBondVisibilityChange(bond, false)}
           onLocateInObjects={handleLocateBondInObjects}
           style={style}
         />
@@ -1093,7 +1077,7 @@ function AppContent() {
                   onBondLocateRequestHandled={handleBondLocateRequestHandled}
                   onBondVisibilityChange={handleBondVisibilityChange}
                   onBondCutoffChange={handleBondCutoffOverrideChange}
-                  onBondFamilyReset={handleBondFamilyReset}
+                  bondOpacity={componentOpacity.bonds}
                   onBondFamilyVisibilityChange={handleBondFamilyVisibilityChange}
                   onBondAlgorithmChange={(nextBondAlgorithm) => {
                     void handleBondAlgorithmChange(nextBondAlgorithm);

@@ -6,6 +6,8 @@ import type { ComponentOpacityState } from "../model/displayState";
 import {
   resolveAtomOpacityForStyle,
   resolveAtomRadiusForStyle,
+  resolveBondOpacityForStyle,
+  resolveBondRadiusForStyle,
 } from "../model/objectStyles";
 import type { CameraPoseSnapshot } from "./cameraPose";
 import {
@@ -179,14 +181,28 @@ export function computeStructureProjectedBounds({
   }
 
   if (componentOpacity.bonds > 0 && style.bondThickness > 0) {
-    const radius = BOND_RADIUS * (style.bondThickness / 100);
+    const baseRadius = BOND_RADIUS * (style.bondThickness / 100);
     for (const bond of scene.bonds) {
+      if (
+        resolveBondOpacityForStyle(
+          bond,
+          style.objectStyles,
+          componentOpacity.bonds,
+        ) === 0
+      ) {
+        continue;
+      }
       const startAtom = scene.atoms[bond.startAtomIndex];
       const endAtom = scene.atoms[bond.endAtomIndex];
       if (!startAtom || !endAtom) {
         continue;
       }
 
+      const radius = resolveBondRadiusForStyle(
+        bond,
+        style.objectStyles,
+        baseRadius,
+      );
       bounds.includePoint(projector.projectPoint(startAtom.position), radius);
       bounds.includePoint(projector.projectPoint(endAtom.position), radius);
     }

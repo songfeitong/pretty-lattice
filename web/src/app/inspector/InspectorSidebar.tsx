@@ -187,6 +187,7 @@ export function InspectorSidebar({
   atomsVisible,
   bondAlgorithm,
   bondLocateRequest,
+  bondOpacity,
   bondObjectsResetToken,
   bondsVisible,
   bondVisibilityOverrides,
@@ -214,7 +215,6 @@ export function InspectorSidebar({
   onActiveTabChange,
   onAtomLocateRequestHandled,
   onBondCutoffChange,
-  onBondFamilyReset,
   onBondFamilyVisibilityChange,
   onBondLocateRequestHandled,
   onBondVisibilityChange,
@@ -240,6 +240,7 @@ export function InspectorSidebar({
   atomsVisible: boolean;
   bondAlgorithm: BondingMode;
   bondLocateRequest: { bondId: string; token: number } | null;
+  bondOpacity: number;
   bondObjectsResetToken: number;
   bondsVisible: boolean;
   bondVisibilityOverrides: BondVisibilityOverrides;
@@ -268,7 +269,6 @@ export function InspectorSidebar({
   onAtomLocateRequestHandled: (token: number) => void;
   onBondAlgorithmChange: (bondAlgorithm: BondingMode) => void;
   onBondCutoffChange: (familyKey: string, cutoff: number | null) => Promise<boolean>;
-  onBondFamilyReset: (familyKey: string) => Promise<void>;
   onBondFamilyVisibilityChange: (familyKey: string, visible: boolean) => void;
   onBondLocateRequestHandled: (token: number) => void;
   onBondVisibilityChange: (bond: BondSpec, visible: boolean) => void;
@@ -367,6 +367,7 @@ export function InspectorSidebar({
               atomOpacity={atomOpacity}
               atomsVisible={atomsVisible}
               bondLocateRequest={bondLocateRequest}
+              bondOpacity={bondOpacity}
               bondAlgorithm={bondAlgorithm}
               bondObjectsResetToken={bondObjectsResetToken}
               bondsVisible={bondsVisible}
@@ -381,7 +382,6 @@ export function InspectorSidebar({
               onBondVisibilityChange={onBondVisibilityChange}
               onCutoffChange={onBondCutoffChange}
               onElementColorChange={onElementColorChange}
-              onFamilyReset={onBondFamilyReset}
               onFamilyVisibilityChange={onBondFamilyVisibilityChange}
               onStyleChange={onStyleChange}
               scene={scene}
