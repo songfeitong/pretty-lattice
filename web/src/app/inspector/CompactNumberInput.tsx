@@ -38,7 +38,7 @@ export function CompactNumberInput({
       type="text"
       value={displayedValue}
       className={cn(
-        "h-[22px] rounded-md py-0 font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]",
+        "h-[22px] rounded-md py-0 text-center font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]",
         className,
       )}
       onBlur={(event) => {

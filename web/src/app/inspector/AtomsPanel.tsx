@@ -806,7 +806,7 @@ function RadiusCell({
     <CompactNumberCell
       ariaLabel={ariaLabel}
       clampValue={clampAtomRadius}
-      className="w-[42px] justify-self-center px-1.5 text-right"
+      className="w-[42px] justify-self-center px-1.5"
       formatValue={formatRadius}
       inputMode="decimal"
       parseValue={parsePositiveNumber}
@@ -830,7 +830,7 @@ function OpacityCell({
     <CompactNumberCell
       ariaLabel={ariaLabel}
       clampValue={clampAtomOpacity}
-      className="w-9 justify-self-center px-1.5 text-right"
+      className="w-9 justify-self-center px-1.5"
       formatValue={formatOpacity}
       inputMode="numeric"
       parseValue={parseFiniteNumber}

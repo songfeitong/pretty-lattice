@@ -182,9 +182,14 @@ describe("AtomsPanel", () => {
     expect(elementRadiusInput.className).toContain("w-[42px]");
     expect(elementRadiusInput.className).not.toContain("w-11");
     expect(elementRadiusInput.className).toContain("justify-self-center");
+    expect(elementRadiusInput.className).toContain("text-center");
+    expect(elementRadiusInput.className).not.toContain("text-right");
     expect(elementOpacityInput.className).toContain("w-9");
     expect(elementOpacityInput.className).not.toContain("w-11");
     expect(elementOpacityInput.className).toContain("justify-self-center");
+    expect(elementOpacityInput.className).toContain("text-center");
+    expect(elementOpacityInput.className).not.toContain("text-right");
+    expect(atomOpacityInput.className).toContain("text-center");
     expect(elementOpacityInput.parentElement?.textContent).not.toContain("%");
 
     await user.click(atomOpacityInput);

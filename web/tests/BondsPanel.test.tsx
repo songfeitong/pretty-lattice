@@ -38,6 +38,8 @@ describe("BondsPanel", () => {
       expect(input.className).toContain("justify-self-center");
       expect(input.className).toContain("h-[22px]");
       expect(input.className).toContain("px-1.5");
+      expect(input.className).toContain("text-center");
+      expect(input.className).not.toContain("text-right");
     }
 
     await user.click(screen.getByRole("button", { name: "Na:0–Cl:1 visibility" }));
@@ -103,6 +105,9 @@ describe("BondsPanel", () => {
     expect(
       screen.getByRole("textbox", { name: "Maximum cutoff for Na–Cl" }).className,
     ).toContain("focus-visible:ring-[1px]");
+    expect(
+      screen.getByRole("textbox", { name: "Maximum cutoff for Na–Cl" }).className,
+    ).toContain("text-center");
     expect(screen.queryByRole("textbox", { name: "Na–Cl radius" })).toBeNull();
     expect(screen.queryByRole("textbox", { name: "Na:0–Cl:1 radius" })).toBeNull();
   });

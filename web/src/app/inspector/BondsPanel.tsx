@@ -368,7 +368,7 @@ function CutoffInput({
       disabled={isSceneLoading || draft.pendingRemoval}
       valueText={value}
       className={cn(
-        "min-w-0 justify-self-center px-1 text-center text-[0.66rem] aria-invalid:border-input aria-invalid:ring-0 md:text-[0.66rem]",
+        "min-w-0 justify-self-center px-1 text-[0.66rem] aria-invalid:border-input aria-invalid:ring-0 md:text-[0.66rem]",
         invalid && feedbackPhase ? `bond-cutoff-invalid-feedback-${feedbackPhase}` : null,
       )}
       onCommit={(valueText) => {
@@ -665,7 +665,7 @@ function RadiusCell({ ariaLabel, onCommit, value }: { ariaLabel: string; onCommi
     <CompactNumberCell
       ariaLabel={ariaLabel}
       clampValue={clampBondRadius}
-      className="w-[42px] justify-self-center px-1.5 text-right"
+      className="w-[42px] justify-self-center px-1.5"
       formatValue={formatBondRadius}
       inputMode="decimal"
       onCommit={onCommit}
@@ -681,7 +681,7 @@ function OpacityCell({ ariaLabel, onCommit, value }: { ariaLabel: string; onComm
     <CompactNumberCell
       ariaLabel={ariaLabel}
       clampValue={clampAtomOpacity}
-      className="w-9 justify-self-center px-1.5 text-right"
+      className="w-9 justify-self-center px-1.5"
       formatValue={formatBondOpacity}
       inputMode="numeric"
       onCommit={onCommit}
