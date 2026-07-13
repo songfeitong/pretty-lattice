@@ -23,7 +23,7 @@ def create_app(
     prewarm_structure_stack: bool = True,
 ) -> FastAPI:
     lifespan = _lifespan if prewarm_structure_stack else None
-    app = FastAPI(title="Pretty Lattice", version="0.1.5", lifespan=lifespan)
+    app = FastAPI(title="Pretty Lattice", version="0.2.0", lifespan=lifespan)
     app.add_middleware(
         GZipMiddleware,
         minimum_size=RESPONSE_GZIP_MINIMUM_SIZE,
