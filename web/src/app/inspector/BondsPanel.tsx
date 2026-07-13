@@ -16,7 +16,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -41,6 +40,12 @@ import {
 import { lambertLegendSwatchBackground } from "../../scene/renderAppearance";
 import { BOND_RADIUS } from "../../scene/sceneGeometry";
 import { TOOL_ICON_BUTTON_CLASS } from "../surface";
+import {
+  CompactNumberCell,
+  CompactNumberInput,
+  parseFiniteNumber,
+  parsePositiveNumber,
+} from "./CompactNumberInput";
 import {
   bondCutoffDraftCanRestore,
   formatBondCutoffDraftField,
@@ -353,8 +358,7 @@ function CutoffInput({
   const { t } = useTranslation();
   const value = field === "min" ? draft.minText : draft.maxText;
   return (
-    <Input
-      type="text"
+    <CompactNumberInput
       inputMode="decimal"
       aria-label={t(
         field === "min" ? "objectsPanel.minimumCutoffFor" : "objectsPanel.maximumCutoffFor",
@@ -362,17 +366,18 @@ function CutoffInput({
       )}
       aria-invalid={invalid}
       disabled={isSceneLoading || draft.pendingRemoval}
-      value={value}
+      valueText={value}
       className={cn(
-        "h-[22px] min-w-0 justify-self-center rounded-md px-1 py-0 text-center font-mono text-[0.66rem] tabular-nums aria-invalid:border-input aria-invalid:ring-0 focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.66rem]",
+        "min-w-0 justify-self-center px-1 text-center text-[0.66rem] aria-invalid:border-input aria-invalid:ring-0 md:text-[0.66rem]",
         invalid && feedbackPhase ? `bond-cutoff-invalid-feedback-${feedbackPhase}` : null,
       )}
-      onChange={(event) => onChange(family.key, field, event.currentTarget.value)}
-      onBlur={(event) => {
-        const formatted = formatBondCutoffDraftField(event.currentTarget.value);
-        if (formatted !== event.currentTarget.value) onChange(family.key, field, formatted);
+      onCommit={(valueText) => {
+        const formatted = formatBondCutoffDraftField(valueText);
+        if (formatted !== valueText) onChange(family.key, field, formatted);
       }}
-      onKeyDown={onKeyDown}
+      onEnter={onKeyDown}
+      onEscape={onKeyDown}
+      onValueTextChange={(valueText) => onChange(family.key, field, valueText)}
     />
   );
 }
@@ -656,77 +661,43 @@ function tokenColor(
 }
 
 function RadiusCell({ ariaLabel, onCommit, value }: { ariaLabel: string; onCommit: (value: number) => void; value: number }) {
-  return <NumericCell ariaLabel={ariaLabel} digits={2} max={Infinity} min={0.01} onCommit={onCommit} value={value} width="w-[42px]" />;
+  return (
+    <CompactNumberCell
+      ariaLabel={ariaLabel}
+      clampValue={clampBondRadius}
+      className="w-[42px] justify-self-center px-1.5 text-right"
+      formatValue={formatBondRadius}
+      inputMode="decimal"
+      onCommit={onCommit}
+      parseValue={parsePositiveNumber}
+      step={0.01}
+      value={value}
+    />
+  );
 }
 
 function OpacityCell({ ariaLabel, onCommit, value }: { ariaLabel: string; onCommit: (value: number) => void; value: number }) {
-  return <NumericCell ariaLabel={ariaLabel} digits={0} max={100} min={0} onCommit={onCommit} value={value} width="w-9" />;
-}
-
-function NumericCell({ ariaLabel, digits, max, min, onCommit, value, width }: {
-  ariaLabel: string;
-  digits: number;
-  max: number;
-  min: number;
-  onCommit: (value: number) => void;
-  value: number;
-  width: string;
-}) {
-  const [draft, setDraft] = useState(value.toFixed(digits));
-  const [hasEdited, setHasEdited] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const cancelCommitRef = useRef(false);
-  const displayedValue = isFocused && !hasEdited ? "" : draft;
-  useEffect(() => setDraft(value.toFixed(digits)), [digits, value]);
-  function commit(text: string) {
-    const parsed = Number(text.trim());
-    if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
-      setDraft(value.toFixed(digits));
-      return;
-    }
-    onCommit(parsed);
-    setDraft(parsed.toFixed(digits));
-  }
   return (
-    <Input
-      type="text"
-      inputMode="decimal"
-      aria-label={ariaLabel}
-      value={displayedValue}
-      className={cn(
-        "h-[22px] justify-self-center rounded-md px-1.5 py-0 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]",
-        width,
-      )}
-      onBlur={(event) => {
-        setIsFocused(false);
-        setHasEdited(false);
-        if (cancelCommitRef.current || !hasEdited) {
-          cancelCommitRef.current = false;
-          setDraft(value.toFixed(digits));
-          return;
-        }
-        commit(event.currentTarget.value);
-      }}
-      onChange={(event) => {
-        setHasEdited(true);
-        setDraft(event.currentTarget.value);
-      }}
-      onFocus={() => {
-        cancelCommitRef.current = false;
-        setIsFocused(true);
-        setHasEdited(false);
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.currentTarget.blur();
-        } else if (event.key === "Escape") {
-          cancelCommitRef.current = true;
-          setDraft(value.toFixed(digits));
-          event.currentTarget.blur();
-        }
-      }}
+    <CompactNumberCell
+      ariaLabel={ariaLabel}
+      clampValue={clampAtomOpacity}
+      className="w-9 justify-self-center px-1.5 text-right"
+      formatValue={formatBondOpacity}
+      inputMode="numeric"
+      onCommit={onCommit}
+      parseValue={parseFiniteNumber}
+      step={1}
+      value={value}
     />
   );
+}
+
+function formatBondRadius(value: number): string {
+  return value.toFixed(2);
+}
+
+function formatBondOpacity(value: number): string {
+  return String(Math.round(clampAtomOpacity(value)));
 }
 
 function VisibilityButton({ label, onToggle, visible }: { label: string; onToggle: () => void; visible: boolean }) {

@@ -1,9 +1,6 @@
 import { ChevronDown, Eye, EyeOff, Minus } from "lucide-react";
 import {
-  type ChangeEvent,
   type Dispatch,
-  type FocusEvent,
-  type KeyboardEvent,
   type SetStateAction,
   useEffect,
   useLayoutEffect,
@@ -25,7 +22,6 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -70,6 +66,11 @@ import {
 import { HexColorPicker, normalizeHexColor } from "../controls/HexColorPicker";
 import { PercentSliderRow, clampPercentValue } from "../controls/commonPanel/sharedControls";
 import { TOOL_ICON_BUTTON_CLASS } from "../surface";
+import {
+  CompactNumberCell,
+  parseFiniteNumber,
+  parsePositiveNumber,
+} from "./CompactNumberInput";
 
 export interface AtomLocateRequest {
   atomId: string;
@@ -805,10 +806,10 @@ function RadiusCell({
     <CompactNumberCell
       ariaLabel={ariaLabel}
       clampValue={clampAtomRadius}
+      className="w-[42px] justify-self-center px-1.5 text-right"
       formatValue={formatRadius}
       inputMode="decimal"
-      inputClassName="w-[42px] justify-self-center"
-      parseValue={parseRadiusInput}
+      parseValue={parsePositiveNumber}
       step={RADIUS_STEP}
       value={value}
       onCommit={onCommit}
@@ -829,113 +830,13 @@ function OpacityCell({
     <CompactNumberCell
       ariaLabel={ariaLabel}
       clampValue={clampAtomOpacity}
+      className="w-9 justify-self-center px-1.5 text-right"
       formatValue={formatOpacity}
       inputMode="numeric"
-      inputClassName="w-9 justify-self-center"
-      parseValue={parseOpacityInput}
+      parseValue={parseFiniteNumber}
       step={OPACITY_STEP}
       value={value}
       onCommit={onCommit}
-    />
-  );
-}
-
-function CompactNumberCell({
-  ariaLabel,
-  clampValue,
-  formatValue,
-  inputMode,
-  inputClassName,
-  onCommit,
-  parseValue,
-  step,
-  value,
-}: {
-  ariaLabel: string;
-  clampValue: (value: number) => number;
-  formatValue: (value: number) => string;
-  inputMode: "decimal" | "numeric";
-  inputClassName?: string;
-  onCommit: (value: number) => void;
-  parseValue: (value: string) => number | null;
-  step: number;
-  value: number;
-}) {
-  const [valueText, setValueText] = useState(formatValue(value));
-  const [hasEdited, setHasEdited] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const cancelCommitRef = useRef(false);
-  const displayedValue = isFocused && !hasEdited ? "" : valueText;
-
-  useEffect(() => {
-    setValueText(formatValue(value));
-  }, [formatValue, value]);
-
-  function commitValueText(text: string) {
-    const parsedValue = parseValue(text);
-    if (parsedValue === null) {
-      setValueText(formatValue(value));
-      return;
-    }
-
-    const nextValue = clampValue(parsedValue);
-    setValueText(formatValue(nextValue));
-    onCommit(nextValue);
-  }
-
-  function handleBlur(event: FocusEvent<HTMLInputElement>) {
-    setIsFocused(false);
-    setHasEdited(false);
-    if (cancelCommitRef.current || !hasEdited) {
-      cancelCommitRef.current = false;
-      setValueText(formatValue(value));
-      return;
-    }
-    commitValueText(event.currentTarget.value);
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.currentTarget.blur();
-      return;
-    }
-    if (event.key === "Escape") {
-      cancelCommitRef.current = true;
-      setValueText(formatValue(value));
-      event.currentTarget.blur();
-      return;
-    }
-    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-      event.preventDefault();
-      const direction = event.key === "ArrowUp" ? step : -step;
-      const nextValue = clampValue(value + direction);
-      setHasEdited(true);
-      setValueText(formatValue(nextValue));
-      onCommit(nextValue);
-    }
-  }
-
-  return (
-    <Input
-      type="text"
-      inputMode={inputMode}
-      aria-label={ariaLabel}
-      value={displayedValue}
-      className={cn(
-        "h-[22px] w-11 rounded-md px-1.5 py-0 text-right font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]",
-        inputClassName,
-      )}
-      onBlur={handleBlur}
-      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-        setHasEdited(true);
-        setValueText(event.currentTarget.value);
-      }}
-      onFocus={() => {
-        cancelCommitRef.current = false;
-        setIsFocused(true);
-        setHasEdited(false);
-      }}
-      onKeyDown={handleKeyDown}
     />
   );
 }
@@ -1208,16 +1109,6 @@ function formatRadius(value: number): string {
   return value.toFixed(2);
 }
 
-function parseRadiusInput(value: string): number | null {
-  const parsedValue = Number(value.trim());
-  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : null;
-}
-
 function formatOpacity(value: number): string {
   return String(Math.round(clampAtomOpacity(value)));
-}
-
-function parseOpacityInput(value: string): number | null {
-  const parsedValue = Number(value.trim());
-  return Number.isFinite(parsedValue) ? clampAtomOpacity(parsedValue) : null;
 }

@@ -196,6 +196,7 @@ Cell offset         1, 0, -1
 
 - 单击 atom：pulse feedback。
 - 双击 atom：选中并打开信息卡片。
+- 选中 atom 后按 `H`：等同信息卡片的 Hide，并清除 selection；输入或编辑文本时不触发。
 - 点击非 selectable scene space：清除 selection。
 
 Objects 联动：
@@ -206,8 +207,8 @@ Objects 联动：
 - 信息卡片的 Locate 明确打开 Inspector、切换到 `Objects > Atoms` 并滚动到 workspace。
 - 只滚动 inspector body，不使用 page-level `scrollIntoView`。
 
-隐藏 selected atom 后清除 selection。Selected workspace 与信息卡片消失，该 atom 转入
-hidden recovery rows。
+隐藏按钮的 Tooltip 标注快捷键 `H`。隐藏 selected atom 后清除 selection。Selected
+workspace 与信息卡片消失，该 atom 转入 hidden recovery rows。
 
 ## 样式覆盖模型
 

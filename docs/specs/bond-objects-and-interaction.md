@@ -281,7 +281,8 @@ Restore 不立即重算，只参与全局批量提交。
 - `Enter`：等同全局 Check，校验并提交整批草稿。
 - `Escape`：等同全局 X，丢弃整批草稿。
 - `Tab`：按正常顺序遍历输入框和 Restore。
-- blur：只保留草稿，不提交、不重算。
+- focus：与 Objects 中其他紧凑数字输入一致，暂时清空当前显示值以便直接输入。
+- blur：未编辑时恢复原值；已编辑时只格式化并保留草稿，不提交、不重算。
 
 ## 7. Visibility
 
@@ -304,6 +305,7 @@ Hidden bonds 区域的位置、折叠、计数和恢复按钮样式与 Hidden at
 
 - 单击 bond：pulse。
 - 双击 bond：持续选择并打开信息卡。
+- 选中 bond 后按 `H`：等同信息卡片的 Hide，并按 relation 隐藏；输入或编辑文本时不触发。
 - 选择使用 instance id；Hide 使用 relation id。
 - family 或 relation 被隐藏时，相关 selection 清除。
 - cutoff 重算后，若原 bond id 不存在，selection 和信息卡清除。
@@ -318,7 +320,7 @@ Hidden bonds 区域的位置、折叠、计数和恢复按钮样式与 Hidden at
   跨越的整数晶格平移 `relativeImageOffset`。
 
 Header actions 与 Atom 信息卡对齐：Close、Hide、Copy、Locate。Hide 位于相同位置并采用
-相同图标。信息卡不放 cutoff、Delete 或其他成键设置。
+相同图标，Tooltip 标注快捷键 `H`。信息卡不放 cutoff、Delete 或其他成键设置。
 
 ## 9. 重算与派生对象
 

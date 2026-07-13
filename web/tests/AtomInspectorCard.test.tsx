@@ -39,7 +39,10 @@ describe("AtomInspectorCard", () => {
       "Locate atom in Objects",
     ]);
 
-    await user.click(screen.getByRole("button", { name: "Hide atom" }));
+    const hideButton = screen.getByRole("button", { name: "Hide atom" });
+    await user.hover(hideButton);
+    expect((await screen.findByRole("tooltip")).textContent).toBe("Hide atom (H)");
+    await user.click(hideButton);
     expect(onHide).toHaveBeenCalledWith("Al-1");
   });
 });

@@ -52,6 +52,7 @@ import {
 import { createPreviewFpsStore } from "../model/previewFpsStore";
 import { deriveElementLegendEntries } from "./elementLegend";
 import { useFigureExportController } from "./hooks/useFigureExportController";
+import { useHideSelectedObjectShortcut } from "./hooks/useHideSelectedObjectShortcut";
 import { useLockedInteractionFeedback } from "./hooks/useLockedInteractionFeedback";
 import { usePreviewCameraCommands } from "./hooks/usePreviewCameraCommands";
 import { useStructurePreview } from "./hooks/useStructurePreview";
@@ -681,6 +682,17 @@ function AppContent() {
     },
     [],
   );
+  const handleHideBond = useCallback(
+    (bond: SceneSpec["bonds"][number]) => handleBondVisibilityChange(bond, false),
+    [handleBondVisibilityChange],
+  );
+
+  useHideSelectedObjectShortcut({
+    onHideAtom: handleHideAtom,
+    onHideBond: handleHideBond,
+    selectedAtomId: inspectedAtomInfo?.canonicalAtom.siteId ?? null,
+    selectedBond: inspectedBondInfo?.bond ?? null,
+  });
 
   const elementColorOverrides = useMemo(
     () =>
@@ -966,7 +978,7 @@ function AppContent() {
           info={inspectedBondInfo}
           isInspectorOpen={isInspectorOpen}
           onClose={() => setInspectedSceneObject(null)}
-          onHide={(bond) => handleBondVisibilityChange(bond, false)}
+          onHide={handleHideBond}
           onLocateInObjects={handleLocateBondInObjects}
           style={style}
         />

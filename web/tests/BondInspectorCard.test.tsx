@@ -42,7 +42,10 @@ describe("BondInspectorCard", () => {
     expect(screen.getByText("Cell shift").isConnected).toBe(true);
     expect(screen.getByText("1, -1, 0").isConnected).toBe(true);
 
-    await user.click(screen.getByRole("button", { name: "Hide bond" }));
+    const hideButton = screen.getByRole("button", { name: "Hide bond" });
+    await user.hover(hideButton);
+    expect((await screen.findByRole("tooltip")).textContent).toBe("Hide bond (H)");
+    await user.click(hideButton);
     expect(onHide).toHaveBeenCalledWith(bond);
   });
 });

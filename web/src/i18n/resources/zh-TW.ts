@@ -10,7 +10,9 @@ export const zhTW = {
     exportFigure: "匯出",
     exportFormat: "匯出 {{format}}",
     hideAtom: "隱藏原子",
+    hideAtomShortcut: "隱藏原子 (H)",
     hideBond: "隱藏鍵結",
+    hideBondShortcut: "隱藏鍵結 (H)",
     locateAtomInObjects: "在物件列表中定位",
     locateBondInObjects: "在物件列表中定位鍵結",
     open: "開啟",
@@ -41,7 +43,7 @@ export const zhTW = {
   },
   bondInspector: {
     bondLength: "鍵長",
-    bondVector: "向量（分率）",
+    bondVector: "向量\u2009(分率)",
     cellShift: "晶胞平移",
     selectedBond: "已選取的鍵結",
   },

@@ -10,7 +10,9 @@ export const zhCN = {
     exportFigure: "导出",
     exportFormat: "导出 {{format}}",
     hideAtom: "隐藏原子",
+    hideAtomShortcut: "隐藏原子 (H)",
     hideBond: "隐藏键",
+    hideBondShortcut: "隐藏键 (H)",
     locateAtomInObjects: "在物体列表中定位",
     locateBondInObjects: "在物体列表中定位键",
     open: "打开",
@@ -41,7 +43,7 @@ export const zhCN = {
   },
   bondInspector: {
     bondLength: "键长",
-    bondVector: "向量（分数）",
+    bondVector: "向量\u2009(分数)",
     cellShift: "晶胞平移",
     selectedBond: "选中的键",
   },

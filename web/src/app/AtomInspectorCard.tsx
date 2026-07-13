@@ -104,7 +104,7 @@ export function AtomInspectorCard({
                 <EyeOff aria-hidden="true" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">{t("actions.hideAtom")}</TooltipContent>
+            <TooltipContent side="bottom">{t("actions.hideAtomShortcut")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 

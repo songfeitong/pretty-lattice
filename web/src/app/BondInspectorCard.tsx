@@ -88,6 +88,7 @@ export function BondInspectorCard({
           label={t("actions.hideBond")}
           onClick={() => onHide(info.bond)}
           icon={<EyeOff aria-hidden="true" />}
+          tooltip={t("actions.hideBondShortcut")}
         />
         <CardAction
           label={t("actions.copyBondInfo")}
@@ -133,10 +134,12 @@ function CardAction({
   icon,
   label,
   onClick,
+  tooltip,
 }: {
   icon: ReactNode;
   label: string;
   onClick: () => void;
+  tooltip?: string;
 }) {
   return (
     <TooltipProvider delayDuration={500}>
@@ -156,7 +159,7 @@ function CardAction({
             {icon}
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">{label}</TooltipContent>
+        <TooltipContent side="bottom">{tooltip ?? label}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );

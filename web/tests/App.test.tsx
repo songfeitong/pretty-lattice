@@ -1169,6 +1169,10 @@ describe("App", () => {
       name: "Maximum cutoff for Na–Cl",
     });
     expect(cutoffInput.getAttribute("value")).toBe("1.000");
+    await user.click(cutoffInput);
+    expect(cutoffInput.getAttribute("value")).toBe("");
+    await user.tab();
+    expect(cutoffInput.getAttribute("value")).toBe("1.000");
     expect(within(sidebar).getByRole("textbox", { name: "Minimum cutoff for Na–Cl" }).getAttribute("value"))
       .toBe("0.000");
     expect(within(sidebar).getByRole("combobox", { name: "Bonding algorithm" }).hasAttribute("disabled"))
