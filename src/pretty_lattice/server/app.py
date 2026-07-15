@@ -87,7 +87,7 @@ def _resolve_static_root(
         candidates.extend(_dev_static_candidates())
 
     for candidate in candidates:
-        if (candidate / "index.html").is_file():
+        if (candidate / "index.html").is_file() and (candidate / "assets").is_dir():
             return candidate
 
     return None
@@ -145,6 +145,7 @@ def _mount_missing_web_page(app: FastAPI) -> None:
                     padding: 24px;
                   }
                   section {
+                    box-sizing: border-box;
                     width: min(620px, 100%);
                     border: 1px solid rgb(34 39 46 / 0.12);
                     border-radius: 8px;
@@ -163,28 +164,50 @@ def _mount_missing_web_page(app: FastAPI) -> None:
                   }
                   code {
                     display: block;
-                    margin-top: 10px;
+                    margin: 10px 0 14px;
                     padding: 10px 12px;
                     border-radius: 6px;
                     background: #f0f3f4;
                     color: #22272e;
                     white-space: pre-wrap;
                   }
+                  details {
+                    margin-top: 18px;
+                    color: #4f5b66;
+                  }
+                  summary {
+                    cursor: pointer;
+                    font-weight: 600;
+                  }
+                  details p {
+                    margin-top: 14px;
+                  }
                 </style>
               </head>
               <body>
                 <main>
                   <section>
-                    <h1>Pretty Lattice frontend is not built</h1>
-                    <p>The Python API is running, but no bundled web app was found.</p>
-                    <p>For the built GUI, run:</p>
-                    <code>cd web
+                    <h1>Pretty Lattice web app is unavailable</h1>
+                    <p>
+                      The local server is running, but its bundled browser files are
+                      missing or incomplete.
+                    </p>
+                    <p>
+                      Reinstall Pretty Lattice using the same tool you installed it with,
+                      then restart it. If the problem continues, run:
+                    </p>
+                    <code>prl --verbose</code>
+                    <details>
+                      <summary>Running from a source checkout?</summary>
+                      <p>Rebuild the browser files:</p>
+                      <code>cd web
 bun run build
 cd ..
 uv run prl</code>
-                    <p>For live frontend development, run the Python API and Vite separately:</p>
-                    <code>uv run prl --no-open
+                      <p>For live frontend development, run the API and Vite separately:</p>
+                      <code>uv run prl --no-open
 cd web && bun run dev</code>
+                    </details>
                   </section>
                 </main>
               </body>

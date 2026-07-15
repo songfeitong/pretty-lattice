@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import logging
 import threading
 from collections.abc import Iterable
 
@@ -8,6 +9,7 @@ STRUCTURE_PREWARM_MODULES = (
     "pretty_lattice.structures.readers",
     "pretty_lattice.structures.scene_builder",
 )
+logger = logging.getLogger(__name__)
 
 
 def prewarm_structure_preview_dependencies(
@@ -31,4 +33,7 @@ def _prewarm_structure_preview_dependencies() -> None:
     try:
         prewarm_structure_preview_dependencies()
     except Exception:
-        pass
+        logger.exception(
+            "Could not prepare the structure-processing backend. "
+            "Structure loading may fail; restart with `prl --verbose` for request logs."
+        )

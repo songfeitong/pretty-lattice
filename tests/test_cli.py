@@ -355,7 +355,7 @@ def test_open_browser_when_ready_waits_for_server(monkeypatch) -> None:
     assert opened_urls == ["http://127.0.0.1:8765"]
 
 
-def test_open_browser_when_ready_skips_unavailable_server(monkeypatch) -> None:
+def test_open_browser_when_ready_reports_unavailable_server(monkeypatch, capsys) -> None:
     opened_urls: list[str] = []
 
     def wait_for_server(host: str, port: int) -> bool:
@@ -373,3 +373,17 @@ def test_open_browser_when_ready_skips_unavailable_server(monkeypatch) -> None:
     cli._open_browser_when_ready("http://127.0.0.1:8765", "127.0.0.1", 8765)
 
     assert opened_urls == []
+    error_output = capsys.readouterr().err
+    assert "Could not start the local server" in error_output
+    assert "prl --verbose" in error_output
+
+
+def test_open_browser_when_ready_reports_browser_failure(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(cli, "_wait_for_server", lambda host, port: True)
+    monkeypatch.setattr(cli.webbrowser, "open", lambda url: False)
+
+    cli._open_browser_when_ready("http://127.0.0.1:8765", "127.0.0.1", 8765)
+
+    error_output = capsys.readouterr().err
+    assert "Could not open a browser automatically" in error_output
+    assert "http://127.0.0.1:8765" in error_output

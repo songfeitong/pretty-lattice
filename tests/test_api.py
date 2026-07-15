@@ -58,6 +58,22 @@ def test_structure_prewarm_imports_preview_modules(monkeypatch) -> None:
     assert imported_modules == list(prewarm_module.STRUCTURE_PREWARM_MODULES)
 
 
+def test_structure_prewarm_reports_import_failure(monkeypatch, caplog) -> None:
+    def fail_to_prewarm() -> None:
+        raise RuntimeError("backend import failed")
+
+    monkeypatch.setattr(
+        prewarm_module,
+        "prewarm_structure_preview_dependencies",
+        fail_to_prewarm,
+    )
+
+    prewarm_module._prewarm_structure_preview_dependencies()
+
+    assert "Could not prepare the structure-processing backend" in caplog.text
+    assert "backend import failed" in caplog.text
+
+
 @pytest.mark.anyio
 async def test_app_lifespan_starts_structure_prewarm(monkeypatch, tmp_path) -> None:
     calls: list[str] = []
@@ -398,5 +414,22 @@ async def test_missing_static_root_returns_actionable_page(tmp_path) -> None:
         response = await client.get("/")
 
         assert response.status_code == 503
-        assert "frontend is not built" in response.text
+        assert "web app is unavailable" in response.text
+        assert "missing or incomplete" in response.text
+        assert "prl --verbose" in response.text
         assert "bun run build" in response.text
+
+
+@pytest.mark.anyio
+async def test_incomplete_static_root_returns_actionable_page(tmp_path) -> None:
+    (tmp_path / "index.html").write_text("<!doctype html><title>Pretty Lattice</title>")
+
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app(static_root=tmp_path, dev_static_fallback=False)),
+        base_url="http://testserver",
+    ) as client:
+        response = await client.get("/")
+
+        assert response.status_code == 503
+        assert "browser files are" in response.text
+        assert "missing or incomplete" in response.text

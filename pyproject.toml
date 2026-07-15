@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-prl = "pretty_lattice.cli:app"
+prl = "pretty_lattice.entrypoint:main"
 
 [dependency-groups]
 dev = [

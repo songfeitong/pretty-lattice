@@ -149,8 +149,23 @@ def _wait_for_server(host: str, port: int, timeout_seconds: float = 30.0) -> boo
 
 
 def _open_browser_when_ready(url: str, host: str, port: int) -> None:
-    if _wait_for_server(host, port):
-        webbrowser.open(url)
+    if not _wait_for_server(host, port):
+        Console(stderr=True).print(
+            "[yellow]Could not start the local server.[/yellow] "
+            "Run [bold]prl --verbose[/bold] for details."
+        )
+        return
+
+    try:
+        opened = webbrowser.open(url)
+    except webbrowser.Error:
+        opened = False
+
+    if not opened:
+        Console(stderr=True).print(
+            "[yellow]Could not open a browser automatically.[/yellow] "
+            f"Open [cyan]{url}[/cyan] manually."
+        )
 
 
 def _start_browser_opener(url: str, host: str, port: int) -> None:
