@@ -1,7 +1,8 @@
-import { type ComponentProps, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { type ComponentProps, type KeyboardEvent } from "react";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useCommittedInput } from "../controls/useCommittedInput";
 
 type CompactNumberInputProps = Omit<
   ComponentProps<typeof Input>,
@@ -27,57 +28,33 @@ export function CompactNumberInput({
   valueText,
   ...props
 }: CompactNumberInputProps) {
-  const [hasEdited, setHasEdited] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const cancelCommitRef = useRef(false);
-  const displayedValue = isFocused && !hasEdited ? "" : valueText;
+  const committedInput = useCommittedInput({
+    clearOnFocus: true,
+    value: valueText,
+    formatValue: String,
+    parseValue: String,
+    onCommit: (nextValueText) => onCommit?.(nextValueText),
+    onDraftChange: onValueTextChange,
+    onEnter,
+    onEscape:
+      onCancel || onEscape
+        ? (event) => {
+            onCancel?.();
+            onEscape?.(event);
+          }
+        : undefined,
+    onStep,
+  });
 
   return (
     <Input
       {...props}
       type="text"
-      value={displayedValue}
+      {...committedInput.inputProps}
       className={cn(
         "h-[22px] rounded-md py-0 text-center font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]",
         className,
       )}
-      onBlur={(event) => {
-        setIsFocused(false);
-        setHasEdited(false);
-        if (cancelCommitRef.current || !hasEdited) {
-          cancelCommitRef.current = false;
-          return;
-        }
-        onCommit?.(event.currentTarget.value);
-      }}
-      onChange={(event) => {
-        setHasEdited(true);
-        onValueTextChange(event.currentTarget.value);
-      }}
-      onFocus={() => {
-        cancelCommitRef.current = false;
-        setIsFocused(true);
-        setHasEdited(false);
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          if (onEnter) onEnter(event);
-          else event.currentTarget.blur();
-          return;
-        }
-        if (event.key === "Escape") {
-          cancelCommitRef.current = true;
-          onCancel?.();
-          if (onEscape) onEscape(event);
-          else event.currentTarget.blur();
-          return;
-        }
-        if (onStep && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
-          event.preventDefault();
-          setHasEdited(true);
-          onStep(event.key === "ArrowUp" ? 1 : -1);
-        }
-      }}
     />
   );
 }
@@ -103,37 +80,28 @@ export function CompactNumberCell({
   step: number;
   value: number;
 }) {
-  const [valueText, setValueText] = useState(formatValue(value));
-
-  useEffect(() => {
-    setValueText(formatValue(value));
-  }, [formatValue, value]);
-
-  function commitValueText(text: string) {
-    const parsedValue = parseValue(text);
-    if (parsedValue === null) {
-      setValueText(formatValue(value));
-      return;
-    }
-    const nextValue = clampValue(parsedValue);
-    setValueText(formatValue(nextValue));
-    onCommit(nextValue);
-  }
+  const committedInput = useCommittedInput({
+    clearOnFocus: true,
+    value,
+    formatValue,
+    parseValue: (text) => {
+      const parsedValue = parseValue(text);
+      return parsedValue === null ? null : clampValue(parsedValue);
+    },
+    onCommit,
+    onStep: (direction) => onCommit(clampValue(value + direction * step)),
+  });
 
   return (
-    <CompactNumberInput
+    <Input
+      type="text"
       inputMode={inputMode}
       aria-label={ariaLabel}
-      valueText={valueText}
-      className={className}
-      onCancel={() => setValueText(formatValue(value))}
-      onCommit={commitValueText}
-      onStep={(direction) => {
-        const nextValue = clampValue(value + direction * step);
-        setValueText(formatValue(nextValue));
-        onCommit(nextValue);
-      }}
-      onValueTextChange={setValueText}
+      {...committedInput.inputProps}
+      className={cn(
+        "h-[22px] rounded-md py-0 text-center font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]",
+        className,
+      )}
     />
   );
 }

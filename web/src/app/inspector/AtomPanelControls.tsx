@@ -259,9 +259,7 @@ export function AtomElementGroups({
             <ContextMenuTrigger asChild>{elementContainer}</ContextMenuTrigger>
             <ContextMenuContent className="min-w-48">
               <ContextMenuItem
-                onSelect={() =>
-                  editor.applyElementToAllAtoms(group, appearance)
-                }
+                onSelect={() => editor.applyElementToAllAtoms(group.element)}
               >
                 {t("objectsPanel.applyElementStyleToAtoms", {
                   element: group.element,

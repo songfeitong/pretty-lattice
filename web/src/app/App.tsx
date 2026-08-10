@@ -653,25 +653,43 @@ function AppContent() {
                     EMPTY_BOND_CUTOFF_OVERRIDES
                   }
                   hasCustomBondingProfile={customBondingProfile !== null}
-                  dragSensitivity={viewState.dragSensitivity}
-                  interactionMode={viewState.interactionMode}
-                  selectionActivation={selectionActivation}
-                  lightStrength={viewState.lightStrength}
-                  mouseInertia={viewState.mouseInertia}
-                  isCustomColorScheme={style.colorSchemeMode === "custom"}
                   isOpen={isInspectorOpen}
                   isSceneLoading={previewStatus === "loading" || connectivityStatus === "loading"}
-                  previewMeshQuality={previewMeshQuality}
-                  fogAffectsUnitCell={style.fogAffectsUnitCell}
-                  distinguishSimilarColors={style.distinguishSimilarColors}
                   scene={scene}
                   selectedAtomId={inspectedAtomId}
                   selectedBondId={inspectedBondId}
-                  showFpsOverlay={viewState.showFpsOverlay}
-                  showCrystalAxisLabels={showCrystalAxisLabels}
+                  settingsModel={{
+                    distinguishSimilarColors: style.distinguishSimilarColors,
+                    dragSensitivity: viewState.dragSensitivity,
+                    fogAffectsUnitCell: style.fogAffectsUnitCell,
+                    isCustomColorScheme: style.colorSchemeMode === "custom",
+                    interactionMode: viewState.interactionMode,
+                    lightStrength: viewState.lightStrength,
+                    mouseInertia: viewState.mouseInertia,
+                    previewMeshQuality,
+                    selectionActivation,
+                    showCrystalAxisLabels,
+                    showFpsOverlay: viewState.showFpsOverlay,
+                    structureLineWidth,
+                    unitCellLineStyle,
+                  }}
+                  settingsActions={{
+                    onDistinguishSimilarColorsChange:
+                      handleDistinguishSimilarColorsChange,
+                    onDragSensitivityChange: handleDragSensitivityChange,
+                    onFogAffectsUnitCellChange: handleFogAffectsUnitCellChange,
+                    onInteractionModeChange: handleInteractionModeChange,
+                    onLightStrengthChange: handleLightStrengthChange,
+                    onMouseInertiaChange: handleMouseInertiaChange,
+                    onPreviewMeshQualityChange: setPreviewMeshQuality,
+                    onSelectionActivationChange:
+                      handleSelectionActivationChange,
+                    onShowCrystalAxisLabelsChange: setShowCrystalAxisLabels,
+                    onShowFpsOverlayChange: handleShowFpsOverlayChange,
+                    onStructureLineWidthChange: setStructureLineWidth,
+                    onUnitCellLineStyleChange: setUnitCellLineStyle,
+                  }}
                   style={style}
-                  structureLineWidth={structureLineWidth}
-                  unitCellLineStyle={unitCellLineStyle}
                   onActiveObjectsTabChange={handleActiveObjectsTabChange}
                   onActiveTabChange={handleActiveInspectorTabChange}
                   onAtomLocateRequestHandled={handleAtomLocateRequestHandled}
@@ -684,20 +702,8 @@ function AppContent() {
                   onBondAlgorithmChange={(nextBondAlgorithm) => {
                     void handleBondAlgorithmChange(nextBondAlgorithm);
                   }}
-                  onDragSensitivityChange={handleDragSensitivityChange}
-                  onInteractionModeChange={handleInteractionModeChange}
-                  onSelectionActivationChange={handleSelectionActivationChange}
-                  onLightStrengthChange={handleLightStrengthChange}
-                  onMouseInertiaChange={handleMouseInertiaChange}
-                  onPreviewMeshQualityChange={setPreviewMeshQuality}
-                  onFogAffectsUnitCellChange={handleFogAffectsUnitCellChange}
-                  onDistinguishSimilarColorsChange={handleDistinguishSimilarColorsChange}
                   onElementColorChange={handleLegendElementColorChange}
-                  onShowFpsOverlayChange={handleShowFpsOverlayChange}
-                  onShowCrystalAxisLabelsChange={setShowCrystalAxisLabels}
                   onStyleChange={setStyle}
-                  onStructureLineWidthChange={setStructureLineWidth}
-                  onUnitCellLineStyleChange={setUnitCellLineStyle}
                 />
               </div>
             </ContextMenuTrigger>

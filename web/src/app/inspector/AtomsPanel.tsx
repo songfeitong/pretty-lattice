@@ -56,7 +56,9 @@ export function AtomsPanel({
     [atomOpacity, atomsVisible, scene, selectedAtomId, style],
   );
   const editor = createAtomAppearanceEditor({
+    atomOpacity,
     atoms: model.objectAtoms,
+    atomsVisible,
     onElementColorChange,
     onStyleChange,
     style,

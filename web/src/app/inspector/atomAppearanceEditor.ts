@@ -5,25 +5,23 @@ import {
   CUSTOM_ATOM_RADIUS_MODEL,
   STYLE_SCALE_MAX,
   STYLE_SCALE_MIN,
+  baseColorSchemeForStyle,
   clearAtomOverridePropertyForAtom,
   clearAtomOverridePropertyForElement,
   clearObjectStyleProperty,
   createCustomAtomRadii,
   createCustomColormapFromStyle,
+  elementColorOverridesForStyle,
   setAtomOverrideProperty,
   setElementOverrideProperty,
-  type AtomAppearance,
   type AtomRadiusStyleModel,
   type StyleState,
 } from "../../model";
 import { clampPercentValue } from "../controls/commonPanel/sharedControls";
-import type { ElementGroup } from "./atomAppearanceModel";
+import { elementRowAppearance } from "./atomAppearanceModel";
 
 export interface AtomAppearanceEditor {
-  applyElementToAllAtoms: (
-    group: ElementGroup,
-    appearance: AtomAppearance,
-  ) => void;
+  applyElementToAllAtoms: (element: string) => void;
   restoreAtomVisibility: (atom: AtomSpec) => void;
   setAtomColor: (atom: AtomSpec, color: string) => void;
   setAtomOpacity: (atom: AtomSpec, opacity: number) => void;
@@ -38,12 +36,16 @@ export interface AtomAppearanceEditor {
 }
 
 export function createAtomAppearanceEditor({
+  atomOpacity,
   atoms,
+  atomsVisible,
   onElementColorChange,
   onStyleChange,
   style,
 }: {
+  atomOpacity: number;
   atoms: readonly AtomSpec[];
+  atomsVisible: boolean;
   onElementColorChange: (element: string, color: string) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
   style: StyleState;
@@ -146,41 +148,68 @@ export function createAtomAppearanceEditor({
         ),
       }));
     },
-    applyElementToAllAtoms: (group, appearance) => {
-      const nextStyle = ensureCustomRadiusStyle(style, atoms);
-      let objectStyles = setElementOverrideProperty(
-        nextStyle.objectStyles,
-        group.element,
-        "radius",
-        appearance.radius,
-      );
-      objectStyles = setElementOverrideProperty(
-        objectStyles,
-        group.element,
-        "opacity",
-        appearance.opacity,
-      );
-      objectStyles = setElementOverrideProperty(
-        objectStyles,
-        group.element,
-        "visible",
-        appearance.visible,
-      );
-      for (const property of [
-        "radius",
-        "opacity",
-        "visible",
-        "color",
-      ] as const) {
-        objectStyles = clearAtomOverridePropertyForElement(
-          objectStyles,
-          atoms,
-          group.element,
-          property,
+    applyElementToAllAtoms: (element) => {
+      onStyleChange((currentStyle) => {
+        const groupAtoms = atoms.filter((atom) => atom.element === element);
+        if (groupAtoms.length === 0) return currentStyle;
+        const appearance = elementRowAppearance(
+          { atoms: groupAtoms, element },
+          currentStyle,
+          baseColorSchemeForStyle(currentStyle),
+          elementColorOverridesForStyle(atoms, currentStyle),
+          atomsVisible,
+          atomOpacity,
         );
-      }
-      onStyleChange({ ...nextStyle, objectStyles });
-      onElementColorChange(group.element, appearance.color);
+        const customColormap = createCustomColormapFromStyle(
+          atoms,
+          currentStyle,
+        );
+        const nextStyle = ensureCustomRadiusStyle(currentStyle, atoms);
+        let objectStyles = setElementOverrideProperty(
+          nextStyle.objectStyles,
+          element,
+          "radius",
+          appearance.radius,
+        );
+        objectStyles = setElementOverrideProperty(
+          objectStyles,
+          element,
+          "opacity",
+          appearance.opacity,
+        );
+        objectStyles = setElementOverrideProperty(
+          objectStyles,
+          element,
+          "visible",
+          appearance.visible,
+        );
+        for (const property of [
+          "radius",
+          "opacity",
+          "visible",
+          "color",
+        ] as const) {
+          objectStyles = clearAtomOverridePropertyForElement(
+            objectStyles,
+            atoms,
+            element,
+            property,
+          );
+        }
+        return {
+          ...nextStyle,
+          colorScheme: customColormap.baseColorScheme,
+          colorSchemeMode: "custom",
+          customColormap: {
+            ...customColormap,
+            elements: {
+              ...customColormap.elements,
+              [element]: appearance.color,
+            },
+          },
+          objectStyles,
+        };
+      });
     },
   };
 }

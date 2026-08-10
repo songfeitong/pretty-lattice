@@ -11,23 +11,21 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { SelectionActivation } from "@/selection/selectionActivationPreference";
-
 import type { BondCutoffRange, BondSpec, SceneSpec } from "../../api/scene";
 import type {
   BondingMode,
   BondVisibilityOverrides,
-  MeshQuality,
-  StructureLineWidthState,
   StyleState,
-  UnitCellLineStyle,
 } from "../../model";
-import type { InteractionMode } from "../viewState";
 import {
   TOOL_ICON_BUTTON_ACTIVE_CLASS,
   TOOL_ICON_BUTTON_CLASS,
 } from "../surface";
-import { InspectorSettingsPanel } from "./InspectorSettingsPanel";
+import {
+  InspectorSettingsPanel,
+  type InspectorSettingsActions,
+  type InspectorSettingsModel,
+} from "./InspectorSettingsPanel";
 import { ObjectsPanel, type ObjectsPanelTab } from "./ObjectsPanel";
 
 export type InspectorSidebarTab = "settings" | "objects";
@@ -84,25 +82,14 @@ export function InspectorSidebar({
   bondVisibilityOverrides,
   cutoffOverrides,
   hasCustomBondingProfile,
-  distinguishSimilarColors,
-  dragSensitivity,
-  isCustomColorScheme,
-  interactionMode,
-  selectionActivation,
-  lightStrength,
-  mouseInertia,
   isOpen,
   isSceneLoading,
-  previewMeshQuality,
-  fogAffectsUnitCell,
-  showFpsOverlay,
-  showCrystalAxisLabels,
   scene,
   selectedAtomId,
   selectedBondId,
+  settingsActions,
+  settingsModel,
   style,
-  structureLineWidth,
-  unitCellLineStyle,
   onActiveObjectsTabChange,
   onActiveTabChange,
   onAtomLocateRequestHandled,
@@ -112,20 +99,8 @@ export function InspectorSidebar({
   onBondLocateRequestHandled,
   onBondVisibilityChange,
   onBondAlgorithmChange,
-  onDistinguishSimilarColorsChange,
-  onDragSensitivityChange,
-  onInteractionModeChange,
-  onSelectionActivationChange,
-  onLightStrengthChange,
-  onMouseInertiaChange,
-  onPreviewMeshQualityChange,
-  onFogAffectsUnitCellChange,
-  onShowFpsOverlayChange,
-  onShowCrystalAxisLabelsChange,
   onElementColorChange,
   onStyleChange,
-  onStructureLineWidthChange,
-  onUnitCellLineStyleChange,
 }: {
   activeObjectsTab: ObjectsPanelTab;
   activeTab: InspectorSidebarTab;
@@ -140,25 +115,14 @@ export function InspectorSidebar({
   bondVisibilityOverrides: BondVisibilityOverrides;
   cutoffOverrides: Record<string, BondCutoffRange>;
   hasCustomBondingProfile: boolean;
-  distinguishSimilarColors: boolean;
-  dragSensitivity: number;
-  isCustomColorScheme: boolean;
-  interactionMode: InteractionMode;
-  selectionActivation: SelectionActivation;
-  lightStrength: number;
-  mouseInertia: boolean;
   isOpen: boolean;
   isSceneLoading: boolean;
-  previewMeshQuality: MeshQuality;
-  fogAffectsUnitCell: boolean;
-  showFpsOverlay: boolean;
-  showCrystalAxisLabels: boolean;
   scene: SceneSpec;
   selectedAtomId: string | null;
   selectedBondId: string | null;
+  settingsActions: InspectorSettingsActions;
+  settingsModel: InspectorSettingsModel;
   style: StyleState;
-  structureLineWidth: StructureLineWidthState;
-  unitCellLineStyle: UnitCellLineStyle;
   onActiveObjectsTabChange: (tab: ObjectsPanelTab) => void;
   onActiveTabChange: (tab: InspectorSidebarTab) => void;
   onAtomLocateRequestHandled: (token: number) => void;
@@ -170,20 +134,8 @@ export function InspectorSidebar({
   onBondFamilyVisibilityChange: (familyKey: string, visible: boolean) => void;
   onBondLocateRequestHandled: (token: number) => void;
   onBondVisibilityChange: (bond: BondSpec, visible: boolean) => void;
-  onDistinguishSimilarColorsChange: (distinguishSimilarColors: boolean) => void;
-  onDragSensitivityChange: (dragSensitivity: number) => void;
-  onInteractionModeChange: (interactionMode: InteractionMode) => void;
-  onSelectionActivationChange: (activation: SelectionActivation) => void;
-  onLightStrengthChange: (lightStrength: number) => void;
-  onMouseInertiaChange: (mouseInertia: boolean) => void;
-  onPreviewMeshQualityChange: (meshQuality: MeshQuality) => void;
-  onFogAffectsUnitCellChange: (fogAffectsUnitCell: boolean) => void;
-  onShowFpsOverlayChange: (showFpsOverlay: boolean) => void;
-  onShowCrystalAxisLabelsChange: (showCrystalAxisLabels: boolean) => void;
   onElementColorChange: (element: string, color: string) => void;
   onStyleChange: Dispatch<SetStateAction<StyleState>>;
-  onStructureLineWidthChange: Dispatch<SetStateAction<StructureLineWidthState>>;
-  onUnitCellLineStyleChange: (lineStyle: UnitCellLineStyle) => void;
 }) {
   const { t } = useTranslation();
 
@@ -235,35 +187,8 @@ export function InspectorSidebar({
         >
           <TabsContent value="settings" className="m-0">
             <InspectorSettingsPanel
-              model={{
-                distinguishSimilarColors,
-                dragSensitivity,
-                fogAffectsUnitCell,
-                isCustomColorScheme,
-                interactionMode,
-                lightStrength,
-                mouseInertia,
-                previewMeshQuality,
-                selectionActivation,
-                showCrystalAxisLabels,
-                showFpsOverlay,
-                structureLineWidth,
-                unitCellLineStyle,
-              }}
-              actions={{
-                onDistinguishSimilarColorsChange,
-                onDragSensitivityChange,
-                onFogAffectsUnitCellChange,
-                onInteractionModeChange,
-                onLightStrengthChange,
-                onMouseInertiaChange,
-                onPreviewMeshQualityChange,
-                onSelectionActivationChange,
-                onShowCrystalAxisLabelsChange,
-                onShowFpsOverlayChange,
-                onStructureLineWidthChange,
-                onUnitCellLineStyleChange,
-              }}
+              model={settingsModel}
+              actions={settingsActions}
             />
           </TabsContent>
           <TabsContent value="objects" className="-mt-2 min-h-0">
