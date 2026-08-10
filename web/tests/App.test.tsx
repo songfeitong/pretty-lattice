@@ -2754,7 +2754,12 @@ describe("App", () => {
   test("keeps the loaded scene when recomputing structure data fails", async () => {
     const user = userEvent.setup();
 
-    await renderLoadedStructure(user);
+    await renderLoadedStructure(user, sceneWithPeriodicImages({ polyhedra: false }));
+    const commonControls = screen.getByRole("complementary", { name: "Common controls" });
+    const polyhedraCheckbox = within(commonControls).getByRole("checkbox", {
+      name: "Polyhedra",
+    }) as HTMLButtonElement;
+    expect(polyhedraCheckbox.disabled).toBe(true);
     await user.click(screen.getByRole("button", { name: "Sidebar" }));
     const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
     await openBondObjectsTab(user, sidebar);
@@ -2768,6 +2773,7 @@ describe("App", () => {
     expect(screen.getByRole("combobox", { name: "Bonding algorithm" }).textContent).toContain(
       "CrystalNN",
     );
+    expect(polyhedraCheckbox.disabled).toBe(true);
   });
 
   test("keeps view controls wired to lock, zoom, and reset state", async () => {
@@ -3020,6 +3026,34 @@ describe("App", () => {
     expect(fetchCalls[1]?.input).toBe("/api/structure-preview?bondAlgorithm=cut-off-dict&includeConnectivity=true");
     expect(within(commonControls).getByRole("checkbox", { name: "Bonds" }).getAttribute("aria-checked")).toBe("false");
     expect((await within(sidebar).findByRole("region", { name: "Na–Cl bonds" })).isConnected).toBe(true);
+  });
+
+  test("keeps deferred connectivity failures retryable", async () => {
+    const user = userEvent.setup();
+    const readyScene = {
+      ...sceneWithPeriodicImages({ atomCount: 1024 }),
+      bondAlgorithm: "cut-off-dict" as const,
+    };
+    const deferredScene: SceneSpec = {
+      ...readyScene,
+      atoms: readyScene.atoms.filter((atom) => !atom.imageReasons.includes("bonded")),
+      bonds: [],
+      bondFamilies: [],
+      polyhedra: [],
+      connectivity: "deferred",
+    };
+    await renderLoadedStructure(user, deferredScene);
+    const commonControls = screen.getByRole("complementary", { name: "Common controls" });
+    const bondsCheckbox = within(commonControls).getByRole("checkbox", { name: "Bonds" });
+    queueFetchResponse(errorResponse("Temporary connectivity failure."));
+
+    await user.click(bondsCheckbox);
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Temporary connectivity failure.",
+    );
+    expect(screen.getByRole("button", { name: "Retry" }).isConnected).toBe(true);
+    expect(bondsCheckbox.getAttribute("aria-checked")).toBe("false");
   });
 });
 

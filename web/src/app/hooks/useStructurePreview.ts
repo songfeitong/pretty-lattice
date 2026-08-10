@@ -69,6 +69,11 @@ interface LoadedPreviewSession {
   scene: SceneSpec;
 }
 
+interface SceneUpdateFailurePolicy {
+  allowRetry?: boolean;
+  connectivityStatus?: ConnectivityStatus;
+}
+
 export function useStructurePreview({
   onBondAlgorithmSceneLoaded,
   onPreviewCleared,
@@ -200,9 +205,12 @@ export function useStructurePreview({
     [isStaticScenePreview, requestRunner, resetLoadedPreviewState, session, setErrorMessage, setPreviewError],
   );
 
-  const handleConnectivityFailure = useCallback((error: unknown, allowRetry: boolean) => {
+  const handleConnectivityFailure = useCallback((
+    error: unknown,
+    { allowRetry = false, connectivityStatus = "error" }: SceneUpdateFailurePolicy,
+  ) => {
     const code = error instanceof StructurePreviewError ? error.code : null;
-    setConnectivityStatus("error");
+    setConnectivityStatus(connectivityStatus);
     setConnectivityRetryable(
       allowRetry && (!code || !DETERMINISTIC_CONNECTIVITY_ERROR_CODES.has(code)),
     );
@@ -217,7 +225,7 @@ export function useStructurePreview({
   const runSceneUpdate = useCallback(async (
     request: (signal: AbortSignal) => Promise<SceneSpec>,
     commit: (current: LoadedPreviewSession, nextScene: SceneSpec) => LoadedPreviewSession,
-    allowRetry = false,
+    failurePolicy: SceneUpdateFailurePolicy = {},
   ): Promise<SceneSpec | null> => {
     setConnectivityStatus("loading");
     setConnectivityRetryable(false);
@@ -231,7 +239,7 @@ export function useStructurePreview({
       return nextScene;
     }
     if (outcome.status === "error") {
-      handleConnectivityFailure(outcome.error, allowRetry);
+      handleConnectivityFailure(outcome.error, failurePolicy);
     }
     return null;
   }, [handleConnectivityFailure, requestRunner, setErrorMessage]);
@@ -253,7 +261,7 @@ export function useStructurePreview({
         signal,
       }),
       (current, scene) => ({ ...current, scene }),
-      true,
+      { allowRetry: true },
     );
     if (nextScene) {
       onBondAlgorithmSceneLoaded(nextScene);
@@ -294,6 +302,7 @@ export function useStructurePreview({
             nextBondingMode === CUSTOM_BONDING_MODE ? nextProfile : null,
           scene: nextScene,
         }),
+        { connectivityStatus: session.scene.connectivity ?? "ready" },
       );
       if (nextScene) {
         onBondAlgorithmSceneLoaded(nextScene);
@@ -341,6 +350,7 @@ export function useStructurePreview({
           customBondingProfile: nextProfile,
           scene: nextScene,
         }),
+        { connectivityStatus: session.scene.connectivity ?? "ready" },
       );
       if (nextScene) {
         onBondAlgorithmSceneLoaded(nextScene);
@@ -389,6 +399,7 @@ export function useStructurePreview({
         customBondingProfile: null,
         scene,
       }),
+      { connectivityStatus: session.scene.connectivity ?? "ready" },
     );
     if (nextScene) {
       resetLoadedPreviewState(nextScene, {
