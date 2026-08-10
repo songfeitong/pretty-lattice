@@ -11,12 +11,6 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { MotionProvider, useMotion } from "@/motion/MotionProvider";
-import {
-  DEFAULT_SELECTION_ACTIVATION,
-  readSelectionActivation,
-  type SelectionActivation,
-  writeSelectionActivation,
-} from "@/selection/selectionActivationPreference";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -32,12 +26,10 @@ import {
 import { AtomInspectorCard } from "./AtomInspectorCard";
 import { BondInspectorCard } from "./BondInspectorCard";
 import type { BondCutoffRange, SceneSpec } from "../api/scene";
-import { inspectedAtomInfoForId } from "./atomInspector";
 import {
   LatticeScene,
   previewSafeAreaForViewport,
 } from "../scene/LatticeScene";
-import { ATOM_HIGHLIGHT_PULSE_MS } from "../scene/atomHighlight";
 import { OrientationGizmo } from "../scene/OrientationGizmo";
 import {
   CommonControlsPanel,
@@ -50,11 +42,11 @@ import {
   useColorPickerRegistry,
 } from "./colorPickerRegistry";
 import { createPreviewFpsStore } from "../model/previewFpsStore";
-import { deriveElementLegendEntries } from "./elementLegend";
+import { useFigureAppearanceController } from "./hooks/useFigureAppearanceController";
 import { useFigureExportController } from "./hooks/useFigureExportController";
-import { useHideSelectedObjectShortcut } from "./hooks/useHideSelectedObjectShortcut";
 import { useLockedInteractionFeedback } from "./hooks/useLockedInteractionFeedback";
 import { usePreviewCameraCommands } from "./hooks/usePreviewCameraCommands";
+import { useSceneObjectInteractionController } from "./hooks/useSceneObjectInteractionController";
 import { useStructurePreview } from "./hooks/useStructurePreview";
 import type { StructurePreviewErrorKind } from "./hooks/useStructurePreview";
 import { ElementLegend } from "./legend/ElementLegend";
@@ -67,46 +59,12 @@ import { StructureSummaryCard } from "./panels/StructureSummaryCard";
 import {
   InspectorSidebar,
   InspectorToggle,
-  type InspectorSidebarTab,
 } from "./inspector/InspectorSidebar";
-import type { ObjectsPanelTab } from "./inspector/ObjectsPanel";
 import {
-  createDefaultComponentOpacity,
-  createDefaultComponentVisibility,
-  createDefaultBondVisibilityOverrides,
-  createDefaultStyle,
-  baseColorSchemeForStyle,
-  clearAtomOverridePropertyForElement,
-  clearObjectStyleProperty,
-  canonicalAtomsForObjectStyles,
-  DEFAULT_SHOW_CRYSTAL_AXIS_LABELS,
-  DEFAULT_STRUCTURE_LINE_WIDTH,
-  DEFAULT_UNIT_CELL_LINE_STYLE,
-  createCustomColormapFromStyle,
-  defaultPreviewMeshQualityForScene,
-  elementColorOverridesForStyle,
-  type MeshQuality,
-  type StructureLineWidthState,
-  type UnitCellLineStyle,
   hasPolyhedra,
   previewSafeAreaForInspector,
   sceneOffsetXForInspector,
-  setAtomOverrideProperty,
-  visibleSceneForComponents,
-  inspectedBondInfoForId,
-  setBondFamilyVisible,
-  setBondRelationVisible,
-  type BondVisibilityOverrides,
-  type ComponentOpacityState,
-  type ComponentVisibilityState,
 } from "../model";
-
-type InspectedSceneObject =
-  | { kind: "atom"; id: string }
-  | { kind: "bond"; id: string }
-  | null;
-
-type PulsedSceneObject = Exclude<InspectedSceneObject, null> & { token: number };
 const EMPTY_BOND_CUTOFF_OVERRIDES: Record<string, BondCutoffRange> = {};
 
 interface ResetLoadedPreviewOptions {
@@ -136,82 +94,23 @@ function AppContent() {
   const { resolvedTheme } = useTheme();
   const { reducedMotion } = useMotion();
   const { closeActiveColorPicker } = useColorPickerRegistry();
-  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
-  const [componentVisibility, setComponentVisibility] = useState(
-    createDefaultComponentVisibility,
-  );
-  const [componentOpacity, setComponentOpacity] = useState(createDefaultComponentOpacity);
-  const [style, setStyle] = useState(createDefaultStyle);
-  const [previewMeshQuality, setPreviewMeshQuality] = useState<MeshQuality>(
-    () => defaultPreviewMeshQualityForScene(null),
-  );
-  const [unitCellLineStyle, setUnitCellLineStyle] = useState<UnitCellLineStyle>(
-    DEFAULT_UNIT_CELL_LINE_STYLE,
-  );
-  const [structureLineWidth, setStructureLineWidth] =
-    useState<StructureLineWidthState>(DEFAULT_STRUCTURE_LINE_WIDTH);
-  const [showCrystalAxisLabels, setShowCrystalAxisLabels] = useState(
-    DEFAULT_SHOW_CRYSTAL_AXIS_LABELS,
-  );
-  const [inspectedSceneObject, setInspectedSceneObject] =
-    useState<InspectedSceneObject>(null);
-  const [selectionActivation, setSelectionActivationState] =
-    useState(readSelectionActivation);
-  const [pulsedSceneObject, setPulsedSceneObject] =
-    useState<PulsedSceneObject | null>(null);
-  const [bondVisibilityOverrides, setBondVisibilityOverrides] =
-    useState<BondVisibilityOverrides>(createDefaultBondVisibilityOverrides);
-  const [activeInspectorTab, setActiveInspectorTab] =
-    useState<InspectorSidebarTab>("settings");
-  const [activeObjectsTab, setActiveObjectsTab] =
-    useState<ObjectsPanelTab>("atoms");
-  const [atomLocateRequest, setAtomLocateRequest] =
-    useState<{ atomId: string; token: number } | null>(null);
-  const [bondLocateRequest, setBondLocateRequest] =
-    useState<{ bondId: string; token: number } | null>(null);
-  const [bondObjectsResetToken, setBondObjectsResetToken] = useState(0);
   const [activeCommonPanelTab, setActiveCommonPanelTab] =
     useState<CommonPanelTab>("display");
   const [cameraInteractionStore] = useState(createCameraInteractionStore);
   const [previewFpsStore] = useState(createPreviewFpsStore);
   const [isStructureSummaryCollapsed, setIsStructureSummaryCollapsed] = useState(true);
   const [workspaceResetRequest, setWorkspaceResetRequest] = useState<{
+    options: ResetLoadedPreviewOptions;
     scene: SceneSpec | null;
     token: number;
-  }>({ scene: null, token: 0 });
+  }>({ options: {}, scene: null, token: 0 });
   const viewportSize = useViewportSize();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const inspectedSceneObjectRef = useRef<InspectedSceneObject>(null);
-  const colorSchemeSelectionRef = useRef({
-    colorScheme: style.colorScheme,
-    colorSchemeMode: style.colorSchemeMode,
-  });
   const resetLoadedPreviewState = useCallback<ResetLoadedPreviewState>(
     (nextScene, options = {}) => {
       closeActiveColorPicker();
-      setInspectedSceneObject(null);
-      setPulsedSceneObject(null);
-      writeSelectionActivation(DEFAULT_SELECTION_ACTIVATION);
-      setSelectionActivationState(DEFAULT_SELECTION_ACTIVATION);
-      setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
-      setAtomLocateRequest(null);
-      setBondLocateRequest(null);
-      setBondObjectsResetToken((token) => token + 1);
-      if (!options.preserveInspectorOpen) {
-        setIsInspectorOpen(false);
-      }
-      setComponentVisibility(createDefaultComponentVisibility(nextScene));
-      setComponentOpacity(createDefaultComponentOpacity());
-      setStyle(createDefaultStyle());
-      setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
-      setUnitCellLineStyle(DEFAULT_UNIT_CELL_LINE_STYLE);
-      setStructureLineWidth(DEFAULT_STRUCTURE_LINE_WIDTH);
-      setShowCrystalAxisLabels(DEFAULT_SHOW_CRYSTAL_AXIS_LABELS);
-      if (!options.preserveActiveCommonPanelTab) {
-        setActiveCommonPanelTab("display");
-      }
-      setIsStructureSummaryCollapsed(true);
       setWorkspaceResetRequest((currentRequest) => ({
+        options,
         scene: nextScene,
         token: currentRequest.token + 1,
       }));
@@ -219,25 +118,10 @@ function AppContent() {
     [closeActiveColorPicker],
   );
   const handlePreviewCleared = useCallback(() => {
+    resetLoadedPreviewState(null);
+  }, [resetLoadedPreviewState]);
+  const handleBondAlgorithmSceneLoaded = useCallback(() => {
     closeActiveColorPicker();
-    setInspectedSceneObject(null);
-    setPulsedSceneObject(null);
-    setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
-    setAtomLocateRequest(null);
-    setBondLocateRequest(null);
-    setIsInspectorOpen(false);
-    setIsStructureSummaryCollapsed(true);
-  }, [closeActiveColorPicker]);
-  const handleBondAlgorithmSceneLoaded = useCallback((nextScene: SceneSpec) => {
-    closeActiveColorPicker();
-    const inspectedObject = inspectedSceneObjectRef.current;
-    if (
-      inspectedObject?.kind === "bond" &&
-      !nextScene.bonds.some((bond) => bond.id === inspectedObject.id)
-    ) {
-      inspectedSceneObjectRef.current = null;
-      setInspectedSceneObject(null);
-    }
   }, [closeActiveColorPicker]);
   const {
     bondAlgorithm,
@@ -262,32 +146,80 @@ function AppContent() {
     onPreviewCleared: handlePreviewCleared,
     resetLoadedPreviewState,
   });
-  const visibleScene = useMemo(
-    () =>
-      visibleSceneForComponents(
-        scene,
-        componentVisibility,
-        style.objectStyles,
-        bondVisibilityOverrides,
-      ),
-    [bondVisibilityOverrides, componentVisibility, scene, style.objectStyles],
-  );
-  const inspectedAtomId =
-    inspectedSceneObject?.kind === "atom" ? inspectedSceneObject.id : null;
-  const inspectedBondId =
-    inspectedSceneObject?.kind === "bond" ? inspectedSceneObject.id : null;
-  const objectStyleAtoms = useMemo(
-    () => (scene ? canonicalAtomsForObjectStyles(scene.atoms) : []),
-    [scene],
-  );
-  const inspectedAtomInfo = useMemo(
-    () => inspectedAtomInfoForId(visibleScene, inspectedAtomId),
-    [inspectedAtomId, visibleScene],
-  );
-  const inspectedBondInfo = useMemo(
-    () => inspectedBondInfoForId(visibleScene, inspectedBondId),
-    [inspectedBondId, visibleScene],
-  );
+  const appearance = useFigureAppearanceController({
+    closeActiveColorPicker,
+    connectivityStatus,
+    requestConnectivity,
+    scene,
+  });
+  const interaction = useSceneObjectInteractionController({
+    closeActiveColorPicker,
+    componentVisibility: appearance.componentVisibility,
+    connectivityStatus,
+    hideAtom: appearance.hideAtom,
+    requestConnectivity,
+    setBondVisible: appearance.setBondVisible,
+    visibleScene: appearance.visibleScene,
+  });
+  const {
+    bondVisibilityOverrides,
+    componentOpacity,
+    componentVisibility,
+    elementColorOverrides,
+    handleBondFamilyVisibilityChange,
+    handleComponentOpacityChange,
+    handleComponentOpacityReset,
+    handleComponentVisibilityChange,
+    handleDistinguishSimilarColorsChange,
+    handleFogAffectsUnitCellChange,
+    handleLegendElementColorChange,
+    legendColorScheme,
+    legendEntries,
+    objectStyleAtoms,
+    previewMeshQuality,
+    resetAppearance,
+    setPreviewMeshQuality,
+    setShowCrystalAxisLabels,
+    setStructureLineWidth,
+    setStyle,
+    setUnitCellLineStyle,
+    showCrystalAxisLabels,
+    structureLineWidth,
+    style,
+    unitCellLineStyle,
+    visibleScene,
+  } = appearance;
+  const {
+    activeInspectorTab,
+    activeObjectsTab,
+    atomLocateRequest,
+    bondLocateRequest,
+    bondObjectsResetToken,
+    clearSelection,
+    handleActiveInspectorTabChange,
+    handleActiveObjectsTabChange,
+    handleAtomInspect,
+    handleAtomLocateRequestHandled,
+    handleAtomPulse,
+    handleBondInspect,
+    handleBondLocateRequestHandled,
+    handleBondPulse,
+    handleBondVisibilityChange,
+    handleHideAtom,
+    handleHideBond,
+    handleInspectorOpenChange,
+    handleLocateAtomInObjects,
+    handleLocateBondInObjects,
+    handleSelectionActivationChange,
+    inspectedAtomId,
+    inspectedAtomInfo,
+    inspectedBondId,
+    inspectedBondInfo,
+    isInspectorOpen,
+    pulsedSceneObject,
+    resetInteraction,
+    selectionActivation,
+  } = interaction;
   const hasVisibleScene = visibleScene !== null;
   const {
     cameraAnimatedCommandVersion,
@@ -367,363 +299,28 @@ function AppContent() {
     if (workspaceResetRequest.token === 0) {
       return;
     }
+    resetAppearance(workspaceResetRequest.scene);
+    resetInteraction(workspaceResetRequest.options.preserveInspectorOpen);
+    if (!workspaceResetRequest.options.preserveActiveCommonPanelTab) {
+      setActiveCommonPanelTab("display");
+    }
+    setIsStructureSummaryCollapsed(true);
     resetExportState();
     resetLockedInteractionFeedback();
     resetCameraForScene(workspaceResetRequest.scene);
   }, [
     resetCameraForScene,
+    resetAppearance,
     resetExportState,
+    resetInteraction,
     resetLockedInteractionFeedback,
     workspaceResetRequest,
   ]);
-
-  useEffect(() => {
-    inspectedSceneObjectRef.current = inspectedSceneObject;
-  }, [inspectedSceneObject]);
-
-  useEffect(() => {
-    const previousSelection = colorSchemeSelectionRef.current;
-    const changedToPreset =
-      style.colorSchemeMode === "preset" &&
-      (previousSelection.colorSchemeMode !== "preset" ||
-        previousSelection.colorScheme !== style.colorScheme);
-
-    colorSchemeSelectionRef.current = {
-      colorScheme: style.colorScheme,
-      colorSchemeMode: style.colorSchemeMode,
-    };
-
-    if (changedToPreset) {
-      closeActiveColorPicker();
-    }
-  }, [closeActiveColorPicker, style.colorScheme, style.colorSchemeMode]);
-
-  useEffect(() => {
-    if (!pulsedSceneObject) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      setPulsedSceneObject((currentPulse) =>
-        currentPulse?.token === pulsedSceneObject.token ? null : currentPulse,
-      );
-    }, ATOM_HIGHLIGHT_PULSE_MS);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [pulsedSceneObject]);
-
-  const handlePreviewMeshQualityChange = useCallback((nextQuality: MeshQuality) => {
-    setPreviewMeshQuality(nextQuality);
-  }, []);
-
-  const handleInspectorOpenChange = useCallback((isOpen: boolean) => {
-    if (!isOpen) {
-      closeActiveColorPicker();
-    }
-    setIsInspectorOpen(isOpen);
-  }, [closeActiveColorPicker]);
 
   const handleActiveCommonPanelTabChange = useCallback((tab: CommonPanelTab) => {
     closeActiveColorPicker();
     setActiveCommonPanelTab(tab);
   }, [closeActiveColorPicker]);
-
-  const handleActiveInspectorTabChange = useCallback((tab: InspectorSidebarTab) => {
-    closeActiveColorPicker();
-    setActiveInspectorTab(tab);
-  }, [closeActiveColorPicker]);
-
-  const handleActiveObjectsTabChange = useCallback((tab: ObjectsPanelTab) => {
-    closeActiveColorPicker();
-    setActiveObjectsTab(tab);
-    if (tab === "bonds" && connectivityStatus !== "ready") {
-      void requestConnectivity("objects");
-    }
-  }, [closeActiveColorPicker, connectivityStatus, requestConnectivity]);
-
-  const handleComponentVisibilityChange = useCallback(async (
-    key: keyof ComponentVisibilityState,
-    value: boolean,
-  ) => {
-    if (value && (key === "bonds" || key === "polyhedra" || key === "oneHopBondedAtoms") && connectivityStatus !== "ready") {
-      const succeeded = await requestConnectivity(key);
-      if (!succeeded) return;
-    }
-    setComponentVisibility((current) => ({ ...current, [key]: value }));
-    if (value && key === "atoms") {
-      setStyle((currentStyle) => ({
-        ...currentStyle,
-        objectStyles: clearObjectStyleProperty(
-          currentStyle.objectStyles,
-          "visible",
-        ),
-      }));
-    }
-    if (value && key === "bonds") {
-      setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
-    }
-  }, [connectivityStatus, requestConnectivity]);
-
-  const handleComponentOpacityChange = useCallback((
-    key: keyof ComponentOpacityState,
-    value: number,
-  ) => {
-    setComponentOpacity((currentOpacity) => ({
-      ...currentOpacity,
-      [key]: value,
-    }));
-    if (key === "atoms") {
-      setStyle((currentStyle) => ({
-        ...currentStyle,
-        objectStyles: clearObjectStyleProperty(
-          currentStyle.objectStyles,
-          "opacity",
-        ),
-      }));
-    }
-  }, []);
-
-  const handleComponentOpacityReset = useCallback(() => {
-    setComponentOpacity(createDefaultComponentOpacity());
-    setStyle((currentStyle) => ({
-      ...currentStyle,
-      objectStyles: clearObjectStyleProperty(
-        currentStyle.objectStyles,
-        "opacity",
-      ),
-    }));
-  }, []);
-
-  const handleFogAffectsUnitCellChange = useCallback((fogAffectsUnitCell: boolean) => {
-    setStyle((currentStyle) => ({
-      ...currentStyle,
-      fogAffectsUnitCell,
-    }));
-  }, []);
-  const handleDistinguishSimilarColorsChange = useCallback((distinguishSimilarColors: boolean) => {
-    setStyle((currentStyle) => ({
-      ...currentStyle,
-      distinguishSimilarColors,
-    }));
-  }, []);
-
-  const handleAtomPulse = useCallback((atomId: string) => {
-    const inspected = inspectedSceneObjectRef.current;
-    if (inspected?.kind === "atom" && atomId === inspected.id) {
-      return;
-    }
-
-    inspectedSceneObjectRef.current = null;
-    setInspectedSceneObject(null);
-    setPulsedSceneObject((currentPulse) => ({
-      kind: "atom",
-      id: atomId,
-      token: (currentPulse?.token ?? 0) + 1,
-    }));
-  }, []);
-
-  const handleBondPulse = useCallback((bondId: string) => {
-    const inspected = inspectedSceneObjectRef.current;
-    if (inspected?.kind === "bond" && bondId === inspected.id) {
-      return;
-    }
-
-    inspectedSceneObjectRef.current = null;
-    setInspectedSceneObject(null);
-    setPulsedSceneObject((currentPulse) => ({
-      kind: "bond",
-      id: bondId,
-      token: (currentPulse?.token ?? 0) + 1,
-    }));
-  }, []);
-
-  const handleSelectionActivationChange = useCallback(
-    (activation: SelectionActivation) => {
-      writeSelectionActivation(activation);
-      setSelectionActivationState(activation);
-    },
-    [],
-  );
-
-  const requestAtomLocateInObjects = useCallback((atomId: string) => {
-    setAtomLocateRequest((currentRequest) => ({
-      atomId,
-      token: (currentRequest?.token ?? 0) + 1,
-    }));
-  }, []);
-
-  const handleAtomLocateRequestHandled = useCallback((token: number) => {
-    setAtomLocateRequest((currentRequest) =>
-      currentRequest?.token === token ? null : currentRequest,
-    );
-  }, []);
-
-  const requestBondLocateInObjects = useCallback((bondId: string) => {
-    setBondLocateRequest((currentRequest) => ({
-      bondId,
-      token: (currentRequest?.token ?? 0) + 1,
-    }));
-  }, []);
-
-  const handleBondLocateRequestHandled = useCallback((token: number) => {
-    setBondLocateRequest((currentRequest) =>
-      currentRequest?.token === token ? null : currentRequest,
-    );
-  }, []);
-
-  const handleAtomInspect = useCallback((atomId: string | null) => {
-    const nextSelection: InspectedSceneObject = atomId
-      ? { kind: "atom", id: atomId }
-      : null;
-    inspectedSceneObjectRef.current = nextSelection;
-    setInspectedSceneObject(nextSelection);
-    setPulsedSceneObject(null);
-    if (
-      atomId &&
-      isInspectorOpen &&
-      activeInspectorTab === "objects" &&
-      activeObjectsTab === "atoms"
-    ) {
-      requestAtomLocateInObjects(atomId);
-    }
-  }, [
-    activeInspectorTab,
-    activeObjectsTab,
-    isInspectorOpen,
-    requestAtomLocateInObjects,
-  ]);
-
-  const handleBondInspect = useCallback((bondId: string | null) => {
-    const nextSelection: InspectedSceneObject = bondId
-      ? { kind: "bond", id: bondId }
-      : null;
-    inspectedSceneObjectRef.current = nextSelection;
-    setInspectedSceneObject(nextSelection);
-    setPulsedSceneObject(null);
-    if (
-      bondId &&
-      isInspectorOpen &&
-      activeInspectorTab === "objects" &&
-      activeObjectsTab === "bonds"
-    ) {
-      requestBondLocateInObjects(bondId);
-    }
-  }, [
-    activeInspectorTab,
-    activeObjectsTab,
-    isInspectorOpen,
-    requestBondLocateInObjects,
-  ]);
-
-  const handleLocateAtomInObjects = useCallback((atomId: string) => {
-    closeActiveColorPicker();
-    setIsInspectorOpen(true);
-    setActiveInspectorTab("objects");
-    setActiveObjectsTab("atoms");
-    requestAtomLocateInObjects(atomId);
-  }, [closeActiveColorPicker, requestAtomLocateInObjects]);
-
-  const handleLocateBondInObjects = useCallback((bondId: string) => {
-    closeActiveColorPicker();
-    setIsInspectorOpen(true);
-    setActiveInspectorTab("objects");
-    setActiveObjectsTab("bonds");
-    requestBondLocateInObjects(bondId);
-  }, [closeActiveColorPicker, requestBondLocateInObjects]);
-
-  const handleHideAtom = useCallback((atomId: string) => {
-    setStyle((currentStyle) => ({
-      ...currentStyle,
-      objectStyles: setAtomOverrideProperty(
-        currentStyle.objectStyles,
-        atomId,
-        "visible",
-        false,
-      ),
-    }));
-    inspectedSceneObjectRef.current = null;
-    setInspectedSceneObject(null);
-  }, []);
-
-  const handleBondFamilyVisibilityChange = useCallback(
-    (familyKey: string, visible: boolean) => {
-      setBondVisibilityOverrides((current) =>
-        setBondFamilyVisible(current, familyKey, visible),
-      );
-    },
-    [],
-  );
-
-  const handleBondVisibilityChange = useCallback(
-    (bond: SceneSpec["bonds"][number], visible: boolean) => {
-      setBondVisibilityOverrides((current) =>
-        setBondRelationVisible(current, bond, visible),
-      );
-      if (!visible) {
-        inspectedSceneObjectRef.current = null;
-        setInspectedSceneObject(null);
-      }
-    },
-    [],
-  );
-  const handleHideBond = useCallback(
-    (bond: SceneSpec["bonds"][number]) => handleBondVisibilityChange(bond, false),
-    [handleBondVisibilityChange],
-  );
-
-  useHideSelectedObjectShortcut({
-    onHideAtom: handleHideAtom,
-    onHideBond: handleHideBond,
-    selectedAtomId: inspectedAtomInfo?.canonicalAtom.siteId ?? null,
-    selectedBond: inspectedBondInfo?.bond ?? null,
-  });
-
-  const elementColorOverrides = useMemo(
-    () =>
-      scene
-        ? elementColorOverridesForStyle(scene.atoms, style)
-        : undefined,
-    [scene, style],
-  );
-  const legendColorScheme = baseColorSchemeForStyle(style);
-  const legendEntries = useMemo(
-    () => deriveElementLegendEntries(scene, legendColorScheme, elementColorOverrides),
-    [elementColorOverrides, legendColorScheme, scene],
-  );
-  const handleLegendElementColorChange = useCallback((element: string, color: string) => {
-    setStyle((currentStyle) => {
-      const draft = scene
-        ? createCustomColormapFromStyle(scene.atoms, currentStyle)
-        : (
-            currentStyle.customColormap ??
-            createCustomColormapFromStyle([], currentStyle)
-          );
-      const objectStyles = scene
-        ? clearAtomOverridePropertyForElement(
-            currentStyle.objectStyles,
-            scene.atoms,
-            element,
-            "color",
-          )
-        : currentStyle.objectStyles;
-
-      return {
-        ...currentStyle,
-        colorSchemeMode: "custom",
-        colorScheme: draft.baseColorScheme,
-        customColormap: {
-          baseColorScheme: draft.baseColorScheme,
-          elements: {
-            ...draft.elements,
-            [element]: color,
-          },
-        },
-        objectStyles,
-      };
-    });
-  }, [scene]);
   const previewSafeArea = previewSafeAreaForInspector();
   const sceneOffsetX = sceneOffsetXForInspector(isInspectorOpen, viewportSize.width);
   const effectivePreviewSafeArea = useMemo(
@@ -775,28 +372,6 @@ function AppContent() {
       </ContextMenuGroup>
     </ContextMenuContent>
   );
-
-  useEffect(() => {
-    if (!inspectedSceneObject) {
-      return;
-    }
-
-    const selectionStillExists =
-      inspectedSceneObject.kind === "atom"
-        ? componentVisibility.atoms && inspectedAtomInfo !== null
-        : componentVisibility.bonds && inspectedBondInfo !== null;
-    if (!visibleScene || !selectionStillExists) {
-      inspectedSceneObjectRef.current = null;
-      setInspectedSceneObject(null);
-    }
-  }, [
-    componentVisibility.atoms,
-    componentVisibility.bonds,
-    inspectedAtomInfo,
-    inspectedBondInfo,
-    inspectedSceneObject,
-    visibleScene,
-  ]);
 
   useEffect(() => {
     if (activeCommonPanelTab !== "export") {
@@ -950,7 +525,7 @@ function AppContent() {
           colorOverrides={elementColorOverrides}
           info={inspectedAtomInfo}
           isInspectorOpen={isInspectorOpen}
-          onClose={() => setInspectedSceneObject(null)}
+          onClose={clearSelection}
           onHide={handleHideAtom}
           onLocateInObjects={handleLocateAtomInObjects}
           style={style}
@@ -963,7 +538,7 @@ function AppContent() {
           colorOverrides={elementColorOverrides}
           info={inspectedBondInfo}
           isInspectorOpen={isInspectorOpen}
-          onClose={() => setInspectedSceneObject(null)}
+          onClose={clearSelection}
           onHide={handleHideBond}
           onLocateInObjects={handleLocateBondInObjects}
           style={style}
@@ -1114,7 +689,7 @@ function AppContent() {
                   onSelectionActivationChange={handleSelectionActivationChange}
                   onLightStrengthChange={handleLightStrengthChange}
                   onMouseInertiaChange={handleMouseInertiaChange}
-                  onPreviewMeshQualityChange={handlePreviewMeshQualityChange}
+                  onPreviewMeshQualityChange={setPreviewMeshQuality}
                   onFogAffectsUnitCellChange={handleFogAffectsUnitCellChange}
                   onDistinguishSimilarColorsChange={handleDistinguishSimilarColorsChange}
                   onElementColorChange={handleLegendElementColorChange}
