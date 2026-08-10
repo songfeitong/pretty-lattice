@@ -36,6 +36,7 @@ import {
   createPolyhedronSurfaceBatchBuild,
   disposePolyhedronSurfaceBatchBuild,
 } from "../src/scene/BatchedPolyhedra";
+import { bondBatchPopulationKey } from "../src/scene/BatchedBonds";
 import { createAtomRenderItems } from "../src/scene/AtomRenderItems";
 import { createBondRenderItems } from "../src/scene/BondRenderItems";
 import {
@@ -338,6 +339,34 @@ describe("computeSceneLayout", () => {
 
     expect(items.map((item) => item.id)).toEqual([visibleBond.id]);
     expect(items[0]?.opacity).toBe(0.8);
+  });
+
+  test("invalidates the bond population when RGBA or pick identity changes", () => {
+    const style = createDefaultStyle();
+    const [item] = createBondRenderItems({
+      atoms: [atom("Si-0", [0, 0, 0]), atom("Si-1", [1, 0, 0])],
+      bondColor: style.bondColor,
+      bondOpacity: 80,
+      bondRadius: 0.1,
+      bonds: [bond("bond-original", 0, 1)],
+      colorMode: style.bondColorMode,
+      colorScheme: style.colorScheme,
+      style,
+    });
+    expect(item).toBeDefined();
+    if (!item) return;
+
+    const keyFor = (items: typeof item[]) =>
+      bondBatchPopulationKey({
+        colorMode: style.bondColorMode,
+        items,
+        radialSegments: 12,
+        radius: 0.1,
+      });
+    const initialKey = keyFor([item]);
+
+    expect(keyFor([{ ...item, opacity: 0.4 }])).not.toBe(initialKey);
+    expect(keyFor([{ ...item, id: "bond-replacement" }])).not.toBe(initialKey);
   });
 
   test("fits the preview layout from unit-cell bounds only", () => {

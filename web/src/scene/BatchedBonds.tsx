@@ -280,7 +280,12 @@ function createBondBatchBuild({
     return {
       itemCount: items.length,
       items,
-      key: bondBatchKey({ colorMode, items, radialSegments: segments, radius }),
+      key: bondBatchPopulationKey({
+        colorMode,
+        items,
+        radialSegments: segments,
+        radius,
+      }),
       maxIndexCount: indexCount,
       maxVertexCount: vertexCount,
       mode: colorMode,
@@ -296,7 +301,12 @@ function createBondBatchBuild({
   return {
     itemCount: items.length,
     items,
-    key: bondBatchKey({ colorMode, items, radialSegments: segments, radius }),
+    key: bondBatchPopulationKey({
+      colorMode,
+      items,
+      radialSegments: segments,
+      radius,
+    }),
     maxIndexCount,
     maxVertexCount,
     mode: colorMode,
@@ -460,7 +470,7 @@ function twoToneBondIndexCount(radialSegments: number): number {
   return 12 * radialSegments;
 }
 
-function bondBatchKey({
+export function bondBatchPopulationKey({
   colorMode,
   items,
   radialSegments,
@@ -476,10 +486,12 @@ function bondBatchKey({
     hash = hashString(
       [
         hash,
+        item.id,
         item.startAtomIndex,
         item.endAtomIndex,
         item.length,
         item.radius,
+        item.opacity,
         item.center.toArray().join(","),
         item.quaternion.toArray().join(","),
         item.startColor,
