@@ -11,7 +11,7 @@ export interface FetchCall {
 
 export function createAppTestHarness(App: ComponentType) {
   const fetchCalls: FetchCall[] = [];
-  const fetchResponses: Response[] = [];
+  const fetchResponses: Array<Response | Promise<Response>> = [];
 
   function resetFetchMock() {
     fetchCalls.length = 0;
@@ -23,11 +23,11 @@ export function createAppTestHarness(App: ComponentType) {
         throw new Error("Unexpected fetch request.");
       }
 
-      return response;
+      return await response;
     }) as typeof fetch;
   }
 
-  function queueFetchResponse(response: Response) {
+  function queueFetchResponse(response: Response | Promise<Response>) {
     fetchResponses.push(response);
   }
 

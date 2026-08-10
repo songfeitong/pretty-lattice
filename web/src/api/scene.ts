@@ -157,15 +157,25 @@ export function isBackendUnavailablePreviewError(
   return error instanceof StructurePreviewError && error.reason === "backend-unavailable";
 }
 
-export async function loadStaticScenePreview(): Promise<SceneSpec | null> {
+export function isAbortError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "AbortError"
+  );
+}
+
+export async function loadStaticScenePreview(signal?: AbortSignal): Promise<SceneSpec | null> {
   if (!hasStaticScenePreview()) {
     return null;
   }
 
   let response: Response;
   try {
-    response = await fetch(STATIC_SCENE_PREVIEW_URL);
-  } catch {
+    response = await fetch(STATIC_SCENE_PREVIEW_URL, { signal });
+  } catch (error) {
+    if (isAbortError(error)) throw error;
     throw new StructurePreviewError("Static example could not be loaded.");
   }
 
@@ -208,7 +218,8 @@ export async function uploadStructurePreview(
       body: file,
       signal: options.signal,
     });
-  } catch {
+  } catch (error) {
+    if (isAbortError(error)) throw error;
     throw new StructurePreviewError(BACKEND_UNAVAILABLE_MESSAGE, "backend-unavailable");
   }
 

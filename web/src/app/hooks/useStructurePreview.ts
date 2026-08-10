@@ -29,6 +29,7 @@ import {
 } from "../../model/bondObjects";
 import type { PreviewStatus } from "../previewState";
 import { MAX_STRUCTURE_UPLOAD_BYTES } from "../../model/structureLimits";
+import { LatestRequestRunner } from "./latestRequest";
 
 const STRUCTURE_FILE_TOO_LARGE_MESSAGE = "File is too large to preview.";
 const STRUCTURE_PARSE_ERROR_MESSAGE = "pymatgen could not parse this file.";
@@ -60,37 +61,38 @@ interface UseStructurePreviewOptions {
   ) => void;
 }
 
+interface LoadedPreviewSession {
+  bondingMode: BondingMode;
+  customBondingProfile: CustomBondingProfile | null;
+  file: File | null;
+  fileName: string;
+  scene: SceneSpec;
+}
+
 export function useStructurePreview({
   onBondAlgorithmSceneLoaded,
   onPreviewCleared,
   resetLoadedPreviewState,
 }: UseStructurePreviewOptions) {
   const isStaticScenePreview = hasStaticScenePreview();
-  const [scene, setScene] = useState<SceneSpec | null>(null);
+  const [session, setSession] = useState<LoadedPreviewSession | null>(null);
   const [previewStatus, setPreviewStatus] = useState<PreviewStatus>(() =>
     isStaticScenePreview ? "loading" : "idle",
   );
-  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const [errorMessage, setRawErrorMessage] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<StructurePreviewErrorKind | null>(null);
-  const [currentFile, setCurrentFile] = useState<File | null>(null);
-  const [bondingMode, setBondingMode] =
-    useState<BondingMode>(DEFAULT_BOND_ALGORITHM);
-  const [customBondingProfile, setCustomBondingProfile] =
-    useState<CustomBondingProfile | null>(null);
   const [connectivityStatus, setConnectivityStatus] = useState<ConnectivityStatus>("ready");
   const [connectivityIntent, setConnectivityIntent] = useState<ConnectivityIntent | null>(null);
   const [connectivityRetryable, setConnectivityRetryable] = useState(false);
-  const requestGenerationRef = useRef(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  const beginRequest = useCallback(() => {
-    abortControllerRef.current?.abort();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    requestGenerationRef.current += 1;
-    return { controller, generation: requestGenerationRef.current };
-  }, []);
+  const requestRunnerRef = useRef<LatestRequestRunner | null>(null);
+  if (!requestRunnerRef.current) {
+    requestRunnerRef.current = new LatestRequestRunner();
+  }
+  const requestRunner = requestRunnerRef.current;
+  const scene = session?.scene ?? null;
+  const selectedFileName = session?.fileName ?? null;
+  const bondingMode = session?.bondingMode ?? DEFAULT_BOND_ALGORITHM;
+  const customBondingProfile = session?.customBondingProfile ?? null;
 
   const setErrorMessage = useCallback((message: string | null) => {
     if (message === null) {
@@ -104,34 +106,30 @@ export function useStructurePreview({
     setRawErrorMessage(message);
   }, []);
 
+  useEffect(() => () => requestRunner.cancel(), [requestRunner]);
+
   useEffect(() => {
     if (!isStaticScenePreview) {
       return;
     }
 
-    let isCurrent = true;
-
     async function loadExampleScene() {
-      try {
-        const nextScene = await loadStaticScenePreview();
-        if (!isCurrent || !nextScene) {
-          return;
-        }
-
-        setScene(nextScene);
-        setSelectedFileName(STATIC_SCENE_PREVIEW_NAME);
-        setBondingMode(defaultBondAlgorithmForScene(nextScene));
-        setCustomBondingProfile(null);
+      const outcome = await requestRunner.run((signal) => loadStaticScenePreview(signal));
+      if (outcome.status === "success" && outcome.value) {
+        const nextScene = outcome.value;
+        setSession({
+          bondingMode: defaultBondAlgorithmForScene(nextScene),
+          customBondingProfile: null,
+          file: null,
+          fileName: STATIC_SCENE_PREVIEW_NAME,
+          scene: nextScene,
+        });
+        setConnectivityStatus(nextScene.connectivity ?? "ready");
         resetLoadedPreviewState(nextScene);
         setPreviewStatus("ready");
-      } catch {
-        if (!isCurrent) {
-          return;
-        }
-
-        setScene(null);
+      } else if (outcome.status === "error") {
+        setSession(null);
         onPreviewCleared();
-        setSelectedFileName(null);
         setPreviewStatus("error");
         setPreviewError("static-example", "Static example could not be loaded.");
       }
@@ -140,9 +138,9 @@ export function useStructurePreview({
     void loadExampleScene();
 
     return () => {
-      isCurrent = false;
+      requestRunner.cancel();
     };
-  }, [isStaticScenePreview, onPreviewCleared, resetLoadedPreviewState, setPreviewError]);
+  }, [isStaticScenePreview, onPreviewCleared, requestRunner, resetLoadedPreviewState, setPreviewError]);
 
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -156,43 +154,39 @@ export function useStructurePreview({
         setPreviewError("backend-unavailable", BACKEND_UNAVAILABLE_MESSAGE);
         return;
       }
-      const request = beginRequest();
 
       if (file.size > MAX_STRUCTURE_UPLOAD_BYTES) {
-        setSelectedFileName(null);
-        setPreviewStatus("error");
+        requestRunner.cancel();
+        setPreviewStatus(session ? "ready" : "error");
         setPreviewError("file-too-large", STRUCTURE_FILE_TOO_LARGE_MESSAGE);
-        setScene(null);
-        setCurrentFile(null);
-        onPreviewCleared();
+        setConnectivityStatus(session?.scene.connectivity ?? "ready");
         return;
       }
 
-      setSelectedFileName(file.name);
       setPreviewStatus("loading");
       setErrorMessage(null);
-      setScene(null);
-      setCurrentFile(file);
-      setBondingMode(DEFAULT_BOND_ALGORITHM);
-      setCustomBondingProfile(null);
-      resetLoadedPreviewState(null);
+      setConnectivityRetryable(false);
 
-      try {
-        const nextScene = await uploadStructurePreview(file, { signal: request.controller.signal });
-        if (request.generation !== requestGenerationRef.current) return;
-        setScene(nextScene);
-        setBondingMode(defaultBondAlgorithmForScene(nextScene));
+      const outcome = await requestRunner.run((signal) =>
+        uploadStructurePreview(file, { signal }),
+      );
+      if (outcome.status === "success") {
+        const nextScene = outcome.value;
+        setSession({
+          bondingMode: defaultBondAlgorithmForScene(nextScene),
+          customBondingProfile: null,
+          file,
+          fileName: file.name,
+          scene: nextScene,
+        });
         setConnectivityStatus(nextScene.connectivity ?? "ready");
         setConnectivityIntent(null);
         resetLoadedPreviewState(nextScene);
         setPreviewStatus("ready");
-      } catch (error) {
-        if (request.controller.signal.aborted) return;
-        setScene(null);
-        setCurrentFile(null);
-        setSelectedFileName(null);
-        onPreviewCleared();
-        setPreviewStatus("error");
+      } else if (outcome.status === "error") {
+        const error = outcome.error;
+        setConnectivityStatus(session?.scene.connectivity ?? "ready");
+        setPreviewStatus(session ? "ready" : "error");
         setPreviewError(
           isBackendUnavailablePreviewError(error)
             ? "backend-unavailable"
@@ -203,101 +197,120 @@ export function useStructurePreview({
         );
       }
     },
-    [beginRequest, isStaticScenePreview, onPreviewCleared, resetLoadedPreviewState, setErrorMessage, setPreviewError],
+    [isStaticScenePreview, requestRunner, resetLoadedPreviewState, session, setErrorMessage, setPreviewError],
   );
 
-  const requestConnectivity = useCallback(async (intent: ConnectivityIntent = "preserve") => {
-    if (!currentFile || connectivityStatus === "loading") return false;
-    if (scene?.connectivity === "ready") return true;
-    const request = beginRequest();
-    setConnectivityIntent(intent);
+  const handleConnectivityFailure = useCallback((error: unknown, allowRetry: boolean) => {
+    const code = error instanceof StructurePreviewError ? error.code : null;
+    setConnectivityStatus("error");
+    setConnectivityRetryable(
+      allowRetry && (!code || !DETERMINISTIC_CONNECTIVITY_ERROR_CODES.has(code)),
+    );
+    setPreviewError(
+      isBackendUnavailablePreviewError(error)
+        ? "backend-unavailable"
+        : "bonding-error",
+      error instanceof Error ? error.message : STRUCTURE_PARSE_ERROR_MESSAGE,
+    );
+  }, [setPreviewError]);
+
+  const runSceneUpdate = useCallback(async (
+    request: (signal: AbortSignal) => Promise<SceneSpec>,
+    commit: (current: LoadedPreviewSession, nextScene: SceneSpec) => LoadedPreviewSession,
+    allowRetry = false,
+  ): Promise<SceneSpec | null> => {
     setConnectivityStatus("loading");
+    setConnectivityRetryable(false);
     setErrorMessage(null);
-    try {
-      const profile = bondingMode === CUSTOM_BONDING_MODE ? customBondingProfile : null;
-      const nextScene = await uploadStructurePreview(currentFile, {
-        bondAlgorithm: profile?.baseAlgorithm ?? (bondingMode as BondAlgorithm),
+
+    const outcome = await requestRunner.run(request);
+    if (outcome.status === "success") {
+      const nextScene = outcome.value;
+      setSession((current) => current ? commit(current, nextScene) : current);
+      setConnectivityStatus("ready");
+      return nextScene;
+    }
+    if (outcome.status === "error") {
+      handleConnectivityFailure(outcome.error, allowRetry);
+    }
+    return null;
+  }, [handleConnectivityFailure, requestRunner, setErrorMessage]);
+
+  const requestConnectivity = useCallback(async (intent: ConnectivityIntent = "preserve") => {
+    if (!session?.file || connectivityStatus === "loading") return false;
+    if (session.scene.connectivity === "ready") return true;
+    const file = session.file;
+    setConnectivityIntent(intent);
+
+    const profile = session.bondingMode === CUSTOM_BONDING_MODE
+      ? session.customBondingProfile
+      : null;
+    const nextScene = await runSceneUpdate(
+      (signal) => uploadStructurePreview(file, {
+        bondAlgorithm: profile?.baseAlgorithm ?? (session.bondingMode as BondAlgorithm),
         cutoffOverrides: profile?.cutoffOverrides,
         includeConnectivity: true,
-        signal: request.controller.signal,
-      });
-      if (request.generation !== requestGenerationRef.current) return false;
-      setScene(nextScene);
-      setConnectivityStatus("ready");
-      setConnectivityRetryable(false);
+        signal,
+      }),
+      (current, scene) => ({ ...current, scene }),
+      true,
+    );
+    if (nextScene) {
       onBondAlgorithmSceneLoaded(nextScene);
       return true;
-    } catch (error) {
-      if (request.controller.signal.aborted) return false;
-      setConnectivityStatus("error");
-      const code = error instanceof StructurePreviewError ? error.code : null;
-      setConnectivityRetryable(!code || !DETERMINISTIC_CONNECTIVITY_ERROR_CODES.has(code));
-      setPreviewError("bonding-error", error instanceof Error ? error.message : STRUCTURE_PARSE_ERROR_MESSAGE);
-      return false;
     }
-  }, [beginRequest, bondingMode, connectivityStatus, currentFile, customBondingProfile, onBondAlgorithmSceneLoaded, scene?.connectivity, setErrorMessage, setPreviewError]);
+    return false;
+  }, [connectivityStatus, onBondAlgorithmSceneLoaded, runSceneUpdate, session]);
 
   const handleBondAlgorithmChange = useCallback(
     async (nextBondingMode: BondingMode) => {
-      if (!currentFile) {
+      if (!session?.file) {
         if (scene) {
           setPreviewError("backend-unavailable", BACKEND_UNAVAILABLE_MESSAGE);
         }
         return;
       }
 
-      const request = beginRequest();
-      setConnectivityStatus("loading");
-      setErrorMessage(null);
+      const nextProfile =
+        nextBondingMode === CUSTOM_BONDING_MODE
+          ? session.customBondingProfile
+          : null;
+      if (nextBondingMode === CUSTOM_BONDING_MODE && !nextProfile) return;
+      const file = session.file;
 
-      try {
-        const nextProfile =
-          nextBondingMode === CUSTOM_BONDING_MODE
-            ? customBondingProfile
-            : null;
-        if (nextBondingMode === CUSTOM_BONDING_MODE && !nextProfile) {
-          setPreviewStatus("ready");
-          return;
-        }
-        const nextScene = await uploadStructurePreview(currentFile, {
+      setConnectivityIntent("preserve");
+      const nextScene = await runSceneUpdate(
+        (signal) => uploadStructurePreview(file, {
           bondAlgorithm:
             nextProfile?.baseAlgorithm ?? (nextBondingMode as BondAlgorithm),
           cutoffOverrides: nextProfile?.cutoffOverrides,
           includeConnectivity: true,
-          signal: request.controller.signal,
-        });
-        if (request.generation !== requestGenerationRef.current) return;
-        setBondingMode(nextBondingMode);
-        setCustomBondingProfile(
-          nextBondingMode === CUSTOM_BONDING_MODE ? nextProfile : null,
-        );
-        setScene(nextScene);
+          signal,
+        }),
+        (current, nextScene) => ({
+          ...current,
+          bondingMode: nextBondingMode,
+          customBondingProfile:
+            nextBondingMode === CUSTOM_BONDING_MODE ? nextProfile : null,
+          scene: nextScene,
+        }),
+      );
+      if (nextScene) {
         onBondAlgorithmSceneLoaded(nextScene);
-        setConnectivityStatus("ready");
-      } catch (error) {
-        if (request.controller.signal.aborted) return;
-        setConnectivityStatus("error");
-        setPreviewError(
-          isBackendUnavailablePreviewError(error)
-            ? "backend-unavailable"
-            : "bonding-error",
-          error instanceof Error ? error.message : STRUCTURE_PARSE_ERROR_MESSAGE,
-        );
       }
     },
     [
-      beginRequest, currentFile,
-      customBondingProfile,
       onBondAlgorithmSceneLoaded,
+      runSceneUpdate,
       scene,
-      setErrorMessage,
+      session,
       setPreviewError,
     ],
   );
 
   const handleBondCutoffOverridesChange = useCallback(
     async (cutoffOverrides: Record<string, BondCutoffRange>) => {
-      if (!currentFile) {
+      if (!session?.file) {
         if (scene) {
           setPreviewError("backend-unavailable", BACKEND_UNAVAILABLE_MESSAGE);
         }
@@ -305,50 +318,41 @@ export function useStructurePreview({
       }
 
       const baseAlgorithm =
-        bondingMode === CUSTOM_BONDING_MODE
-          ? customBondingProfile?.baseAlgorithm ?? DEFAULT_BOND_ALGORITHM
-          : bondingMode;
+        session.bondingMode === CUSTOM_BONDING_MODE
+          ? session.customBondingProfile?.baseAlgorithm ?? DEFAULT_BOND_ALGORITHM
+          : session.bondingMode;
       const hasOverrides = Object.keys(cutoffOverrides).length > 0;
       const nextProfile = hasOverrides
         ? { baseAlgorithm, cutoffOverrides }
         : null;
+      const file = session.file;
 
-      const request = beginRequest();
-      setConnectivityStatus("loading");
-      setErrorMessage(null);
-      try {
-        const nextScene = await uploadStructurePreview(currentFile, {
+      setConnectivityIntent("preserve");
+      const nextScene = await runSceneUpdate(
+        (signal) => uploadStructurePreview(file, {
           bondAlgorithm: baseAlgorithm,
           cutoffOverrides: nextProfile?.cutoffOverrides,
           includeConnectivity: true,
-          signal: request.controller.signal,
-        });
-        if (request.generation !== requestGenerationRef.current) return false;
-        setScene(nextScene);
-        setCustomBondingProfile(nextProfile);
-        setBondingMode(hasOverrides ? CUSTOM_BONDING_MODE : baseAlgorithm);
+          signal,
+        }),
+        (current, nextScene) => ({
+          ...current,
+          bondingMode: hasOverrides ? CUSTOM_BONDING_MODE : baseAlgorithm,
+          customBondingProfile: nextProfile,
+          scene: nextScene,
+        }),
+      );
+      if (nextScene) {
         onBondAlgorithmSceneLoaded(nextScene);
-        setConnectivityStatus("ready");
         return true;
-      } catch (error) {
-        if (request.controller.signal.aborted) return false;
-        setConnectivityStatus("error");
-        setPreviewError(
-          isBackendUnavailablePreviewError(error)
-            ? "backend-unavailable"
-            : "bonding-error",
-          error instanceof Error ? error.message : STRUCTURE_PARSE_ERROR_MESSAGE,
-        );
-        return false;
       }
+      return false;
     },
     [
-      beginRequest, bondingMode,
-      currentFile,
-      customBondingProfile,
       onBondAlgorithmSceneLoaded,
+      runSceneUpdate,
       scene,
-      setErrorMessage,
+      session,
       setPreviewError,
     ],
   );
@@ -360,9 +364,12 @@ export function useStructurePreview({
 
     const defaultBondAlgorithm = defaultBondAlgorithmForScene(scene);
 
-    if (bondingMode === defaultBondAlgorithm || !currentFile) {
-      setBondingMode(defaultBondAlgorithm);
-      setCustomBondingProfile(null);
+    if (bondingMode === defaultBondAlgorithm || !session?.file) {
+      setSession((current) => current ? {
+        ...current,
+        bondingMode: defaultBondAlgorithm,
+        customBondingProfile: null,
+      } : current);
       setPreviewStatus("ready");
       resetLoadedPreviewState(scene, {
         preserveActiveCommonPanelTab: true,
@@ -372,41 +379,31 @@ export function useStructurePreview({
     }
 
     setConnectivityIntent("preserve");
-    setConnectivityStatus("loading");
-    setErrorMessage(null);
+    const file = session.file;
 
-    try {
-      const request = beginRequest();
-      const nextScene = await uploadStructurePreview(currentFile, { includeConnectivity: true, signal: request.controller.signal });
-      if (request.generation !== requestGenerationRef.current) return;
-      setBondingMode(defaultBondAlgorithmForScene(nextScene));
-      setCustomBondingProfile(null);
-      setScene(nextScene);
+    const nextScene = await runSceneUpdate(
+      (signal) => uploadStructurePreview(file, { includeConnectivity: true, signal }),
+      (current, scene) => ({
+        ...current,
+        bondingMode: defaultBondAlgorithmForScene(scene),
+        customBondingProfile: null,
+        scene,
+      }),
+    );
+    if (nextScene) {
       resetLoadedPreviewState(nextScene, {
         preserveActiveCommonPanelTab: true,
         preserveInspectorOpen: true,
       });
-      setConnectivityStatus("ready");
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      setConnectivityStatus("error");
-      setPreviewError(
-        isBackendUnavailablePreviewError(error)
-          ? "backend-unavailable"
-          : "bonding-error",
-        error instanceof Error ? error.message : STRUCTURE_PARSE_ERROR_MESSAGE,
-      );
     }
   }, [
     bondingMode,
-    beginRequest,
     connectivityStatus,
-    currentFile,
     previewStatus,
     resetLoadedPreviewState,
+    runSceneUpdate,
     scene,
-    setErrorMessage,
-    setPreviewError,
+    session,
   ]);
 
   const errorTitle = useMemo(

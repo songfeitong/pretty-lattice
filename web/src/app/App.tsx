@@ -175,21 +175,48 @@ function AppContent() {
   const [cameraInteractionStore] = useState(createCameraInteractionStore);
   const [previewFpsStore] = useState(createPreviewFpsStore);
   const [isStructureSummaryCollapsed, setIsStructureSummaryCollapsed] = useState(true);
+  const [workspaceResetRequest, setWorkspaceResetRequest] = useState<{
+    scene: SceneSpec | null;
+    token: number;
+  }>({ scene: null, token: 0 });
   const viewportSize = useViewportSize();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inspectedSceneObjectRef = useRef<InspectedSceneObject>(null);
-  const previousAtomsVisibleRef = useRef(componentVisibility.atoms);
-  const previousBondsVisibleRef = useRef(componentVisibility.bonds);
   const colorSchemeSelectionRef = useRef({
     colorScheme: style.colorScheme,
     colorSchemeMode: style.colorSchemeMode,
   });
-  const resetLoadedPreviewStateRef = useRef<ResetLoadedPreviewState>(() => {});
-  const resetLoadedPreviewStateForPreview = useCallback<ResetLoadedPreviewState>(
-    (nextScene, options) => {
-      resetLoadedPreviewStateRef.current(nextScene, options);
+  const resetLoadedPreviewState = useCallback<ResetLoadedPreviewState>(
+    (nextScene, options = {}) => {
+      closeActiveColorPicker();
+      setInspectedSceneObject(null);
+      setPulsedSceneObject(null);
+      writeSelectionActivation(DEFAULT_SELECTION_ACTIVATION);
+      setSelectionActivationState(DEFAULT_SELECTION_ACTIVATION);
+      setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
+      setAtomLocateRequest(null);
+      setBondLocateRequest(null);
+      setBondObjectsResetToken((token) => token + 1);
+      if (!options.preserveInspectorOpen) {
+        setIsInspectorOpen(false);
+      }
+      setComponentVisibility(createDefaultComponentVisibility(nextScene));
+      setComponentOpacity(createDefaultComponentOpacity());
+      setStyle(createDefaultStyle());
+      setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
+      setUnitCellLineStyle(DEFAULT_UNIT_CELL_LINE_STYLE);
+      setStructureLineWidth(DEFAULT_STRUCTURE_LINE_WIDTH);
+      setShowCrystalAxisLabels(DEFAULT_SHOW_CRYSTAL_AXIS_LABELS);
+      if (!options.preserveActiveCommonPanelTab) {
+        setActiveCommonPanelTab("display");
+      }
+      setIsStructureSummaryCollapsed(true);
+      setWorkspaceResetRequest((currentRequest) => ({
+        scene: nextScene,
+        token: currentRequest.token + 1,
+      }));
     },
-    [],
+    [closeActiveColorPicker],
   );
   const handlePreviewCleared = useCallback(() => {
     closeActiveColorPicker();
@@ -233,7 +260,7 @@ function AppContent() {
   } = useStructurePreview({
     onBondAlgorithmSceneLoaded: handleBondAlgorithmSceneLoaded,
     onPreviewCleared: handlePreviewCleared,
-    resetLoadedPreviewState: resetLoadedPreviewStateForPreview,
+    resetLoadedPreviewState,
   });
   const visibleScene = useMemo(
     () =>
@@ -336,6 +363,20 @@ function AppContent() {
     interactionLocked: viewState.interactionLocked,
   });
 
+  useLayoutEffect(() => {
+    if (workspaceResetRequest.token === 0) {
+      return;
+    }
+    resetExportState();
+    resetLockedInteractionFeedback();
+    resetCameraForScene(workspaceResetRequest.scene);
+  }, [
+    resetCameraForScene,
+    resetExportState,
+    resetLockedInteractionFeedback,
+    workspaceResetRequest,
+  ]);
+
   useEffect(() => {
     inspectedSceneObjectRef.current = inspectedSceneObject;
   }, [inspectedSceneObject]);
@@ -358,27 +399,6 @@ function AppContent() {
   }, [closeActiveColorPicker, style.colorScheme, style.colorSchemeMode]);
 
   useEffect(() => {
-    if (!previousAtomsVisibleRef.current && componentVisibility.atoms) {
-      setStyle((currentStyle) => ({
-        ...currentStyle,
-        objectStyles: clearObjectStyleProperty(
-          currentStyle.objectStyles,
-          "visible",
-        ),
-      }));
-    }
-
-    previousAtomsVisibleRef.current = componentVisibility.atoms;
-  }, [componentVisibility.atoms]);
-
-  useEffect(() => {
-    if (!previousBondsVisibleRef.current && componentVisibility.bonds) {
-      setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
-    }
-    previousBondsVisibleRef.current = componentVisibility.bonds;
-  }, [componentVisibility.bonds]);
-
-  useEffect(() => {
     if (!pulsedSceneObject) {
       return;
     }
@@ -393,52 +413,6 @@ function AppContent() {
       window.clearTimeout(timeout);
     };
   }, [pulsedSceneObject]);
-
-  const resetLoadedPreviewState = useCallback(
-    (
-      nextScene: SceneSpec | null,
-      options: ResetLoadedPreviewOptions = {},
-    ) => {
-      setErrorMessage(null);
-      closeActiveColorPicker();
-      resetExportState();
-      setInspectedSceneObject(null);
-      setPulsedSceneObject(null);
-      writeSelectionActivation(DEFAULT_SELECTION_ACTIVATION);
-      setSelectionActivationState(DEFAULT_SELECTION_ACTIVATION);
-      setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
-      setAtomLocateRequest(null);
-      setBondLocateRequest(null);
-      setBondObjectsResetToken((token) => token + 1);
-      if (!options.preserveInspectorOpen) {
-        setIsInspectorOpen(false);
-      }
-      setComponentVisibility(createDefaultComponentVisibility(nextScene));
-      setComponentOpacity(createDefaultComponentOpacity());
-      setStyle(createDefaultStyle());
-      setPreviewMeshQuality(defaultPreviewMeshQualityForScene(nextScene));
-      setUnitCellLineStyle(DEFAULT_UNIT_CELL_LINE_STYLE);
-      setStructureLineWidth(DEFAULT_STRUCTURE_LINE_WIDTH);
-      setShowCrystalAxisLabels(DEFAULT_SHOW_CRYSTAL_AXIS_LABELS);
-      if (!options.preserveActiveCommonPanelTab) {
-        setActiveCommonPanelTab("display");
-      }
-      resetLockedInteractionFeedback();
-      setIsStructureSummaryCollapsed(true);
-      resetCameraForScene(nextScene);
-    },
-    [
-      closeActiveColorPicker,
-      resetCameraForScene,
-      resetExportState,
-      resetLockedInteractionFeedback,
-      setErrorMessage,
-    ],
-  );
-
-  useLayoutEffect(() => {
-    resetLoadedPreviewStateRef.current = resetLoadedPreviewState;
-  }, [resetLoadedPreviewState]);
 
   const handlePreviewMeshQualityChange = useCallback((nextQuality: MeshQuality) => {
     setPreviewMeshQuality(nextQuality);
@@ -478,6 +452,18 @@ function AppContent() {
       if (!succeeded) return;
     }
     setComponentVisibility((current) => ({ ...current, [key]: value }));
+    if (value && key === "atoms") {
+      setStyle((currentStyle) => ({
+        ...currentStyle,
+        objectStyles: clearObjectStyleProperty(
+          currentStyle.objectStyles,
+          "visible",
+        ),
+      }));
+    }
+    if (value && key === "bonds") {
+      setBondVisibilityOverrides(createDefaultBondVisibilityOverrides());
+    }
   }, [connectivityStatus, requestConnectivity]);
 
   const handleComponentOpacityChange = useCallback((

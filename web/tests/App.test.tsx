@@ -2713,6 +2713,44 @@ describe("App", () => {
     ).toBe("true");
   });
 
+  test("does not apply a late bonding result to a replacement file", async () => {
+    const user = userEvent.setup();
+    await renderLoadedStructure(user);
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+    const sidebar = screen.getByRole("complementary", { name: "Sidebar" });
+    await openBondObjectsTab(user, sidebar);
+    const bondingRequest = deferredResponse();
+    queueFetchResponse(bondingRequest.promise);
+
+    await user.click(screen.getByRole("combobox", { name: "Bonding algorithm" }));
+    await user.click(await screen.findByRole("option", { name: "Minimum distance" }));
+    await waitFor(() => expect(fetchCalls).toHaveLength(2));
+    const bondingSignal = fetchCalls[1]?.init?.signal;
+
+    const replacementScene = sceneWithPeriodicImages();
+    queueFetchResponse(jsonResponse({
+      ...replacementScene,
+      summary: { ...replacementScene.summary, formula: "KCl" },
+    }));
+    await user.upload(getFileInput(), structureFile("replacement.cif"));
+
+    expect((await screen.findByText("replacement.cif")).isConnected).toBe(true);
+    expect(screen.getByText("KCl").isConnected).toBe(true);
+    expect(bondingSignal?.aborted).toBe(true);
+
+    const staleScene = sceneWithPeriodicImages();
+    bondingRequest.resolve(jsonResponse({
+      ...staleScene,
+      bondAlgorithm: "minimum-distance",
+      summary: { ...staleScene.summary, formula: "LiF" },
+    }));
+    await waitFor(() => {
+      expect(screen.getByText("replacement.cif").isConnected).toBe(true);
+      expect(screen.getByText("KCl").isConnected).toBe(true);
+      expect(screen.queryByText("LiF")).toBeNull();
+    });
+  });
+
   test("keeps the loaded scene when recomputing structure data fails", async () => {
     const user = userEvent.setup();
 
@@ -2788,6 +2826,69 @@ describe("App", () => {
     expect(screen.getByText("No structure loaded").isConnected).toBe(true);
     expect(screen.queryByTestId("lattice-canvas")).toBeNull();
     expect(screen.queryByRole("button", { name: "Sidebar" })).toBeNull();
+  });
+
+  test("keeps the committed workspace while a replacement file is pending or fails", async () => {
+    const user = userEvent.setup();
+    await renderLoadedStructure(user);
+    const commonControls = screen.getByRole("complementary", { name: "Common controls" });
+    const atomsCheckbox = within(commonControls).getByRole("checkbox", { name: "Atoms" });
+    await user.click(atomsCheckbox);
+    await user.click(screen.getByRole("button", { name: "Sidebar" }));
+
+    const pending = deferredResponse();
+    queueFetchResponse(pending.promise);
+    await user.upload(getFileInput(), structureFile("bad.cif"));
+    await waitFor(() => expect(fetchCalls).toHaveLength(2));
+
+    expect(screen.getByTestId("lattice-canvas").isConnected).toBe(true);
+    expect(screen.getByText("NaCl.cif").isConnected).toBe(true);
+    expect(screen.queryByText("bad.cif")).toBeNull();
+    expect(atomsCheckbox.getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByRole("complementary", { name: "Sidebar" }).isConnected).toBe(true);
+
+    pending.resolve(errorResponse("Could not parse bad.cif."));
+    const alert = await screen.findByRole("alert");
+
+    expect(alert.textContent).toContain("pymatgen could not parse this file.");
+    expect(screen.getByTestId("lattice-canvas").isConnected).toBe(true);
+    expect(screen.getByText("NaCl.cif").isConnected).toBe(true);
+    expect(atomsCheckbox.getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByRole("complementary", { name: "Sidebar" }).isConnected).toBe(true);
+  });
+
+  test("aborts a superseded file request and ignores its late result", async () => {
+    const user = userEvent.setup();
+    await renderLoadedStructure(user);
+    const older = deferredResponse();
+    const newer = deferredResponse();
+    queueFetchResponse(older.promise);
+    queueFetchResponse(newer.promise);
+
+    await user.upload(getFileInput(), structureFile("older.cif"));
+    await waitFor(() => expect(fetchCalls).toHaveLength(2));
+    const olderSignal = fetchCalls[1]?.init?.signal;
+
+    await user.upload(getFileInput(), structureFile("newer.cif"));
+    await waitFor(() => expect(fetchCalls).toHaveLength(3));
+    expect(olderSignal?.aborted).toBe(true);
+
+    newer.resolve(jsonResponse({
+      ...sceneWithPeriodicImages(),
+      summary: { ...sceneWithPeriodicImages().summary, formula: "KCl" },
+    }));
+    expect((await screen.findByText("newer.cif")).isConnected).toBe(true);
+    expect(screen.getByText("KCl").isConnected).toBe(true);
+
+    older.resolve(jsonResponse({
+      ...sceneWithPeriodicImages(),
+      summary: { ...sceneWithPeriodicImages().summary, formula: "LiF" },
+    }));
+    await waitFor(() => {
+      expect(screen.getByText("newer.cif").isConnected).toBe(true);
+      expect(screen.getByText("KCl").isConnected).toBe(true);
+      expect(screen.queryByText("LiF")).toBeNull();
+    });
   });
 
   test("shows a backend unavailable alert when the Python server cannot be reached", async () => {
@@ -3061,4 +3162,12 @@ function atom(
     siteId,
     siteIndex,
   };
+}
+
+function deferredResponse() {
+  let resolve!: (response: Response) => void;
+  const promise = new Promise<Response>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
 }
