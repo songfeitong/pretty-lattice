@@ -7,6 +7,12 @@ import { readPrettyLatticeVersion } from "./projectMetadata";
 
 const apiTarget = process.env.PRETTY_LATTICE_API_URL ?? "http://127.0.0.1:8765";
 const prettyLatticeVersion = readPrettyLatticeVersion();
+const apiProxy = {
+  "/api": {
+    target: apiTarget,
+    changeOrigin: true,
+  },
+};
 
 function devFaviconPlugin(): Plugin {
   return {
@@ -31,16 +37,12 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    proxy: {
-      "/api": {
-        target: apiTarget,
-        changeOrigin: true,
-      },
-    },
+    proxy: apiProxy,
   },
   preview: {
     port: 4173,
     strictPort: true,
+    proxy: apiProxy,
   },
   build: {
     chunkSizeWarningLimit: 2000,
