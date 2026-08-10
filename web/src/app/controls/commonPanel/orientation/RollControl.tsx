@@ -50,6 +50,7 @@ export function RollControl({
   const animatedValueRef = useRef(committedValue);
   const lastPreviewValueRef = useRef<number | null>(null);
   const valueTextAtFocusRef = useRef(valueText);
+  const cancelBlurCommitRef = useRef(false);
   const displayedValueText = isValueFocused && !hasValueEdited ? "" : valueText;
 
   function cancelDisplayAnimation() {
@@ -132,6 +133,7 @@ export function RollControl({
 
   function handleValueFocus() {
     valueTextAtFocusRef.current = valueText;
+    cancelBlurCommitRef.current = false;
     setIsValueFocused(true);
     setHasValueEdited(false);
   }
@@ -140,6 +142,11 @@ export function RollControl({
     const wasEdited = hasValueEdited;
     setIsValueFocused(false);
     setHasValueEdited(false);
+
+    if (cancelBlurCommitRef.current) {
+      cancelBlurCommitRef.current = false;
+      return;
+    }
 
     if (!wasEdited) {
       return;
@@ -154,6 +161,7 @@ export function RollControl({
   }
 
   function handleValueChange(event: ChangeEvent<HTMLInputElement>) {
+    cancelBlurCommitRef.current = false;
     setHasValueEdited(true);
     setValueText(event.target.value);
   }
@@ -194,16 +202,12 @@ export function RollControl({
   function handleValueKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter") {
       event.preventDefault();
-      if (event.currentTarget.value.trim() === "") {
-        setValueText(valueTextAtFocusRef.current);
-      } else {
-        commitValueText(event.currentTarget.value);
-      }
       event.currentTarget.blur();
       return;
     }
 
     if (event.key === "Escape") {
+      cancelBlurCommitRef.current = true;
       setValueText(valueTextAtFocusRef.current);
       event.currentTarget.blur();
       return;
@@ -218,6 +222,7 @@ export function RollControl({
       setDisplayedRollValue(normalizedValue);
       setHasValueEdited(true);
       setValueText(formatRollValue(normalizedValue));
+      cancelBlurCommitRef.current = true;
       onValueChange(normalizedValue);
     }
   }

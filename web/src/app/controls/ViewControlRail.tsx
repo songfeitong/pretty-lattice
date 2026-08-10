@@ -1,7 +1,6 @@
 import { Lock, RotateCcw, Unlock } from "lucide-react";
 import {
   type CSSProperties,
-  type KeyboardEvent,
   useEffect,
   useRef,
   useState,
@@ -30,6 +29,7 @@ import {
   snapZoomSliderPosition,
   viewScaleToSliderPosition,
 } from "../viewState";
+import { useCommittedInput } from "./useCommittedInput";
 import type { PreviewFpsStore } from "../../model/previewFpsStore";
 
 const LOCKED_INTERACTION_FEEDBACK_ANIMATION_MS = 420;
@@ -70,7 +70,12 @@ export function ViewControlRail({
   );
   const [lockFeedbackPhase, setLockFeedbackPhase] = useState<"a" | "b" | null>(null);
   const [resetFeedbackPhase, setResetFeedbackPhase] = useState<"a" | "b" | null>(null);
-  const [zoomText, setZoomText] = useState(formatZoomPercent(viewScale));
+  const zoomInput = useCommittedInput({
+    value: viewScale,
+    formatValue: formatZoomPercent,
+    parseValue: parseZoomPercentInput,
+    onCommit: cameraInteractionStore.requestViewScale,
+  });
   const lastLockFeedbackCountRef = useRef(0);
   const lockFeedbackTimeoutRef = useRef<number | null>(null);
   const resetFeedbackTickRef = useRef(0);
@@ -87,10 +92,6 @@ export function ViewControlRail({
     "--zoom-slider-thumb-top": `${sliderThumbTopPx}px`,
   } as CSSProperties;
   const visibleLockFeedbackPhase = interactionLocked ? lockFeedbackPhase : null;
-
-  useEffect(() => {
-    setZoomText(formatZoomPercent(viewScale));
-  }, [viewScale]);
 
   useEffect(
     () => () => {
@@ -172,29 +173,6 @@ export function ViewControlRail({
   function handleZoomSliderPointerEnd() {
     if (isZoomSliderPointerActiveRef.current) {
       scheduleZoomSliderBlur();
-    }
-  }
-
-  function commitZoomText() {
-    const nextScale = parseZoomPercentInput(zoomText);
-    if (nextScale === null) {
-      setZoomText(formatZoomPercent(viewScale));
-      return;
-    }
-
-    cameraInteractionStore.requestViewScale(nextScale);
-  }
-
-  function handleZoomKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.currentTarget.blur();
-      commitZoomText();
-      return;
-    }
-
-    if (event.key === "Escape") {
-      setZoomText(formatZoomPercent(viewScale));
-      event.currentTarget.blur();
     }
   }
 
@@ -317,13 +295,10 @@ export function ViewControlRail({
             <input
               type="text"
               inputMode="decimal"
-              value={zoomText}
+              {...zoomInput.inputProps}
               aria-label={t("view.zoomPercentageInput")}
               className="zoom-percent-input h-full w-[1.35rem] border-0 bg-transparent px-0 text-center font-mono text-[0.68rem] leading-none tabular-nums outline-none"
               data-testid="zoom-input"
-              onBlur={commitZoomText}
-              onChange={(event) => setZoomText(event.target.value)}
-              onKeyDown={handleZoomKeyDown}
             />
             <span
               aria-hidden="true"

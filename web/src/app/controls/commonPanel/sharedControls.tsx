@@ -1,16 +1,15 @@
 import {
   type CSSProperties,
-  type KeyboardEvent,
   type ReactNode,
   useEffect,
   useRef,
-  useState,
 } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
+import { useCommittedInput } from "../useCommittedInput";
 import { COMMON_PANEL_BODY_TEXT_CLASS } from "./styles";
 
 const COMMON_SLIDER_BLUR_DELAY_MS = 500;
@@ -39,48 +38,22 @@ export function PercentSliderRow({
   valueLabel?: string;
 }) {
   const { t } = useTranslation();
-  const [valueText, setValueText] = useState(formatPercentValue(value));
   const sliderBlur = useAutoBlurSlider();
+  const committedInput = useCommittedInput({
+    value,
+    formatValue: formatPercentValue,
+    parseValue: (valueText) => {
+      const parsedValue = parsePercentInput(valueText, { allowZero });
+      return parsedValue === null ? null : clampPercentValue(parsedValue, min, max);
+    },
+    onCommit: onValueChange,
+    onStep: (direction) =>
+      onValueChange(clampPercentValue(value + direction, min, max)),
+  });
   const sliderPosition = percentValueToLinearSliderPosition(value, min, max);
   const sliderStyle = {
     "--opacity-slider-position": `${Math.min(100, Math.max(0, sliderPosition * 100))}%`,
   } as CSSProperties;
-
-  useEffect(() => {
-    setValueText(formatPercentValue(value));
-  }, [value]);
-
-  function commitValueText() {
-    const nextValue = parsePercentInput(valueText, { allowZero });
-    if (nextValue === null) {
-      setValueText(formatPercentValue(value));
-      return;
-    }
-
-    const clampedValue = clampPercentValue(nextValue, min, max);
-    setValueText(formatPercentValue(clampedValue));
-    onValueChange(clampedValue);
-  }
-
-  function handleValueKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.currentTarget.blur();
-      commitValueText();
-      return;
-    }
-
-    if (event.key === "Escape") {
-      setValueText(formatPercentValue(value));
-      event.currentTarget.blur();
-      return;
-    }
-
-    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-      event.preventDefault();
-      const direction = event.key === "ArrowUp" ? 1 : -1;
-      onValueChange(clampPercentValue(value + direction, min, max));
-    }
-  }
 
   return (
     <div
@@ -131,13 +104,10 @@ export function PercentSliderRow({
         <input
           type="text"
           inputMode="numeric"
-          value={valueText}
+          {...committedInput.inputProps}
           aria-label={t("style.valueInput", { target: accessibleLabel, valueLabel })}
           className="opacity-value-input h-full w-[1.35rem] border-0 bg-transparent px-0 text-center font-mono text-[0.68rem] leading-none tabular-nums outline-none"
           disabled={disabled}
-          onBlur={commitValueText}
-          onChange={(event) => setValueText(event.target.value)}
-          onKeyDown={handleValueKeyDown}
         />
         <span
           aria-hidden="true"

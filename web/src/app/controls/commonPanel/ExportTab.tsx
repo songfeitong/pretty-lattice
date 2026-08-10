@@ -1,5 +1,5 @@
 import { AlertTriangleIcon, ImageDown, Link, RotateCcw, Unlink } from "lucide-react";
-import { type CSSProperties, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,7 @@ import {
   TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS,
   TOOL_ICON_BUTTON_RESET_FEEDBACK_B_CLASS,
 } from "../../surface";
+import { useCommittedInput } from "../useCommittedInput";
 import { TOOL_ICON_BUTTON_FEEDBACK_ANIMATION_MS } from "./controlFeedback";
 import {
   COMMON_PANEL_BODY_TEXT_CLASS,
@@ -627,35 +628,12 @@ function ExportSizeInput({
   onCommit: (value: number) => void;
   value: number;
 }) {
-  const [valueText, setValueText] = useState(String(value));
-
-  useEffect(() => {
-    setValueText(String(value));
-  }, [value]);
-
-  function commitValueText() {
-    const nextValue = parseExportDimensionInput(valueText);
-    if (nextValue === null) {
-      setValueText(String(value));
-      return;
-    }
-
-    setValueText(String(nextValue));
-    onCommit(nextValue);
-  }
-
-  function handleValueKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.currentTarget.blur();
-      commitValueText();
-      return;
-    }
-
-    if (event.key === "Escape") {
-      setValueText(String(value));
-      event.currentTarget.blur();
-    }
-  }
+  const committedInput = useCommittedInput({
+    value,
+    formatValue: String,
+    parseValue: parseExportDimensionInput,
+    onCommit,
+  });
 
   return (
     <label className="grid min-w-0 justify-items-start gap-1">
@@ -665,12 +643,9 @@ function ExportSizeInput({
       <Input
         type="text"
         inputMode="numeric"
-        value={valueText}
+        {...committedInput.inputProps}
         aria-label={accessibleLabel}
         className="h-6 w-11 px-1.5 text-left font-mono text-[0.68rem] tabular-nums focus-visible:border-ring/20 focus-visible:bg-background/80 focus-visible:ring-[1px] focus-visible:ring-ring/20 md:text-[0.68rem]"
-        onBlur={commitValueText}
-        onChange={(event) => setValueText(event.target.value)}
-        onKeyDown={handleValueKeyDown}
       />
     </label>
   );

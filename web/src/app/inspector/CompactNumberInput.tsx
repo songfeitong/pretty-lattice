@@ -139,7 +139,12 @@ export function CompactNumberCell({
 }
 
 export function parseFiniteNumber(valueText: string): number | null {
-  const value = Number(valueText.trim());
+  const normalizedValue = valueText.trim();
+  if (normalizedValue === "") {
+    return null;
+  }
+
+  const value = Number(normalizedValue);
   return Number.isFinite(value) ? value : null;
 }
 

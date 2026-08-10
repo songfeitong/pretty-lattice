@@ -1,7 +1,6 @@
 import { RotateCcw } from "lucide-react";
 import {
   type CSSProperties,
-  type KeyboardEvent,
   useEffect,
   useRef,
   useState,
@@ -27,6 +26,7 @@ import {
   TOOL_ICON_BUTTON_RESET_FEEDBACK_A_CLASS,
   TOOL_ICON_BUTTON_RESET_FEEDBACK_B_CLASS,
 } from "../../surface";
+import { useCommittedInput } from "../useCommittedInput";
 import { TOOL_ICON_BUTTON_FEEDBACK_ANIMATION_MS } from "./controlFeedback";
 import {
   clampOpacityValue,
@@ -224,49 +224,23 @@ function ComponentOpacityRow({
   value: number;
 }) {
   const { t } = useTranslation();
-  const [opacityText, setOpacityText] = useState(formatOpacityValue(value));
   const sliderBlur = useAutoBlurSlider();
+  const committedInput = useCommittedInput({
+    value,
+    formatValue: formatOpacityValue,
+    parseValue: (valueText) => {
+      const parsedValue = parseOpacityInput(valueText);
+      return parsedValue === null ? null : clampOpacityValue(parsedValue, max);
+    },
+    onCommit: onOpacityChange,
+    onStep: (direction) =>
+      onOpacityChange(clampOpacityValue(value + direction, max)),
+  });
   const sliderPosition = max > 0 ? value / max : 0;
   const sliderStyle = {
     "--opacity-slider-position": `${Math.min(100, Math.max(0, sliderPosition * 100))}%`,
   } as CSSProperties;
   const inputDisabled = checkboxDisabled || !checked;
-
-  useEffect(() => {
-    setOpacityText(formatOpacityValue(value));
-  }, [value]);
-
-  function commitOpacityText() {
-    const nextOpacity = parseOpacityInput(opacityText);
-    if (nextOpacity === null) {
-      setOpacityText(formatOpacityValue(value));
-      return;
-    }
-
-    const clampedOpacity = clampOpacityValue(nextOpacity, max);
-    setOpacityText(formatOpacityValue(clampedOpacity));
-    onOpacityChange(clampedOpacity);
-  }
-
-  function handleOpacityKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.currentTarget.blur();
-      commitOpacityText();
-      return;
-    }
-
-    if (event.key === "Escape") {
-      setOpacityText(formatOpacityValue(value));
-      event.currentTarget.blur();
-      return;
-    }
-
-    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-      event.preventDefault();
-      const direction = event.key === "ArrowUp" ? 1 : -1;
-      onOpacityChange(clampOpacityValue(value + direction, max));
-    }
-  }
 
   return (
     <div
@@ -341,13 +315,10 @@ function ComponentOpacityRow({
         <input
           type="text"
           inputMode="numeric"
-          value={opacityText}
+          {...committedInput.inputProps}
           disabled={inputDisabled}
           aria-label={t("display.opacityValue", { target: label })}
           className="opacity-value-input h-full w-[1.35rem] border-0 bg-transparent px-0 text-center font-mono text-[0.68rem] leading-none tabular-nums outline-none"
-          onBlur={commitOpacityText}
-          onChange={(event) => setOpacityText(event.target.value)}
-          onKeyDown={handleOpacityKeyDown}
         />
         <span
           aria-hidden="true"
