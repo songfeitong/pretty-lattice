@@ -11,7 +11,7 @@ MAX_STRUCTURE_ATOMS = 25_600
 MAX_SCENE_ATOMS = 64_000
 MAX_SCENE_BONDS = 256_000
 MAX_SCENE_POLYHEDRA = 25_600
-MAX_CUSTOM_BOND_SEARCH_CANDIDATES = MAX_SCENE_BONDS * 4
+MAX_BOND_SEARCH_CANDIDATES = MAX_SCENE_BONDS * 4
 MAX_ESTIMATED_SCENE_BYTES = 80 * MIB
 
 # Conservative estimates cover the repeated identifiers and visibility metadata in SceneSpec.
@@ -71,8 +71,8 @@ def enforce_scene_polyhedron_limit(polyhedron_count: int) -> None:
     )
 
 
-def enforce_custom_bond_search_cost(candidate_count: int) -> None:
-    if candidate_count > MAX_CUSTOM_BOND_SEARCH_CANDIDATES:
+def enforce_bond_search_cost(candidate_count: int) -> None:
+    if candidate_count > MAX_BOND_SEARCH_CANDIDATES:
         raise PreviewLimitExceeded(
             code="bond-cutoff-search-too-expensive",
             message=(

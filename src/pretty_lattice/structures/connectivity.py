@@ -24,9 +24,9 @@ from pretty_lattice.structures.periodic_images import (
     subtract_image_offsets,
 )
 from pretty_lattice.structures.preview_limits import (
-    MAX_CUSTOM_BOND_SEARCH_CANDIDATES,
+    MAX_BOND_SEARCH_CANDIDATES,
     MAX_SCENE_BONDS,
-    enforce_custom_bond_search_cost,
+    enforce_bond_search_cost,
     enforce_scene_bond_limit,
 )
 from pretty_lattice.structures.schema import (
@@ -133,6 +133,11 @@ def build_connectivity(
         element_order=element_order,
     )
     neighbor_analyzer = _neighbor_analyzer_for_bond_algorithm(bond_algorithm)
+    if neighbor_analyzer is not None:
+        _enforce_neighbor_search_cost(
+            structure,
+            _neighbor_analyzer_search_radius(neighbor_analyzer),
+        )
     cutoff_neighbors_by_site = (
         _vesta_neighbor_records_by_site(structure) if bond_algorithm == "cut-off-dict" else None
     )
@@ -457,9 +462,10 @@ def _cutoff_override_neighbor_records_by_site(
     element_order: Mapping[str, int],
 ) -> list[list[NeighborRecord]]:
     max_distance = max(cutoff_range["max"] for cutoff_range in cutoff_overrides.values())
-    _enforce_custom_neighbor_search_cost(structure, max_distance)
-    center_indices, target_indices, images, distances = structure.get_neighbor_list(max_distance)
-    enforce_custom_bond_search_cost(len(center_indices))
+    center_indices, target_indices, images, distances = _bounded_neighbor_list(
+        structure,
+        max_distance,
+    )
     accepted_images = np.rint(images).astype(np.int64)
     neighbors_by_site: list[list[NeighborRecord]] = [[] for _ in structure]
 
@@ -493,15 +499,21 @@ def _cutoff_override_neighbor_records_by_site(
     return neighbors_by_site
 
 
-def _enforce_custom_neighbor_search_cost(
+def _bounded_neighbor_list(
     structure: Structure,
     max_distance: float,
-) -> None:
-    candidate_count = _custom_neighbor_candidate_count(structure, max_distance)
-    enforce_custom_bond_search_cost(candidate_count)
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    _enforce_neighbor_search_cost(structure, max_distance)
+    neighbor_list = structure.get_neighbor_list(max_distance)
+    enforce_bond_search_cost(len(neighbor_list[0]))
+    return neighbor_list
 
 
-def _custom_neighbor_candidate_count(
+def _enforce_neighbor_search_cost(structure: Structure, max_distance: float) -> None:
+    enforce_bond_search_cost(_neighbor_candidate_count(structure, max_distance))
+
+
+def _neighbor_candidate_count(
     structure: Structure,
     max_distance: float,
 ) -> int:
@@ -514,7 +526,7 @@ def _custom_neighbor_candidate_count(
     )
     image_count = math.prod(2 * maximum + 1 for maximum in max_images)
     # Bound the preflight itself before enumerating periodic targets.
-    enforce_custom_bond_search_cost(atom_count * image_count)
+    enforce_bond_search_cost(atom_count * image_count)
 
     positions = [tuple(float(value) for value in position) for position in structure.cart_coords]
     center_bins: dict[tuple[int, int, int], list[int]] = {}
@@ -555,8 +567,8 @@ def _custom_neighbor_candidate_count(
                         center[2] - target[2]
                     ) ** 2 <= squared_distance:
                         candidate_count += 1
-                        if candidate_count > MAX_CUSTOM_BOND_SEARCH_CANDIDATES:
-                            enforce_custom_bond_search_cost(candidate_count)
+                        if candidate_count > MAX_BOND_SEARCH_CANDIDATES:
+                            enforce_bond_search_cost(candidate_count)
 
     return candidate_count
 
@@ -639,8 +651,9 @@ def _neighbor_records_for_site(
 
 
 def _vesta_neighbor_records_by_site(structure: Structure) -> list[list[NeighborRecord]]:
-    center_indices, target_indices, images, distances = structure.get_neighbor_list(
-        _VESTA_CUTOFF_CONFIG.max_distance
+    center_indices, target_indices, images, distances = _bounded_neighbor_list(
+        structure,
+        _VESTA_CUTOFF_CONFIG.max_distance,
     )
     site_codes = np.fromiter(
         (
@@ -686,6 +699,12 @@ def _neighbor_analyzer_for_bond_algorithm(
         return None
 
     raise UnsupportedBondAlgorithmError(f"Unsupported bond algorithm '{bond_algorithm}'.")
+
+
+def _neighbor_analyzer_search_radius(neighbor_analyzer: _NeighborAnalyzer) -> float:
+    if isinstance(neighbor_analyzer, CrystalNN):
+        return float(neighbor_analyzer.search_cutoff)
+    return float(neighbor_analyzer.cutoff)
 
 
 def _merge_bond_visibility_dependency_group(

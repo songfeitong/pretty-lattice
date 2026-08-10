@@ -449,7 +449,7 @@ def test_custom_family_cutoff_rejects_clustered_search_before_neighbor_allocatio
     monkeypatch.setattr(structure, "get_neighbor_list", unexpected_neighbor_list)
 
     with pytest.raises(PreviewLimitExceeded, match="overly expensive") as exc_info:
-        connectivity_module._enforce_custom_neighbor_search_cost(structure, 1.0)
+        connectivity_module._bounded_neighbor_list(structure, 1.0)
 
     assert exc_info.value.code == "bond-cutoff-search-too-expensive"
 
@@ -469,10 +469,56 @@ def test_custom_neighbor_preflight_matches_periodic_neighbor_count(
     structure = normalize_structure_for_preview(read_structure(FIXTURE_DIR / filename))
     center_indices, *_ = structure.get_neighbor_list(cutoff)
 
-    assert connectivity_module._custom_neighbor_candidate_count(
+    assert connectivity_module._neighbor_candidate_count(
         structure,
         cutoff,
     ) == len(center_indices)
+
+
+def test_cutoff_dict_rejects_clustered_search_before_neighbor_allocation(monkeypatch) -> None:
+    atom_count = 1_100
+    structure = Structure(
+        Lattice.cubic(1_000),
+        ["H"] * atom_count,
+        [[index / (atom_count - 1) * 0.0002, 0, 0] for index in range(atom_count)],
+    )
+
+    def unexpected_neighbor_list(*_args: object, **_kwargs: object):
+        pytest.fail("The bounded preflight must reject before get_neighbor_list.")
+
+    monkeypatch.setattr(structure, "get_neighbor_list", unexpected_neighbor_list)
+
+    with pytest.raises(PreviewLimitExceeded, match="overly expensive") as exc_info:
+        connectivity_module._vesta_neighbor_records_by_site(structure)
+
+    assert exc_info.value.code == "bond-cutoff-search-too-expensive"
+
+
+@pytest.mark.parametrize("bond_algorithm", ["crystal-nn", "minimum-distance"])
+def test_neighbor_analyzers_reject_clustered_search_before_neighbor_allocation(
+    monkeypatch,
+    bond_algorithm: str,
+) -> None:
+    atom_count = 1_100
+    structure = Structure(
+        Lattice.cubic(1_000),
+        ["H"] * atom_count,
+        [[0.4 + index / (atom_count - 1) * 0.0002, 0.123, 0.234] for index in range(atom_count)],
+    )
+
+    def unexpected_neighbors(*_args: object, **_kwargs: object):
+        pytest.fail("The bounded preflight must reject before analyzer neighbor allocation.")
+
+    monkeypatch.setattr(Structure, "get_neighbors", unexpected_neighbors)
+
+    with pytest.raises(PreviewLimitExceeded, match="overly expensive") as exc_info:
+        build_scene_response(
+            structure,
+            bond_algorithm=bond_algorithm,
+            include_connectivity=True,
+        )
+
+    assert exc_info.value.code == "bond-cutoff-search-too-expensive"
 
 
 def test_custom_family_cutoff_range_is_inclusive_and_cannot_add_a_new_family() -> None:
@@ -1069,12 +1115,48 @@ def test_scene_response_returns_warning_when_polyhedra_analysis_fails(monkeypatc
     ]
 
 
+def test_explicit_connectivity_recalculation_fails_atomically_when_bond_build_fails(
+    monkeypatch,
+) -> None:
+    structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
+
+    def fail_bonds(**_kwargs: object) -> list[dict[str, object]]:
+        raise RuntimeError("bond serialization unavailable")
+
+    monkeypatch.setattr(connectivity_module, "build_bonds", fail_bonds)
+
+    with pytest.raises(CustomBondRecalculationError, match="bond serialization unavailable"):
+        build_scene_response(structure, include_connectivity=True)
+
+
+def test_explicit_connectivity_recalculation_keeps_polyhedra_failure_nonfatal(
+    monkeypatch,
+) -> None:
+    structure = read_structure(FIXTURE_DIR / "SrTiO3.cif")
+
+    def fail_polyhedra(**_kwargs: object) -> list[dict[str, object]]:
+        raise RuntimeError("polyhedra hull unavailable")
+
+    monkeypatch.setattr(polyhedra_module, "build_polyhedra", fail_polyhedra)
+
+    scene = build_scene_response(structure, include_connectivity=True)
+
+    assert scene["connectivity"] == "ready"
+    assert scene["bonds"]
+    assert scene["polyhedra"] == []
+    assert scene["warnings"] == [
+        {
+            "code": "polyhedra-analysis-failed",
+            "message": "Polyhedra analysis with CrystalNN failed: polyhedra hull unavailable",
+        }
+    ]
+
+
 @pytest.mark.parametrize(
     ("module", "attribute", "failure"),
     [
         (connectivity_module, "build_connectivity", "neighbor graph unavailable"),
         (connectivity_module, "build_bonds", "bond serialization unavailable"),
-        (polyhedra_module, "build_polyhedra", "polyhedra hull unavailable"),
     ],
 )
 def test_custom_recalculation_fails_atomically(

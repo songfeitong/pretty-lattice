@@ -91,7 +91,12 @@ def _build_scene_spec(
     bond_families = []
     polyhedra = []
     warnings = []
-    strict_recalculation = bool(bond_cutoff_overrides)
+    if bond_cutoff_overrides:
+        bond_failure_context = "Custom bonding recalculation"
+    elif include_connectivity is True:
+        bond_failure_context = "Connectivity calculation"
+    else:
+        bond_failure_context = None
     if can_generate_periodic_images and not connectivity_deferred:
         boundary_source_keys = [
             key for key, atom in atom_data.atom_records.items() if "boundary" in atom.image_reasons
@@ -117,7 +122,7 @@ def _build_scene_spec(
                     analysis="Bond analysis",
                     bond_algorithm=selected_bond_algorithm,
                     exc=exc,
-                    strict_recalculation=strict_recalculation,
+                    fatal_context=bond_failure_context,
                 )
             )
         else:
@@ -144,7 +149,7 @@ def _build_scene_spec(
                         analysis="Bond analysis",
                         bond_algorithm=selected_bond_algorithm,
                         exc=exc,
-                        strict_recalculation=strict_recalculation,
+                        fatal_context=bond_failure_context,
                     )
                 )
 
@@ -165,7 +170,7 @@ def _build_scene_spec(
                         analysis="Polyhedra analysis",
                         bond_algorithm=selected_bond_algorithm,
                         exc=exc,
-                        strict_recalculation=strict_recalculation,
+                        fatal_context=None,
                     )
                 )
 
@@ -198,13 +203,11 @@ def _analysis_failure(
     analysis: str,
     bond_algorithm: BondAlgorithm,
     exc: Exception,
-    strict_recalculation: bool,
+    fatal_context: str | None,
 ) -> dict[str, str]:
     message = f"{analysis} with {bond_algorithm_label(bond_algorithm)} failed: {exc}"
-    if strict_recalculation:
-        raise CustomBondRecalculationError(
-            f"Custom bonding recalculation failed: {message}"
-        ) from exc
+    if fatal_context is not None:
+        raise CustomBondRecalculationError(f"{fatal_context} failed: {message}") from exc
     return {
         "code": code,
         "message": message,

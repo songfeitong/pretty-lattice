@@ -337,6 +337,36 @@ async def test_structure_preview_upload_endpoint_returns_bond_warning(monkeypatc
 
 
 @pytest.mark.anyio
+async def test_explicit_connectivity_endpoint_fails_instead_of_returning_ready_without_bonds(
+    monkeypatch,
+) -> None:
+    payload = (FIXTURE_DIR / "SrTiO3.cif").read_bytes()
+
+    def fail_bonds(**_kwargs: object) -> list[dict[str, object]]:
+        raise RuntimeError("neighbor graph unavailable")
+
+    monkeypatch.setattr(connectivity_module, "build_bonds", fail_bonds)
+
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app()), base_url="http://testserver"
+    ) as client:
+        response = await client.post(
+            "/api/structure-preview?includeConnectivity=true",
+            content=payload,
+            headers={"x-pretty-lattice-filename": "SrTiO3.cif"},
+        )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == {
+        "code": "bond-recalculation-failed",
+        "message": (
+            "Connectivity calculation failed: Bond analysis with CrystalNN "
+            "failed: neighbor graph unavailable"
+        ),
+    }
+
+
+@pytest.mark.anyio
 async def test_structure_preview_upload_endpoint_requires_pymatgen_recognizable_filename() -> None:
     payload = (FIXTURE_DIR / "SrTiO3.cif").read_bytes()
 

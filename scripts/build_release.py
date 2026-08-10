@@ -4,6 +4,7 @@ import argparse
 import shutil
 import subprocess
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 
@@ -27,9 +28,12 @@ def main() -> None:
     run(["bun", "run", "build"], cwd=WEB_ROOT)
     copy_web_dist()
 
-    run(["uv", "build", "--out-dir", str(dist_dir), "--clear"], cwd=PROJECT_ROOT)
-    wheel_path = newest_wheel(dist_dir)
-    verify_wheel_static_assets(wheel_path)
+    with tempfile.TemporaryDirectory(prefix="pretty-lattice-build-") as staging_dir_name:
+        staging_dir = Path(staging_dir_name)
+        run(["uv", "build", "--out-dir", str(staging_dir)], cwd=PROJECT_ROOT)
+        wheel_path = newest_wheel(staging_dir)
+        verify_wheel_static_assets(wheel_path)
+        publish_release_artifacts(staging_dir, dist_dir)
     if not args.keep_web_static:
         clean_web_static()
 
@@ -113,6 +117,20 @@ def newest_wheel(dist_dir: Path) -> Path:
     if not wheels:
         raise SystemExit(f"No wheel found in {dist_dir}")
     return wheels[-1]
+
+
+def publish_release_artifacts(staging_dir: Path, dist_dir: Path) -> None:
+    artifacts = [
+        artifact
+        for artifact in staging_dir.iterdir()
+        if artifact.is_file() and artifact.suffix in {".whl", ".gz"}
+    ]
+    if not artifacts:
+        raise SystemExit(f"No release artifacts found in {staging_dir}")
+
+    dist_dir.mkdir(parents=True, exist_ok=True)
+    for artifact in artifacts:
+        shutil.copy2(artifact, dist_dir / artifact.name)
 
 
 def verify_wheel_static_assets(wheel_path: Path) -> None:
