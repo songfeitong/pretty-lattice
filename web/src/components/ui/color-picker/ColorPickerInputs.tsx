@@ -726,4 +726,3 @@ function OklchInput(props: FormatInputProps) {
 }
 
 export { ColorPickerInput };
-

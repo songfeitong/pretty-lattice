@@ -475,4 +475,3 @@ export {
   ColorPickerHueSlider,
   ColorPickerSwatch,
 };
-
