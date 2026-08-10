@@ -28,6 +28,7 @@ import { createBondRenderItems } from "./BondRenderItems";
 import { BOND_RADIUS } from "./sceneGeometry";
 import { CellFrame } from "./CellFrame";
 import { MemoizedBatchedPolyhedra } from "./BatchedPolyhedra";
+import { isRenderableItem } from "./renderItemPolicy";
 export {
   POLYHEDRON_EDGE_COLOR,
   POLYHEDRON_EDGE_OPACITY,
@@ -336,15 +337,6 @@ export function StructureSceneObjects({
       }),
     [colorScheme, colorOverrides, componentOpacity.bonds, scene.atoms, scene.bonds, style],
   );
-  const bondRenderItemGroups = useMemo(() => {
-    const groups = new Map<number, typeof bondRenderItems>();
-    for (const item of bondRenderItems) {
-      const group = groups.get(item.opacity) ?? [];
-      group.push(item);
-      groups.set(item.opacity, group);
-    }
-    return [...groups.entries()];
-  }, [bondRenderItems]);
   const handleSceneClear = useCallback(() => {
     if (interactionLocked) {
       return;
@@ -357,7 +349,8 @@ export function StructureSceneObjects({
   return (
     <group onClick={handleSceneClear} onPointerMissed={handleSceneClear}>
       <group position={groupPosition}>
-        {showUnitCell ? (
+        {showUnitCell &&
+        isRenderableItem({ opacity: componentOpacity.unitCell }) ? (
           <CellFrame
             color={unitCellLineColor}
             fog={style.fogEnabled && style.fogAffectsUnitCell}
@@ -367,20 +360,21 @@ export function StructureSceneObjects({
             vectors={scene.cell.vectors}
           />
         ) : null}
-        <MemoizedBatchedPolyhedra
-          atoms={scene.atoms}
-          colorScheme={colorScheme}
-          colorOverrides={colorOverrides}
-          materialFamily={materialFamilies.polyhedron}
-          opacity={componentOpacity.polyhedra / 100}
-          polyhedra={scene.polyhedra}
-          lineWidthScale={polyhedronEdgeLineWidthScale}
-          style={style}
-        />
-        {bondRenderItemGroups.map(([opacity, items]) => (
+        {isRenderableItem({ opacity: componentOpacity.polyhedra }) ? (
+          <MemoizedBatchedPolyhedra
+            atoms={scene.atoms}
+            colorScheme={colorScheme}
+            colorOverrides={colorOverrides}
+            materialFamily={materialFamilies.polyhedron}
+            opacity={componentOpacity.polyhedra / 100}
+            polyhedra={scene.polyhedra}
+            lineWidthScale={polyhedronEdgeLineWidthScale}
+            style={style}
+          />
+        ) : null}
+        {bondRenderItems.length > 0 ? (
           <BatchedBonds
-            key={opacity}
-            bondRenderItems={items}
+            bondRenderItems={bondRenderItems}
             colorMode={style.bondColorMode}
             inspectedBondId={inspectedBondId}
             interactionLocked={interactionLocked}
@@ -394,9 +388,8 @@ export function StructureSceneObjects({
             pulseToken={pulseBondToken}
             selectionHighlightColor={selectionHighlightColor}
             thicknessScale={style.bondThickness / 100}
-            opacity={opacity / 100}
           />
-        ))}
+        ) : null}
         {showAtoms ? (
           <BatchedAtoms
             atomOpacity={componentOpacity.atoms}

@@ -103,29 +103,58 @@ describe("material presets", () => {
     );
   });
 
-  test("accepts JSON-compatible material props without per-property whitelisting", () => {
-    const catalog = validateMaterialPresetData(
-      catalogWithPreset({
-        material: {
-          props: {
-            emissive: "#ffffff",
-            emissiveIntensity: 0.08,
-            metalness: 0.12,
-            customFutureProp: [1, "two", false],
+  test("accepts appearance props from the material-specific allowlist", () => {
+    expect(
+      validateMaterialPresetData(
+        catalogWithPreset({
+          material: {
+            props: {
+              emissive: "#ffffff",
+              emissiveIntensity: 0.08,
+              metalness: 0.12,
+              roughness: 0.4,
+            },
+            type: "MeshStandardMaterial",
           },
-          type: "MeshStandardMaterial",
-        },
-      }),
-    );
+        }),
+      ).presets[0]?.material.props,
+    ).toMatchObject({ emissive: "#ffffff", metalness: 0.12 });
+  });
 
-    const [preset] = catalog.presets;
-    expect(preset).toBeDefined();
-    expect(preset!.material.props).toMatchObject({
-      emissive: "#ffffff",
-      emissiveIntensity: 0.08,
-      metalness: 0.12,
-      customFutureProp: [1, "two", false],
-    });
+  test("rejects material props that can override renderer policy", () => {
+    for (const property of [
+      "blending",
+      "colorWrite",
+      "depthTest",
+      "depthWrite",
+      "opacity",
+      "side",
+      "transparent",
+    ]) {
+      expect(() =>
+        validateMaterialPresetData(
+          catalogWithPreset({
+            material: {
+              props: { [property]: false },
+              type: "MeshStandardMaterial",
+            },
+          }),
+        ),
+      ).toThrow(`material presets.presets[0].material.props.${property} is not supported`);
+    }
+  });
+
+  test("rejects unknown future material props until they are reviewed", () => {
+    expect(() =>
+      validateMaterialPresetData(
+        catalogWithPreset({
+          material: {
+            props: { customFutureProp: [1, "two", false] },
+            type: "MeshStandardMaterial",
+          },
+        }),
+      ),
+    ).toThrow("material presets.presets[0].material.props.customFutureProp is not supported");
   });
 
   test("accepts per-target material overrides", () => {

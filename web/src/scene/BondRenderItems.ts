@@ -13,6 +13,7 @@ import type {
 } from "../model";
 import { resolveAtomAppearance } from "../model";
 import { resolveBondOpacityForStyle, resolveBondRadiusForStyle } from "../model";
+import { isRenderableItem } from "./renderItemPolicy";
 
 const BOND_UP_AXIS = new Vector3(0, 1, 0);
 
@@ -86,6 +87,12 @@ export function createBondRenderItems({
           }).color
         : bondColor;
 
+    const opacity =
+      resolveBondOpacityForStyle(bond, style.objectStyles, bondOpacity) / 100;
+    if (!isRenderableItem({ opacity })) {
+      continue;
+    }
+
     items.push({
       bond,
       center: start.clone().add(end).multiplyScalar(0.5),
@@ -93,11 +100,7 @@ export function createBondRenderItems({
       endColor,
       id: bond.id,
       length,
-      opacity: resolveBondOpacityForStyle(
-        bond,
-        style.objectStyles,
-        bondOpacity,
-      ),
+      opacity,
       quaternion: new Quaternion().setFromUnitVectors(
         BOND_UP_AXIS,
         direction.clone().normalize(),

@@ -61,9 +61,11 @@ export function ExportSceneContent({
     }
   }, [camera, exportFramePlan]);
 
+  const fogColor = exportFogColor(backgroundColor);
+
   return (
     <>
-      <SceneFog color={backgroundColor ?? undefined} layout={layout} style={style} />
+      {fogColor ? <SceneFog color={fogColor} layout={layout} style={style} /> : null}
       <MemoizedStructureSceneObjects
         componentOpacity={componentOpacity}
         groupPosition={layout.groupPosition}
@@ -80,4 +82,10 @@ export function ExportSceneContent({
       />
     </>
   );
+}
+
+export function exportFogColor(backgroundColor: string | null): string | null {
+  // Three.js fog blends RGB without reducing alpha, so it cannot fade into a
+  // transparent export background without leaving a colored silhouette.
+  return backgroundColor;
 }

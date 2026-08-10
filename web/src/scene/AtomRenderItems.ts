@@ -4,6 +4,7 @@ import type { AtomSpec } from "../api/scene";
 import type { ElementColorOverrides } from "../model/colorSchemes";
 import type { StyleState } from "../model";
 import { resolveAtomAppearance } from "../model";
+import { renderableItems } from "./renderItemPolicy";
 import type { VectorTuple } from "./viewMath";
 
 export interface AtomRenderItem {
@@ -29,23 +30,25 @@ export function createAtomRenderItems({
   colorOverrides?: ElementColorOverrides;
   style: StyleState;
 }): AtomRenderItem[] {
-  return atoms.map((atom) => {
-    const appearance = resolveAtomAppearance({
-      atom,
-      colorOverrides,
-      colorScheme,
-      style: { ...style, atomOpacity },
-    });
-    return {
-      atom,
-      baseColor: new Color(appearance.color),
-      color: appearance.color,
-      id: atom.id,
-      opacity: appearance.opacity / 100,
-      position: atom.position,
-      radius: appearance.radius,
-    };
-  });
+  return renderableItems(
+    atoms.map((atom) => {
+      const appearance = resolveAtomAppearance({
+        atom,
+        colorOverrides,
+        colorScheme,
+        style: { ...style, atomOpacity },
+      });
+      return {
+        atom,
+        baseColor: new Color(appearance.color),
+        color: appearance.color,
+        id: atom.id,
+        opacity: appearance.opacity / 100,
+        position: atom.position,
+        radius: appearance.radius,
+      };
+    }),
+  );
 }
 
 export function atomRenderItemById(items: AtomRenderItem[]): Map<string, AtomRenderItem> {

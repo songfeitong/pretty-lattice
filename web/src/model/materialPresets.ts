@@ -95,6 +95,46 @@ const SUPPORTED_LIGHT_TYPES = new Set<MaterialPresetLightType>([
   "HemisphereLight",
   "cameraDirectional",
 ]);
+const MATERIAL_PROP_ALLOWLIST: Record<
+  MaterialPresetMaterialType,
+  ReadonlySet<string>
+> = {
+  MeshBasicMaterial: new Set(),
+  MeshLambertMaterial: new Set([
+    "emissive",
+    "emissiveIntensity",
+    "flatShading",
+  ]),
+  MeshPhysicalMaterial: new Set([
+    "attenuationColor",
+    "attenuationDistance",
+    "clearcoat",
+    "clearcoatRoughness",
+    "emissive",
+    "emissiveIntensity",
+    "flatShading",
+    "ior",
+    "iridescence",
+    "iridescenceIOR",
+    "metalness",
+    "reflectivity",
+    "roughness",
+    "sheen",
+    "sheenColor",
+    "sheenRoughness",
+    "specularColor",
+    "specularIntensity",
+    "thickness",
+    "transmission",
+  ]),
+  MeshStandardMaterial: new Set([
+    "emissive",
+    "emissiveIntensity",
+    "flatShading",
+    "metalness",
+    "roughness",
+  ]),
+};
 
 export const MATERIAL_PRESET_CATALOG = buildMaterialPresetCatalog(
   materialPresetCatalogData,
@@ -360,10 +400,11 @@ function parseLight(data: unknown, path: string): MaterialPresetLight {
 function parseMaterial(data: unknown, path: string): MaterialPresetMaterial {
   const material = expectRecord(data, path);
   assertKnownKeys(material, path, ["props", "type"]);
+  const type = expectMaterialType(material.type, `${path}.type`);
 
   return {
-    props: expectProps(material.props, `${path}.props`),
-    type: expectMaterialType(material.type, `${path}.type`),
+    props: expectMaterialProps(material.props, `${path}.props`, type),
+    type,
   };
 }
 
@@ -440,6 +481,22 @@ function expectProps(data: unknown, path: string): MaterialPresetProps {
   }
 
   return props as MaterialPresetProps;
+}
+
+function expectMaterialProps(
+  data: unknown,
+  path: string,
+  type: MaterialPresetMaterialType,
+): MaterialPresetProps {
+  const props = expectProps(data, path);
+  const allowedProps = MATERIAL_PROP_ALLOWLIST[type];
+  for (const key of Object.keys(props)) {
+    if (!allowedProps.has(key)) {
+      throw new Error(`${path}.${key} is not supported for ${type}.`);
+    }
+  }
+
+  return props;
 }
 
 function expectJsonValue(data: unknown, path: string): MaterialPresetJsonValue {

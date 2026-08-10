@@ -42,6 +42,11 @@ import {
   easeOutCubic,
 } from "./atomHighlight";
 import { selectionPointerAction } from "./selectionActivation";
+import {
+  batchedInstanceRgbaProgramCacheKey,
+  enableBatchedInstanceRgba,
+  setBatchedInstanceRgba,
+} from "./batchedInstanceRgba";
 
 interface BondBatchBuild {
   itemCount: number;
@@ -64,7 +69,6 @@ export function BatchedBonds({
   onInspect,
   onLockedInteractionAttempt,
   onPulse,
-  opacity,
   pulseBondId,
   pulseToken,
   selectionHighlightColor = SELECTION_HIGHLIGHT_COLOR,
@@ -80,7 +84,6 @@ export function BatchedBonds({
   onInspect?: (bondId: string | null) => void;
   onLockedInteractionAttempt?: () => void;
   onPulse?: (bondId: string) => void;
-  opacity: number;
   pulseBondId: string | null;
   pulseToken: number;
   selectionHighlightColor?: string;
@@ -211,7 +214,7 @@ export function BatchedBonds({
     return null;
   }
 
-  const isTransparent = opacity < 1;
+  const isTransparent = batch.items.some((item) => item.opacity < 1);
   const usesVertexColors = batch.mode === "bicolor";
   const unicolorBondColor = batch.items[0]?.startColor ?? DEFAULT_BOND_COLOR;
 
@@ -229,9 +232,11 @@ export function BatchedBonds({
           color={usesVertexColors ? undefined : unicolorBondColor}
           depthWrite={!isTransparent}
           materialFamily={materialFamily}
-          opacity={opacity}
+          onBeforeCompile={enableBatchedInstanceRgba}
+          opacity={1}
           transparent={isTransparent}
           vertexColors={usesVertexColors}
+          customProgramCacheKey={batchedInstanceRgbaProgramCacheKey}
         />
       </batchedMesh>
       {activeHighlightItem ? (
@@ -305,6 +310,7 @@ function populateBatchedBondMesh(
   pickRegistry: BatchPickRegistry<BondRenderItem>,
 ) {
   const matrix = new Matrix4();
+  const instanceColor = new Color(0xffffff);
   const unicolorGeometry =
     batch.mode === "unicolor"
       ? unicolorBondGeometry(1, batch.radialSegments)
@@ -326,6 +332,7 @@ function populateBatchedBondMesh(
         : new Vector3(1, 1, 1);
     matrix.compose(item.center, item.quaternion, scale);
     mesh.setMatrixAt(batchId, matrix);
+    setBatchedInstanceRgba(mesh, batchId, instanceColor, item.opacity);
     registerBatchPickItem(pickRegistry, batchId, item);
   }
 

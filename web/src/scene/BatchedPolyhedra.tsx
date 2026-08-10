@@ -34,7 +34,7 @@ const POLYHEDRON_EDGE_OPACITY_RATIO =
   POLYHEDRON_EDGE_OPACITY / POLYHEDRON_SURFACE_OPACITY;
 
 export interface PolyhedronSurfaceBatchBuild {
-  edgeItems: PolyhedronEdgeRenderItem[];
+  edgePositions: number[];
   itemCount: number;
   items: PolyhedronSurfaceRenderItem[];
   key: string;
@@ -45,11 +45,6 @@ export interface PolyhedronSurfaceBatchBuild {
 export interface PolyhedronSurfaceRenderItem {
   color: Color;
   geometry: BufferGeometry;
-  polyhedron: PolyhedronSpec;
-  polyhedronIndex: number;
-}
-
-export interface PolyhedronEdgeRenderItem {
   polyhedron: PolyhedronSpec;
   polyhedronIndex: number;
 }
@@ -143,15 +138,13 @@ export function BatchedPolyhedra({
           />
         </batchedMesh>
       ) : null}
-      {batch.edgeItems.map((item) => (
-        <MemoizedPolyhedronEdges
-          key={item.polyhedronIndex}
-          atoms={atoms}
+      {batch.edgePositions.length > 0 ? (
+        <PolyhedronEdges
+          positions={batch.edgePositions}
           lineWidthScale={lineWidthScale}
           opacity={opacity}
-          polyhedron={item.polyhedron}
         />
-      ))}
+      ) : null}
     </group>
   );
 }
@@ -171,7 +164,7 @@ export function createPolyhedronSurfaceBatchBuild({
   polyhedra: PolyhedronSpec[];
   style: StyleState;
 }): PolyhedronSurfaceBatchBuild | null {
-  const edgeItems: PolyhedronEdgeRenderItem[] = [];
+  const edgePositions: number[] = [];
   const items: PolyhedronSurfaceRenderItem[] = [];
   const seenSurfaceFaceKeys = new Set<string>();
   let maxIndexCount = 0;
@@ -187,10 +180,7 @@ export function createPolyhedronSurfaceBatchBuild({
       return;
     }
 
-    edgeItems.push({
-      polyhedron,
-      polyhedronIndex,
-    });
+    edgePositions.push(...polyhedronEdgePositions(polyhedron, atoms));
 
     const surfacePolyhedron = uniqueSurfacePolyhedron(
       polyhedron,
@@ -233,12 +223,12 @@ export function createPolyhedronSurfaceBatchBuild({
     maxVertexCount += vertexCount;
   });
 
-  if (items.length === 0 && edgeItems.length === 0) {
+  if (items.length === 0 && edgePositions.length === 0) {
     return null;
   }
 
   return {
-    edgeItems,
+    edgePositions,
     itemCount: items.length,
     items,
     key: polyhedronSurfaceBatchKey(items),
@@ -374,31 +364,21 @@ function populateBatchedPolyhedraSurfaces(
 }
 
 function PolyhedronEdges({
-  atoms,
   lineWidthScale,
   opacity,
-  polyhedron,
+  positions,
 }: {
-  atoms: AtomSpec[];
   lineWidthScale: number;
   opacity: number;
-  polyhedron: PolyhedronSpec;
+  positions: number[];
 }) {
-  const centerAtom = atoms[polyhedron.centerAtomIndex];
-  const geometry = useMemo(
-    () => (centerAtom ? polyhedronGeometryFromAtoms(polyhedron, atoms) : null),
-    [atoms, centerAtom, polyhedron],
-  );
   const edgeLine = useMemo(() => {
-    if (!geometry) {
+    if (positions.length === 0) {
       return null;
     }
 
-    const edgeGeometry = new EdgesGeometry(geometry);
-    const edgePositions = edgeGeometry.getAttribute("position");
     const lineGeometry = new LineSegmentsGeometry();
-    lineGeometry.setPositions(Array.from(edgePositions.array));
-    edgeGeometry.dispose();
+    lineGeometry.setPositions(positions);
 
     const material = new LineMaterial({
       alphaToCoverage: true,
@@ -415,13 +395,7 @@ function PolyhedronEdges({
     const line = new LineSegments2(lineGeometry, material);
     line.renderOrder = STRUCTURE_RENDER_ORDER.polyhedronEdge;
     return line;
-  }, [geometry, lineWidthScale, opacity]);
-
-  useEffect(() => {
-    return () => {
-      geometry?.dispose();
-    };
-  }, [geometry]);
+  }, [lineWidthScale, opacity, positions]);
 
   useEffect(() => {
     return () => {
@@ -437,7 +411,21 @@ function PolyhedronEdges({
   return <primitive object={edgeLine} />;
 }
 
-const MemoizedPolyhedronEdges = memo(PolyhedronEdges);
+function polyhedronEdgePositions(
+  polyhedron: PolyhedronSpec,
+  atoms: AtomSpec[],
+): number[] {
+  const geometry = polyhedronGeometryFromAtoms(polyhedron, atoms);
+  if (!geometry) {
+    return [];
+  }
+
+  const edgeGeometry = new EdgesGeometry(geometry);
+  const positions = Array.from(edgeGeometry.getAttribute("position").array);
+  edgeGeometry.dispose();
+  geometry.dispose();
+  return positions;
+}
 
 function prepareBatchGeometry(
   geometry: BufferGeometry | null,

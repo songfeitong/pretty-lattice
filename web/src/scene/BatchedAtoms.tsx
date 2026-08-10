@@ -10,7 +10,6 @@ import {
   BatchedMesh,
   BufferGeometry,
   Color,
-  type DataTexture,
   Matrix4,
   Quaternion,
   ShaderMaterial,
@@ -51,9 +50,10 @@ import {
 import type { VectorTuple } from "./viewMath";
 import { selectionPointerAction } from "./selectionActivation";
 import {
-  batchedAtomOpacityProgramCacheKey,
-  enableBatchedAtomOpacity,
-} from "./batchedAtomOpacity";
+  batchedInstanceRgbaProgramCacheKey,
+  enableBatchedInstanceRgba,
+  setBatchedInstanceRgba,
+} from "./batchedInstanceRgba";
 
 interface AtomBatchBuild {
   itemCount: number;
@@ -262,10 +262,10 @@ export function BatchedAtoms({
           // so atoms keep stable structure-layer occlusion against bonds.
           depthWrite={true}
           materialFamily={materialFamily}
-          onBeforeCompile={enableBatchedAtomOpacity}
+          onBeforeCompile={enableBatchedInstanceRgba}
           opacity={1}
           transparent={isTransparent}
-          customProgramCacheKey={batchedAtomOpacityProgramCacheKey}
+          customProgramCacheKey={batchedInstanceRgbaProgramCacheKey}
         />
       </batchedMesh>
       {activeHighlightItem ? (
@@ -355,8 +355,7 @@ function populateBatchedAtomMesh(
     scale.setScalar(item.radius);
     matrix.compose(position, quaternion, scale);
     mesh.setMatrixAt(batchId, matrix);
-    mesh.setColorAt(batchId, item.baseColor);
-    setAtomBatchOpacity(mesh, batchId, item.opacity);
+    setBatchedInstanceRgba(mesh, batchId, item.baseColor, item.opacity);
     registerBatchPickItem(pickRegistry, batchId, item);
   }
 
@@ -376,18 +375,6 @@ function itemForAtomId(
 
 function setAtomBatchColor(mesh: BatchedMesh, batchId: number, color: Color) {
   mesh.setColorAt(batchId, color);
-}
-
-function setAtomBatchOpacity(mesh: BatchedMesh, batchId: number, opacity: number) {
-  const colorTexture = (mesh as BatchedMesh & { _colorsTexture: DataTexture | null })
-    ._colorsTexture;
-  if (!colorTexture) {
-    return;
-  }
-
-  // Three stores batched colors in RGBA texels but its public setter only writes RGB.
-  colorTexture.image.data[batchId * 4 + 3] = opacity;
-  colorTexture.needsUpdate = true;
 }
 
 function AtomHighlightAnimator({

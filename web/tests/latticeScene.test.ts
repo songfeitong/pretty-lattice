@@ -1,12 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { OrthographicCamera, Quaternion, Vector3 } from "three";
 
-import type { AtomSpec, SceneSpec } from "../src/api/scene";
+import type { AtomSpec, BondSpec, SceneSpec } from "../src/api/scene";
 import {
   createDefaultComponentOpacity,
   createDefaultComponentVisibility,
   createDefaultStyle,
   setAtomOverrideProperty,
+  setBondOverrideProperty,
   visibleSceneForComponents,
 } from "../src/model";
 import {
@@ -36,6 +37,7 @@ import {
   disposePolyhedronSurfaceBatchBuild,
 } from "../src/scene/BatchedPolyhedra";
 import { createAtomRenderItems } from "../src/scene/AtomRenderItems";
+import { createBondRenderItems } from "../src/scene/BondRenderItems";
 import {
   createBatchPickRegistry,
   itemForBatchId,
@@ -50,6 +52,7 @@ import {
   type StructureExportFramePlan,
 } from "../src/scene/exportFrame";
 import { structureLineWidthScale } from "../src/scene/exportRenderer";
+import { exportFogColor } from "../src/scene/ExportSceneContent";
 import {
   applyOrthographicFrustum,
   computeCameraFitZoom,
@@ -274,6 +277,24 @@ describe("computeSceneLayout", () => {
       style: defaultStyle,
     });
     expect(inheritedItem?.opacity).toBe(0.7);
+
+    const hiddenStyle = {
+      ...defaultStyle,
+      objectStyles: setAtomOverrideProperty(
+        defaultStyle.objectStyles,
+        "Si-0",
+        "opacity",
+        0,
+      ),
+    };
+    expect(
+      createAtomRenderItems({
+        atomOpacity: 70,
+        atoms: [atom("Si-0", [1, 2, 3])],
+        colorScheme: hiddenStyle.colorScheme,
+        style: hiddenStyle,
+      }),
+    ).toEqual([]);
   });
 
   test("resolves batched pick items including batch id zero", () => {
@@ -285,6 +306,38 @@ describe("computeSceneLayout", () => {
     expect(itemForBatchId(registry, 0)).toBe(item);
     expect(itemForBatchId(registry, undefined)).toBeNull();
     expect(registry.batchIdByItemId.get("Si-0")).toBe(0);
+  });
+
+  test("excludes zero-opacity bonds before batching and picking", () => {
+    const defaultStyle = createDefaultStyle();
+    const hiddenBond = bond("bond-hidden", 0, 1);
+    const visibleBond = bond("bond-visible", 1, 2);
+    const style = {
+      ...defaultStyle,
+      objectStyles: setBondOverrideProperty(
+        defaultStyle.objectStyles,
+        hiddenBond.id,
+        "opacity",
+        0,
+      ),
+    };
+    const items = createBondRenderItems({
+      atoms: [
+        atom("Si-0", [0, 0, 0]),
+        atom("Si-1", [1, 0, 0]),
+        atom("Si-2", [2, 0, 0]),
+      ],
+      bondColor: style.bondColor,
+      bondOpacity: 80,
+      bondRadius: 0.1,
+      bonds: [hiddenBond, visibleBond],
+      colorMode: style.bondColorMode,
+      colorScheme: style.colorScheme,
+      style,
+    });
+
+    expect(items.map((item) => item.id)).toEqual([visibleBond.id]);
+    expect(items[0]?.opacity).toBe(0.8);
   });
 
   test("fits the preview layout from unit-cell bounds only", () => {
@@ -539,6 +592,11 @@ describe("computeSceneLayout", () => {
     expect(strongFog!.far).toBeCloseTo(backDepth);
   });
 
+  test("disables fog for transparent exports instead of using preview fog color", () => {
+    expect(exportFogColor(null)).toBeNull();
+    expect(exportFogColor("#123456")).toBe("#123456");
+  });
+
   test("derives export aspect from the projected currently visible content", () => {
     const scene = sceneWithExportVisibilityAtoms();
     const visibility = createDefaultComponentVisibility(scene);
@@ -692,7 +750,7 @@ describe("computeSceneLayout", () => {
     expect(batch.maxVertexCount).toBe(8);
     expect(batch.maxIndexCount).toBe(24);
     expect(batch.items.map((item) => item.polyhedronIndex)).toEqual([0, 2]);
-    expect(batch.edgeItems.map((item) => item.polyhedronIndex)).toEqual([0, 2]);
+    expect(batch.edgePositions).toHaveLength(72);
     expect(batch.key.startsWith("polyhedra:2:")).toBe(true);
     disposePolyhedronSurfaceBatchBuild(batch);
   });
@@ -721,7 +779,7 @@ describe("computeSceneLayout", () => {
     expect(batch.maxVertexCount).toBe(4);
     expect(batch.maxIndexCount).toBe(12);
     expect(batch.items.map((item) => item.polyhedronIndex)).toEqual([0]);
-    expect(batch.edgeItems.map((item) => item.polyhedronIndex)).toEqual([0, 1]);
+    expect(batch.edgePositions).toHaveLength(72);
     disposePolyhedronSurfaceBatchBuild(batch);
   });
 
@@ -755,7 +813,7 @@ describe("computeSceneLayout", () => {
 
     expect(batch.itemCount).toBe(2);
     expect(batch.items.map((item) => item.polyhedronIndex)).toEqual([0, 1]);
-    expect(batch.edgeItems.map((item) => item.polyhedronIndex)).toEqual([0, 1]);
+    expect(batch.edgePositions).toHaveLength(72);
     disposePolyhedronSurfaceBatchBuild(batch);
   });
 
@@ -1024,5 +1082,27 @@ function atom(id: string, position: [number, number, number]): AtomSpec {
     position,
     siteId: id,
     siteIndex,
+  };
+}
+
+function bond(
+  id: string,
+  startAtomIndex: number,
+  endAtomIndex: number,
+): BondSpec {
+  return {
+    endAtomIndex,
+    endImageOffset: [0, 0, 0],
+    endSiteId: `Si-${endAtomIndex}`,
+    familyKey: "Si-Si",
+    id,
+    length: 1,
+    relationId: id,
+    relativeImageOffset: [0, 0, 0],
+    startAtomIndex,
+    startImageOffset: [0, 0, 0],
+    startSiteId: `Si-${startAtomIndex}`,
+    visibilityDependencies: [],
+    visibilityDependencyGroups: [],
   };
 }
