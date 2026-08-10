@@ -12,6 +12,28 @@ import {
   ColorPickerTrigger,
   useColorPicker,
 } from "../src/components/ui/color-picker";
+import {
+  normalizeHexColor,
+  parseColorToHex,
+} from "../src/components/ui/color-picker/colorModel";
+
+describe("color model", () => {
+  test("normalizes hex values and falls back deterministically", () => {
+    expect(normalizeHexColor("#AbC")).toBe("#aabbcc");
+    expect(normalizeHexColor("invalid", "#123456")).toBe("#123456");
+    expect(normalizeHexColor("invalid", "also-invalid")).toBe("#808080");
+  });
+
+  test("parses every picker output format through one hex conversion path", () => {
+    expect(parseColorToHex("#abc")).toBe("#aabbcc");
+    expect(parseColorToHex("rgba(59.4, 130, 246, 0.5)")).toBe("#3b82f6");
+    expect(parseColorToHex("hsl(217, 91%, 60%)")).toBe("#3c83f6");
+    expect(parseColorToHex("oklch(62.31% 51.46% 259.8deg)")).toMatch(
+      /^#[\da-f]{6}$/,
+    );
+    expect(parseColorToHex("not-a-color")).toBeNull();
+  });
+});
 
 describe("ColorPicker", () => {
   test("does not emit open changes while syncing a controlled open prop", () => {
